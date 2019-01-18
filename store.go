@@ -1,51 +1,51 @@
 package main
 
-// The sql go library is needed to interact with the database
-import (
-	"database/sql"
-	"fmt"
-)
+// // The sql go library is needed to interact with the database
+// import (
+// 	"database/sql"
+// 	"fmt"
+// )
 
-type Store interface {
-	CreateUser(user *User) error
-	GetUsers() ([]*User, error)
-}
+// type Store interface {
+// 	CreateUser(user *User) error
+// 	GetUsers() ([]*User, error)
+// }
 
-type dbStore struct {
-	db *sql.DB
-}
+// type dbStore struct {
+// 	db *sql.DB
+// }
 
-func (store *dbStore) CreateUser(user *User) error {
-	fmt.Println("in CreateUser now")
-	_, err := store.db.Query("INSERT INTO users(id, balance) VALUES ($1,$2)", user.id, user.balance)
-	return err
-}
+// func (store *dbStore) CreateUser(user *User) error {
+// 	fmt.Println("in CreateUser now")
+// 	_, err := store.db.Query("INSERT INTO users(id, balance) VALUES ($1,$2)", user.id, user.balance)
+// 	return err
+// }
 
-func (store *dbStore) GetUsers() ([]*User, error) {
+// func (store *dbStore) GetUsers() ([]*User, error) {
 	
-	rows, err := store.db.Query("SELECT id, balance from users")
+// 	rows, err := store.db.Query("SELECT id, balance from users")
 	
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer rows.Close()
 
-	users := []*User{}
-	for rows.Next() {
+// 	users := []*User{}
+// 	for rows.Next() {
 		
-		user := &User{}
+// 		user := &User{}
 		
-		if err := rows.Scan(&user.id, &user.balance); err != nil {
-			return nil, err
-		}
+// 		if err := rows.Scan(&user.id, &user.balance); err != nil {
+// 			return nil, err
+// 		}
 		
-		users = append(users, user)
-	}
-	return users, nil
-}
+// 		users = append(users, user)
+// 	}
+// 	return users, nil
+// }
 
-var store Store
+// var store Store
 
-func InitStore(s Store) {
-	store = s
-}
+// func InitStore(s Store) {
+// 	store = s
+// }

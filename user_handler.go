@@ -1,49 +1,50 @@
 package main
 
-import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-)
+// import (
+// 	"encoding/json"
+// 	"fmt"
+// 	"net/http"
+// )
 
-type User struct {
-	id     string `json:"id"`
-	balance string `json:"balance"`
-}
 
-func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	users, err := store.GetUsers()
+// func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	// Everything else is the same as before
-	userListBytes, err := json.Marshal(users)
+// 	users, err := store.GetUsers()
 
-	if err != nil {
-		fmt.Println("getUserHandler: ", fmt.Errorf("Error: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Write(userListBytes)
-}
+// 	// Everything else is the same as before
+// 	userListBytes, err := json.Marshal(users)
 
-func createUserHandler(w http.ResponseWriter, r *http.Request) {
+// 	if err != nil {
+// 		fmt.Println("getUserHandler: ", fmt.Errorf("Error: %v", err))
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		return
+// 	}
+// 	w.Write(userListBytes)
+// }
 
-	user := User{}
+// func createUserHandler(w http.ResponseWriter, r *http.Request) {
 
-	err := r.ParseForm()
+// 	user := User{}
 
-	if err != nil {
-		fmt.Println("createUserHandler 1: ", fmt.Errorf("Error: %v", err))
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("id is ", user.id+" balance is ", user.balance)
-	user.id = r.Form.Get("id")
-	user.balance = r.Form.Get("balance")
-	err = store.CreateUser(&user)
-	if err != nil {
-		fmt.Println("createUserHandler 2: ", err)
-	}
+// 	err := r.ParseForm()
 
-	http.Redirect(w, r, "/assets/", http.StatusFound)
-}
+// 	if err != nil {
+// 		fmt.Println("createUserHandler 1: ", fmt.Errorf("Error: %v", err))
+// 		w.WriteHeader(http.StatusInternalServerError)
+// 		return
+// 	}
+// 	fmt.Println("id is ", user.id+" balance is ", user.balance)
+// 	user.id = r.Form.Get("id")
+// 	// balance_, err := strconv.Atoi(r.Form.Get("balance"))
+//    if err != nil {
+//       panic(err)
+//    }
+// 	// user.balance = balance_
+// 	err = store.CreateUser(&user)
+// 	if err != nil {
+// 		fmt.Println("createUserHandler 2: ", err)
+// 	}
+
+// 	http.Redirect(w, r, "/assets/", http.StatusFound)
+// }
