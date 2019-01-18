@@ -13,6 +13,7 @@ func newRouter() *mux.Router {
 	r.PathPrefix("/assets/").Handler(staticFileHandler).Methods("GET")
 
 	r.HandleFunc("/", getHomeHandler).Methods("GET")
+	r.HandleFunc("/quote", getQuoteHandler).Methods("GET")
 	return r
 }
 
