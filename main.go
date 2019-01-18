@@ -13,7 +13,7 @@ const (
     port     = 5432
     user     = "postgres"
     password = ""
-    dbname   = "dayTrading"
+    dbname   = "postgres"
 )
 
 func newRouter() *mux.Router {
@@ -46,19 +46,6 @@ func main() {
     fmt.Println("Successfully connected!")
 
 	InitStore(&dbStore{db: db})
-
-	fmt.Println("after InitStore")
-	sqlStatement := `
-INSERT INTO public.users (id, balance)  
-VALUES ($1, $2)  
-RETURNING id`
-    id := "adcdwc"
-    err = db.QueryRow(sqlStatement, 3, 19).Scan(&id)
-    if err != nil {
-    	fmt.Println("inside insert, after InitStore")
-        panic(err)
-    }
-    fmt.Println("New user ID is:", id)
 
 	r := newRouter()
 	http.ListenAndServe(":8080", r)

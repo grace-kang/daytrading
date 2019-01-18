@@ -4,11 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 )
 
 type User struct {
 	id     string `json:"id"`
-	balance string `json:"balance"`
+	balance int `json:"balance"`
 }
 
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +40,11 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("id is ", user.id+" balance is ", user.balance)
 	user.id = r.Form.Get("id")
-	user.balance = r.Form.Get("balance")
+	int_balance, err := strconv.Atoi(r.Form.Get("balance"))
+   if err != nil {
+      //handle
+   }
+	user.balance = int_balance
 	err = store.CreateUser(&user)
 	if err != nil {
 		fmt.Println("createUserHandler 2: ", err)
