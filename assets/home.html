@@ -1,5 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
 <h1>Day Trading</h1>
 
 <h2>Home</h2>
+
+<table>
+    <tr>
+      <th>name</th>
+      <th>balance</th>
+    </tr>
+  </table>
+  <br/>
+
+  <form action="/user" method="post">
+    userName:
+    <input type="text" name="id">
+    <br/> balance:
+    <input type="text" name="balance">
+    <br/>
+    <input type="submit" value="Submit">
+  </form>
+
+
 <button>Log In</button>
 <button>Sign Up</button>
+
+
+<script>
+    userTable = document.querySelector("table")
+
+    /*
+    Use the browsers `fetch` API to make a GET call to /bird
+    We expect the response to be a JSON list of birds, of the
+    form :
+    [
+      {"species":"...","description":"..."},
+      {"species":"...","description":"..."}
+    ]
+    */
+    fetch("/user")
+      .then(response => response.json())
+      .then(userList => {
+        //Once we fetch the list, we iterate over it
+        userList.forEach(user => {
+          // Create the table row
+          row = document.createElement("tr")
+
+          // Create the table data elements for the species and
+					// description columns
+          id = document.createElement("id")
+          id.innerHTML = user.id
+          balance = document.createElement("td")
+          balance.innerHTML = user.balance
+
+          // Add the data elements to the row
+          row.appendChild(id)
+          row.appendChild(balance)
+          // Finally, add the row element to the table itself
+          userTable.appendChild(row)
+        })
+      })
+  </script>
+</html> 
