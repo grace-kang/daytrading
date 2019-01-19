@@ -15,7 +15,6 @@ type User struct {
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	users, err := store.GetUsers()
-	fmt.Println("users are: ", users)
 
 	// Everything else is the same as before
 	userListBytes, err := json.Marshal(users)
@@ -35,7 +34,6 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 
 	if err != nil {
-		fmt.Println("createUserHandler 1: ", fmt.Errorf("Error: %v", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
