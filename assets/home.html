@@ -5,17 +5,9 @@
 
 <h2>Home</h2>
 
-<table>
-    <tr>
-      <th>name</th>
-      <th>balance</th>
-    </tr>
-  </table>
-  <br/>
-
   <form action="/user" method="post">
     userName:
-    <input type="text" name="id">
+    <input type="text" name="username">
     <br/> balance:
     <input type="text" name="balance">
     <br/>
@@ -49,13 +41,13 @@
 
           // Create the table data elements for the species and
 					// description columns
-          id = document.createElement("id")
-          id.innerHTML = user.id
+          username = document.createElement("username")
+          username.innerHTML = user.username
           balance = document.createElement("td")
           balance.innerHTML = user.balance
 
           // Add the data elements to the row
-          row.appendChild(id)
+          row.appendChild(username)
           row.appendChild(balance)
           // Finally, add the row element to the table itself
           userTable.appendChild(row)

@@ -8,13 +8,14 @@ import (
 )
 
 type User struct {
-	id     string `json:"id"`
+	username     string `json:"username"`
 	balance int `json:"balance"`
 }
 
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	users, err := store.GetUsers()
+	fmt.Println("users are: ", users)
 
 	// Everything else is the same as before
 	userListBytes, err := json.Marshal(users)
@@ -38,8 +39,7 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("id is ", user.id+" balance is ", user.balance)
-	user.id = r.Form.Get("id")
+	user.username = r.Form.Get("username")
 	int_balance, err := strconv.Atoi(r.Form.Get("balance"))
    if err != nil {
       //handle
