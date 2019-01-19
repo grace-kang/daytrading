@@ -41,7 +41,7 @@ func (store *dbStore) GetUsers() ([]*User, error) {
 		if err := rows.Scan(&user.username, &user.balance); err != nil {
 			return nil, err
 		}
-		
+		fmt.Println("in getuser, user is ", user)
 		users = append(users, user)
 	}
 	return users, nil
