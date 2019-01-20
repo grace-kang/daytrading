@@ -44,7 +44,6 @@ ALTER TABLE public.transactions OWNER TO postgres;
 --
 
 CREATE SEQUENCE public.transactions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -83,7 +82,6 @@ ALTER TABLE public.users OWNER TO postgres;
 --
 
 CREATE SEQUENCE public.users_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
