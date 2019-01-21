@@ -5,12 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"encoding/xml"
+	"os"
 )
-
-type User struct {
-	username     string `json:"username"`
-	balance int `json:"balance"`
-}
 
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -47,6 +44,17 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("createUserHandler 2: ", err)
 	}
+	logUserCommand()
 
 	http.Redirect(w, r, "/assets/", http.StatusFound)
+}
+
+
+
+func BuildlogUserCommand() {
+
+}
+
+func logUserCommand() {
+	
 }
