@@ -1,12 +1,31 @@
 package main
 
 
+import (
+	"time"
+	"encoding/xml"
+	"strconv"
+	"fmt"
+)
 
+type LogItem struct {
+	Username string
+	LogData string 
+}
+
+var logList []LogItem
 
 type Command string
 type stockSymbolType string
 var server = "server1" // need to be replaced later
-var log_file = "logFile" // need to be replaced later
+var log_file = "log_File.xml" // need to be replaced later
+
+const (
+    // A generic XML header suitable for use with the output of Marshal.
+    // This is not automatically added to any output of this package,
+    // it is provided as a convenience.
+    Header = `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
+)
 
 const (
 	ADD              = Command("ADD")
@@ -26,11 +45,6 @@ const (
 	DUMPLOG          = Command("DUMPLOG")
 	DISPLAY_SUMMARY  = Command("DISPLAY_SUMMARY")
 )
-
-type LogItem struct {
-	Username string
-	LogData string 
-}
 
 type UserCommandType struct {
 	XMLName   		  xml.Name  `xml:"userCommand"`
@@ -101,4 +115,22 @@ type DebugType struct {
 	debugMessage      string  `xml:"errorMessage,omitempty"`
 }
 
+func getUnixTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
+
+
+func logUserCommand(user User) {
+	fmt.Printf("in logUserCommand. user is ", user.username, " balance is ", user.balance)
+	time := getUnixTimestamp()
+	userCommandData := &UserCommandType{Timestamp:	time, Server:	server, Command:	ADD, Username:	user.username, Funds:	strconv.Itoa(user.balance)}
+ 	out,err := xml.MarshalIndent(userCommandData, "", "   ")
+
+	if err != nil {
+		panic(err)
+	}
+
+	logList = append(logList, LogItem{ Username: user.username, LogData: xml.Header+string(out)})
+
+}
 

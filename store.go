@@ -3,7 +3,6 @@ package main
 // The sql go library is needed to interact with the database
 import (
 	"database/sql"
-	"github.com/jinzhu/gorm"
 )
 
 type Store interface {

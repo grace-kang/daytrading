@@ -3,10 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
-	"encoding/xml"
-	"os"
 )
 
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -26,6 +25,7 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 func createUserHandler(w http.ResponseWriter, r *http.Request) {
 
+	log.Printf("in createUserHandler. ")
 	user := User{}
 
 	err := r.ParseForm()
@@ -44,17 +44,8 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("createUserHandler 2: ", err)
 	}
-	logUserCommand()
+	logUserCommand(user)
 
 	http.Redirect(w, r, "/assets/", http.StatusFound)
 }
 
-
-
-func BuildlogUserCommand() {
-
-}
-
-func logUserCommand() {
-	
-}

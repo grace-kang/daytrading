@@ -8,8 +8,8 @@ type User struct {
 }
 
 const (
-	BUY = TransType("BUY")
-	SELL = TransType("SELL")
+	Trans_BUY = TransType("BUY")
+	Trans_SELL = TransType("SELL")
 )
 
 type Transaction struct {
@@ -18,7 +18,7 @@ type Transaction struct {
 	StockSymbol  string    `json:"stock"`
 	Type         TransType `json:"type"`
 	Amount       int       `json:"amount"`
-	Cost int       `json:"cost"`
+	Cost 		 int       `json:"cost"`
 	Time         int64     `json:"time"`
 }
 
