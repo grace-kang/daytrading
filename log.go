@@ -120,7 +120,20 @@ func getUnixTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func logUserCommand(user User) {
+func logUserCommand(transNum int64, user User) {
+	time := getUnixTimestamp()
+	userCommandData := &UserCommandType{Timestamp: time, Server: server, TransactionNumber: 1, Command: ADD, Username: user.username, Funds: strconv.Itoa(user.balance)}
+	out, err := xml.MarshalIndent(userCommandData, "", "   ")
+
+	if err != nil {
+		panic(err)
+	}
+
+	logList = append(logList, LogItem{Username: user.username, LogData: xml.Header + string(out)})
+
+}
+
+func logTransactionCommand(user User) {
 	time := getUnixTimestamp()
 	userCommandData := &UserCommandType{Timestamp: time, Server: server, Command: ADD, Username: user.username, Funds: strconv.Itoa(user.balance)}
 	out, err := xml.MarshalIndent(userCommandData, "", "   ")
