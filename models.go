@@ -3,23 +3,23 @@ package main
 type TransType string
 
 type User struct {
-	username     string `json:"username"`
-	balance int `json:"balance"`
+	username string  `json:"username"`
+	balance  float64 `json:"balance"`
 }
 
 const (
-	Trans_BUY = TransType("BUY")
+	Trans_BUY  = TransType("BUY")
 	Trans_SELL = TransType("SELL")
 )
 
 type Transaction struct {
-	ID           int64     `json:"id"`
-	Username     string    `json:"username"`
-	StockSymbol  string    `json:"stock"`
-	Type         TransType `json:"type"`
-	Amount       int       `json:"amount"`
-	Cost 		 int       `json:"cost"`
-	Time         int64     `json:"time"`
+	ID          int64     `json:"id"`
+	Username    string    `json:"username"`
+	StockSymbol string    `json:"stock"`
+	Type        TransType `json:"type"`
+	Amount      int       `json:"amount"`
+	Cost        float64   `json:"cost"`
+	Time        int64     `json:"time"`
 }
 
 type Trigger struct {
@@ -32,4 +32,3 @@ type Trigger struct {
 	Executable   bool      `json:"executable"`
 	Time         int64     `json:"time"`
 }
-

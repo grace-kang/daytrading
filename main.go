@@ -46,6 +46,8 @@ func main() {
 
 	fmt.Println("Successfully connected!")
 	deleteFile()
+	data := []string{"1", "ADD", "oY01WVirLr", "63511.53"}
+	ParseCommandData(data)
 
 	InitStore(&dbStore{db: db})
 

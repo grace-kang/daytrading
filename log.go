@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -52,7 +51,7 @@ type UserCommandType struct {
 	XMLName           xml.Name `xml:"userCommand"`
 	Timestamp         int64    `xml:"timestamp"`
 	Server            string   `xml:"server"`
-	TransactionNumber int64    `xml:"transactionNum"`
+	TransactionNumber int      `xml:"transactionNum"`
 	Command           Command  `xml:"command"`
 	Username          string   `xml:"username,omitempty"`
 	StockSymbol       string   `xml:"stockSymbol,omitempty"`
@@ -64,7 +63,7 @@ type QuoteServerType struct {
 	XMLName           xml.Name        `xml:"quoteServer"`
 	Timestamp         int64           `xml:"timestamp"`
 	Server            string          `xml:"server"`
-	TransactionNumber int64           `xml:"transactionNum"`
+	TransactionNumber int             `xml:"transactionNum"`
 	Price             string          `xml:"price"`
 	StockSymbol       stockSymbolType `xml:"stockSymbol"`
 	Username          string          `xml:"username"`
@@ -76,7 +75,7 @@ type AccountTransactionType struct {
 	XMLName           xml.Name `xml:"accountTransaction"`
 	Timestamp         int64    `xml:"timestamp"`
 	Server            string   `xml:"server"`
-	TransactionNumber int64    `xml:"transactionNum"`
+	TransactionNumber int      `xml:"transactionNum"`
 	Action            string   `xml:"action"`
 	Username          string   `xml:"username"`
 	Funds             string   `xml:"funds"`
@@ -121,9 +120,10 @@ func getUnixTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func logUserCommand(transNum int64, user User) {
+func logUserCommand(transNum int, user User) {
 	time := getUnixTimestamp()
-	userCommandData := &UserCommandType{Timestamp: time, Server: server, TransactionNumber: 1, Command: ADD, Username: user.username, Funds: strconv.Itoa(user.balance)}
+	amount_f := fmt.Sprintf("%.2f", user.balance)
+	userCommandData := &UserCommandType{Timestamp: time, Server: server, TransactionNumber: transNum, Command: ADD, Username: user.username, Funds: amount_f}
 	out, err := xml.MarshalIndent(userCommandData, "", "   ")
 
 	if err != nil {
@@ -134,9 +134,10 @@ func logUserCommand(transNum int64, user User) {
 
 }
 
-func logTransactionCommand(transNum int64, user User) {
+func logAccountTransactionCommand(transNum int, action string, user User) {
 	time := getUnixTimestamp()
-	transCommandData := &AccountTransactionType{Timestamp: time, Server: server, TransactionNumber: transNum, Action: "add", Username: user.username, Funds: strconv.Itoa(user.balance)}
+	amount_f := fmt.Sprintf("%.2f", user.balance)
+	transCommandData := &AccountTransactionType{Timestamp: time, Server: server, TransactionNumber: transNum, Action: action, Username: user.username, Funds: amount_f}
 	out, err := xml.MarshalIndent(transCommandData, "", "   ")
 
 	if err != nil {

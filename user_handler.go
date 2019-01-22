@@ -33,7 +33,7 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.username = r.Form.Get("username")
-	intBalance, err := strconv.Atoi(r.Form.Get("balance"))
+	intBalance, err := strconv.ParseFloat(r.Form.Get("balance"), 64)
 	if err != nil {
 		//handle
 	}
@@ -43,7 +43,7 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("createUserHandler 2: ", err)
 	}
 	logUserCommand(1, user)
-	logTransactionCommand(1, user)
+	logAccountTransactionCommand(1, "add", user)
 	dumpLog(user)
 
 	http.Redirect(w, r, "/assets/", http.StatusFound)
