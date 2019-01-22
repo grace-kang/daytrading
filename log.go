@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -133,10 +134,10 @@ func logUserCommand(transNum int64, user User) {
 
 }
 
-func logTransactionCommand(user User) {
+func logTransactionCommand(transNum int64, user User) {
 	time := getUnixTimestamp()
-	userCommandData := &UserCommandType{Timestamp: time, Server: server, Command: ADD, Username: user.username, Funds: strconv.Itoa(user.balance)}
-	out, err := xml.MarshalIndent(userCommandData, "", "   ")
+	transCommandData := &AccountTransactionType{Timestamp: time, Server: server, TransactionNumber: transNum, Action: "add", Username: user.username, Funds: strconv.Itoa(user.balance)}
+	out, err := xml.MarshalIndent(transCommandData, "", "   ")
 
 	if err != nil {
 		panic(err)
@@ -166,4 +167,22 @@ func dumpLog(user User) {
 	}
 
 	f.Close()
+}
+
+func deleteFile() {
+	// delete file
+	var err = os.Remove(log_file)
+	if isError(err) {
+		return
+	}
+
+	fmt.Println("File Deleted")
+}
+
+func isError(err error) bool {
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return (err != nil)
 }

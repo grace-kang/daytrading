@@ -45,6 +45,7 @@ func main() {
 	}
 
 	fmt.Println("Successfully connected!")
+	deleteFile()
 
 	InitStore(&dbStore{db: db})
 

@@ -43,6 +43,7 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("createUserHandler 2: ", err)
 	}
 	logUserCommand(1, user)
+	logTransactionCommand(1, user)
 	dumpLog(user)
 
 	http.Redirect(w, r, "/assets/", http.StatusFound)
