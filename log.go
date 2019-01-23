@@ -48,15 +48,15 @@ const (
 )
 
 type UserCommandType struct {
-	XMLName           xml.Name `xml:"userCommand"`
-	Timestamp         int64    `xml:"timestamp"`
-	Server            string   `xml:"server"`
-	TransactionNumber int      `xml:"transactionNum"`
-	Command           Command  `xml:"command"`
-	Username          string   `xml:"username,omitempty"`
-	StockSymbol       string   `xml:"stockSymbol,omitempty"`
-	Filename          string   `xml:"filename,omitempty"`
-	Funds             string   `xml:"funds,omitempty"`
+	XMLName           xml.Name        `xml:"userCommand"`
+	Timestamp         int64           `xml:"timestamp"`
+	Server            string          `xml:"server"`
+	TransactionNumber int             `xml:"transactionNum"`
+	Command           Command         `xml:"command"`
+	Username          string          `xml:"username,omitempty"`
+	StockSymbol       stockSymbolType `xml:"stockSymbol,omitempty"`
+	Filename          string          `xml:"filename,omitempty"`
+	Funds             string          `xml:"funds,omitempty"`
 }
 
 type QuoteServerType struct {
@@ -85,7 +85,7 @@ type SystemEventType struct {
 	XMLName           xml.Name        `xml:"systemEvent"`
 	Timestamp         int64           `xml:"timestamp"`
 	Server            string          `xml:"server"`
-	TransactionNumber int64           `xml:"transactionNum"`
+	TransactionNumber int             `xml:"transactionNum"`
 	Command           Command         `xml:"command"`
 	Username          string          `xml:"username"`
 	StockSymbol       stockSymbolType `xml:"stockSymbol"`
@@ -96,7 +96,7 @@ type ErrorEventType struct {
 	XMLName           xml.Name        `xml:"errorEvent"`
 	Timestamp         int64           `xml:"timestamp"`
 	Server            string          `xml:"server"`
-	TransactionNumber int64           `xml:"transactionNum"`
+	TransactionNumber int             `xml:"transactionNum"`
 	Command           Command         `xml:"command"`
 	Username          string          `xml:"username,omitempty"`
 	StockSymbol       stockSymbolType `xml:"stockSymbol,omitempty"`
@@ -108,7 +108,7 @@ type DebugType struct {
 	XMLName           xml.Name        `xml:"debugEvent"`
 	Timestamp         int64           `xml:"timestamp"`
 	Server            string          `xml:"server"`
-	TransactionNumber int64           `xml:"transactionNum"`
+	TransactionNumber int             `xml:"transactionNum"`
 	Command           Command         `xml:"command"`
 	Username          string          `xml:"username,omitempty"`
 	StockSymbol       stockSymbolType `xml:"stockSymbol,omitempty"`
@@ -120,39 +120,167 @@ func getUnixTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func logUserCommand(transNum int, user User) {
+func GetKwds(kwds []interface{}) map[string]interface{} {
+	result := make(map[string]interface{})
+
+	for i := 0; i < len(kwds); i += 2 {
+		result[kwds[i].(string)] = kwds[i+1]
+	}
+
+	return result
+}
+
+func logUserCommand(kwds ...interface{}) {
 	time := getUnixTimestamp()
-	amount_f := fmt.Sprintf("%.2f", user.balance)
-	userCommandData := &UserCommandType{Timestamp: time, Server: server, TransactionNumber: transNum, Command: ADD, Username: user.username, Funds: amount_f}
+	args := GetKwds(kwds)
+	userCommandData := &UserCommandType{Timestamp: time, Server: server}
+	if value, ok := args["transNum"]; ok {
+		userCommandData.TransactionNumber = value.(int)
+	}
+	if value, ok := args["command"]; ok {
+		userCommandData.Command = Command(value.(string))
+	}
+	if value, ok := args["username"]; ok {
+		userCommandData.Username = value.(string)
+	}
+	if value, ok := args["amount"]; ok {
+		amount := value.(float64)
+		amount2f := fmt.Sprintf("%.2f", amount)
+		userCommandData.Funds = amount2f
+	}
+	if value, ok := args["symbol"]; ok {
+		symbol := value.(string)
+		userCommandData.StockSymbol = stockSymbolType(symbol)
+	}
+	if value, ok := args["fileName"]; ok {
+		userCommandData.Filename = value.(string)
+	}
+
 	out, err := xml.MarshalIndent(userCommandData, "", "   ")
 
 	if err != nil {
 		panic(err)
 	}
 
-	logList = append(logList, LogItem{Username: user.username, LogData: xml.Header + string(out)})
-
+	logList = append(logList, LogItem{Username: userCommandData.Username, LogData: xml.Header + string(out)})
 }
 
-func logAccountTransactionCommand(transNum int, action string, user User) {
+func logAccountTransactionCommand(transNum int, action string, username string, amount float64) {
 	time := getUnixTimestamp()
-	amount_f := fmt.Sprintf("%.2f", user.balance)
-	transCommandData := &AccountTransactionType{Timestamp: time, Server: server, TransactionNumber: transNum, Action: action, Username: user.username, Funds: amount_f}
+	amountF := fmt.Sprintf("%.2f", amount)
+	transCommandData := &AccountTransactionType{Timestamp: time, Server: server, TransactionNumber: transNum, Action: action, Username: username, Funds: amountF}
 	out, err := xml.MarshalIndent(transCommandData, "", "   ")
 
 	if err != nil {
 		panic(err)
 	}
 
-	logList = append(logList, LogItem{Username: user.username, LogData: xml.Header + string(out)})
+	logList = append(logList, LogItem{Username: username, LogData: xml.Header + string(out)})
 
 }
 
-func dumpLog(user User) {
+func logSystemEventCommand(transNum int, command string, username string, stock string, amount float64) {
+	time := getUnixTimestamp()
+	amountF := fmt.Sprintf("%.2f", amount)
+	systemEventCommandData := &SystemEventType{Timestamp: time, Server: server, TransactionNumber: transNum, Command: Command(command), Username: username, StockSymbol: stockSymbolType(stock), Funds: amountF}
+	out, err := xml.MarshalIndent(systemEventCommandData, "", "   ")
+
+	if err != nil {
+		panic(err)
+	}
+
+	logList = append(logList, LogItem{Username: username, LogData: xml.Header + string(out)})
+
+}
+
+func logQuoteServerCommand(transNum int, price string, stock string, username string, quoteServerTime int64, cryptoKey string) {
+	time := getUnixTimestamp()
+	quoteEventCommandData := &QuoteServerType{Timestamp: time, Server: server, TransactionNumber: transNum, Price: price, StockSymbol: stockSymbolType(stock), Username: username, QuoteServerTime: quoteServerTime, CryptoKey: cryptoKey}
+	out, err := xml.MarshalIndent(quoteEventCommandData, "", "   ")
+
+	if err != nil {
+		panic(err)
+	}
+
+	logList = append(logList, LogItem{Username: username, LogData: xml.Header + string(out)})
+
+}
+
+func logErrorEventCommand(kwds ...interface{}) {
+	time := getUnixTimestamp()
+	args := GetKwds(kwds)
+	errorEvent := &ErrorEventType{Timestamp: time, Server: server}
+	if value, ok := args["transNum"]; ok {
+		errorEvent.TransactionNumber = value.(int)
+	}
+	if value, ok := args["command"]; ok {
+		errorEvent.Command = Command(value.(string))
+	}
+	if value, ok := args["username"]; ok {
+		errorEvent.Username = value.(string)
+	}
+	if value, ok := args["amount"]; ok {
+		amount := value.(float64)
+		amount2f := fmt.Sprintf("%.2f", amount)
+		errorEvent.Funds = amount2f
+	}
+	if value, ok := args["symbol"]; ok {
+		symbol := value.(string)
+		errorEvent.StockSymbol = stockSymbolType(symbol)
+	}
+	if value, ok := args["errorMessage"]; ok {
+		errorEvent.ErrorMessage = value.(string)
+	}
+
+	out, err := xml.MarshalIndent(errorEvent, "", "   ")
+
+	if err != nil {
+		panic(err)
+	}
+
+	logList = append(logList, LogItem{Username: errorEvent.Username, LogData: xml.Header + string(out)})
+}
+
+func logDebugMessageCommand(kwds ...interface{}) {
+	time := getUnixTimestamp()
+	args := GetKwds(kwds)
+	debugMessage := &DebugType{Timestamp: time, Server: server}
+	if value, ok := args["transNum"]; ok {
+		debugMessage.TransactionNumber = value.(int)
+	}
+	if value, ok := args["command"]; ok {
+		debugMessage.Command = Command(value.(string))
+	}
+	if value, ok := args["username"]; ok {
+		debugMessage.Username = value.(string)
+	}
+	if value, ok := args["amount"]; ok {
+		amount := value.(float64)
+		amount2f := fmt.Sprintf("%.2f", amount)
+		debugMessage.Funds = amount2f
+	}
+	if value, ok := args["symbol"]; ok {
+		symbol := value.(string)
+		debugMessage.StockSymbol = stockSymbolType(symbol)
+	}
+	if value, ok := args["debugMessage"]; ok {
+		debugMessage.DebugMessage = value.(string)
+	}
+
+	out, err := xml.MarshalIndent(debugMessage, "", "   ")
+
+	if err != nil {
+		panic(err)
+	}
+
+	logList = append(logList, LogItem{Username: debugMessage.Username, LogData: xml.Header + string(out)})
+}
+
+func dumpLog(username string) {
 
 	var logS = ""
 	for _, s := range logList {
-		if s.Username == user.username {
+		if s.Username == username {
 			logS = logS + s.LogData + "\n"
 		}
 	}

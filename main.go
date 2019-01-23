@@ -48,7 +48,13 @@ func main() {
 	deleteFile()
 	data := []string{"1", "ADD", "oY01WVirLr", "63511.53"}
 	ParseCommandData(data)
+	data1 := []string{"3", "BUY", "oY01WVirLr", "S", "276.83"}
+	ParseCommandData(data1)
 
+	data2 := []string{"61", "SELL", "oY01WVirLr", "S", "429.74"}
+	ParseCommandData(data2)
+
+	dumpLog("oY01WVirLr")
 	InitStore(&dbStore{db: db})
 
 	r := newRouter()

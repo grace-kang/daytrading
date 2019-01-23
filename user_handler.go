@@ -42,9 +42,9 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("createUserHandler 2: ", err)
 	}
-	logUserCommand(1, user)
-	logAccountTransactionCommand(1, "add", user)
-	dumpLog(user)
+	logUserCommand(1, user.username, user.balance)
+	logAccountTransactionCommand(1, "add", user.username, user.balance)
+	dumpLog(user.username)
 
 	http.Redirect(w, r, "/assets/", http.StatusFound)
 }
