@@ -48,7 +48,6 @@ func parseCommandBuy(data []string) {
 		logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
 		return
 	}
-
 }
 
 func parseCommandSell(data []string) {
@@ -61,15 +60,17 @@ func parseCommandSell(data []string) {
 	amount, err := strconv.ParseFloat(data[4], 64)
 	logUserCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol)
 	if _, ok := currentUsers[username]; ok {
-		logSystemEventCommand(transNum, data[1], username, symbol, amount)
-		logAccountTransactionCommand(transNum, "add", username, amount)
+		// do nothing
+	} else {
+		message := "Account" + username + " does not exist"
+		logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
 		return
 	}
 	// TODO: check if the amount of stocks user hold is smaller than amount. if yes, call logErrorEventCommand and exit the function
 	// TODO: add quote transaction xml after getting reponse from quote server
 
-	message := "Account" + username + " does not exist"
-	logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+	logSystemEventCommand(transNum, data[1], username, symbol, amount)
+	logAccountTransactionCommand(transNum, "add", username, amount)
 
 }
 
