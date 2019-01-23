@@ -7,11 +7,6 @@ import (
 	"strconv"
 )
 
-type User struct {
-	username     string `json:"username"`
-	balance int `json:"balance"`
-}
-
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	users, err := store.GetUsers()
@@ -38,15 +33,18 @@ func createUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user.username = r.Form.Get("username")
-	int_balance, err := strconv.Atoi(r.Form.Get("balance"))
-   if err != nil {
-      //handle
-   }
-	user.balance = int_balance
+	intBalance, err := strconv.ParseFloat(r.Form.Get("balance"), 64)
+	if err != nil {
+		//handle
+	}
+	user.balance = intBalance
 	err = store.CreateUser(&user)
 	if err != nil {
 		fmt.Println("createUserHandler 2: ", err)
 	}
+	logUserCommand(1, user.username, user.balance)
+	logAccountTransactionCommand(1, "add", user.username, user.balance)
+	dumpLog(user.username)
 
 	http.Redirect(w, r, "/assets/", http.StatusFound)
 }

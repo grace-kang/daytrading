@@ -41,6 +41,8 @@ func (store *dbStore) GetUsers() ([]*User, error) {
 	return users, nil
 }
 
+
+
 var store Store
 
 func InitStore(s Store) {
