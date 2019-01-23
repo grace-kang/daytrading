@@ -193,9 +193,10 @@ func logSystemEventCommand(transNum int, command string, username string, stock 
 
 }
 
-func logQuoteServerCommand(transNum int, price string, stock string, username string, quoteServerTime int64, cryptoKey string) {
+func logQuoteServerCommand(transNum int, price float64, stock string, username string, quoteServerTime int64, cryptoKey string) {
 	time := getUnixTimestamp()
-	quoteEventCommandData := &QuoteServerType{Timestamp: time, Server: server, TransactionNumber: transNum, Price: price, StockSymbol: stockSymbolType(stock), Username: username, QuoteServerTime: quoteServerTime, CryptoKey: cryptoKey}
+	stockPrice2f := fmt.Sprintf("%.2f", price)
+	quoteEventCommandData := &QuoteServerType{Timestamp: time, Server: server, TransactionNumber: transNum, Price: stockPrice2f, StockSymbol: stockSymbolType(stock), Username: username, QuoteServerTime: quoteServerTime, CryptoKey: cryptoKey}
 	out, err := xml.MarshalIndent(quoteEventCommandData, "", "   ")
 
 	if err != nil {
