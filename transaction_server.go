@@ -15,6 +15,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"net/http"
+	"io/ioutil"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
@@ -25,14 +27,24 @@ func main() {
 		// handle err
 	}
 
-	lines, err := readLines("workload1.txt")
+	lines, err := readLines("workload_files/workload1.txt")
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
 	}
-	for _, line := range lines {
-
+	for i, line := range lines {
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
+		transNum := strconv.Itoa(i+1)
+		for i=0; i < len(s); i++ {
+			s[i] = strings.TrimSpace(s[i])
+		}
+
+		data := make([]string, 2)
+		fmt.Println(transNum)
+		data[0] = transNum
+		data[1] = strings.TrimSpace(x[1])
+		data = append(data, s[1:]...)
+		// ParseCommandData(data)
 
 		switch x[1] {
 		case "ADD":
@@ -86,6 +98,39 @@ func main() {
 
 		case "QUOTE":
 			fmt.Println("-----QUOTE-----")
+			req, err := http.NewRequest("GET", "http://localhost:1200", nil)
+			req.Header.Add("If-None-Match", `W/"wyzzy"`)
+
+			q := req.URL.Query()
+			q.Add("user", s[1])
+			q.Add("stock", s[2])
+			q.Add("transNum", transNum)
+			req.URL.RawQuery = q.Encode()
+
+			httpclient := http.Client{}
+
+			var resp *http.Response
+			for {
+				resp, err = httpclient.Do(req)
+
+				if err != nil { // trans server down? retry
+					fmt.Println(err)
+				} else {
+					break
+				}
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+
+			if err != nil {
+				fmt.Printf("Error reading body: %s", err.Error())
+			}
+
+			// fmt.Println(string(body))
+			split := strings.Split(string(body), ",")[0]
+			price, _  := strconv.ParseFloat(split, 64)
+			fmt.Println(price)
+			resp.Body.Close()
 
 			/* HINCRBYFLOAT: change a float value. Quote costs a User
 			$0.50 */
