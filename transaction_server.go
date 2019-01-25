@@ -307,9 +307,10 @@ func main() {
 
 			/* HSET: Cancel stock SELL amount
 			Display new value ex. S:SELL should equal 0 now */
-			string9 := strings.TrimSpace(s[1])
-			client.Cmd("HSET", string9, "S:SELL", 0)
-			zps, _ := client.Cmd("HGET", string9, "S:SELL").Float64()
+			username := data[2]
+			client.Cmd("HSET", username, "S:SELL", 0)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username)
+			zps, _ := client.Cmd("HGET", username, "S:SELL").Float64()
 			fmt.Println("SELL: ", zps)
 
 		case "SET_BUY_AMOUNT":
