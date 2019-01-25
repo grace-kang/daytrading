@@ -315,18 +315,19 @@ func main() {
 
 		case "SET_BUY_AMOUNT":
 			fmt.Println("-----SET_BUY_AMOUNT-----")
-			string10 := strings.TrimSpace(s[1])
-			string11 := s[2] + ":TBUYAMOUNT"
-			string13 := strings.TrimSpace(s[3])
-			dollar2, _ := strconv.ParseFloat(string13, 64)
+			username := data[2]
+			symbol := data[3]
+			amount, _ := strconv.ParseFloat(data[4], 64)
+			cmd := symbol + ":TBUYAMOUNT"
 
 			/* HSET: Amount of money set aside for Buy Trigger to be activated */
-			client.Cmd("HSET", string10, string11, dollar2)
-			fmt.Println("TBUYAMOUNT:	", dollar2)
+			client.Cmd("HSET", username, cmd, amount)
+			fmt.Println("TBUYAMOUNT:	", amount)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
 
 			/* HINCRBYFLOAT: Decrease User's Balance by amount set aside, Display */
-			client.Cmd("HINCRBYFLOAT", string10, "Balance", -dollar2)
-			zazz, _ := client.Cmd("HGET", string10, "Balance").Float64()
+			client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
+			zazz, _ := client.Cmd("HGET", username, "Balance").Float64()
 			fmt.Println("Balance: ", zazz)
 
 		case "SET_BUY_TRIGGER":
