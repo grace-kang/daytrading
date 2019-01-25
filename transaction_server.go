@@ -21,7 +21,6 @@ import (
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
-var client *redis.Client
 var stockPrices = map[string]float64{}
 var stocksAmount = map[string]int{}
 
@@ -31,6 +30,51 @@ func dialRedis() *redis.Client {
 		// handle err
 	}
 	return cli
+}
+
+func getQuotePrice(transNum string, username string, stock string, client *redis.Client) {
+	req, err := http.NewRequest("GET", "http://localhost:1200", nil)
+	req.Header.Add("If-None-Match", `W/"wyzzy"`)
+
+	q := req.URL.Query()
+	q.Add("user", username)
+	q.Add("stock", stock)
+	q.Add("transNum", transNum)
+	req.URL.RawQuery = q.Encode()
+
+	httpclient := http.Client{}
+
+	var resp *http.Response
+	for {
+		resp, err = httpclient.Do(req)
+
+		if err != nil { // trans server down? retry
+			fmt.Println(err)
+		} else {
+			break
+		}
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		fmt.Printf("Error reading body: %s", err.Error())
+	}
+
+	// fmt.Println(string(body))
+	split := strings.Split(string(body), ",")[0]
+	price, _ := strconv.ParseFloat(split, 64)
+	fmt.Println(price)
+	resp.Body.Close()
+
+	/* HINCRBYFLOAT: change a float value. Quote costs a User
+	$0.50 */
+	client.Cmd("HINCRBYFLOAT", username, "Balance", -0.50)
+
+	/* Display - HGET new balance for display */
+	fmt.Print("QUOTE:	", stock)
+	x, _ := client.Cmd("HGET", username, "Balance").Float64()
+	fmt.Println("	Balance: ", x)
 }
 
 func main() {
@@ -136,48 +180,9 @@ func main() {
 
 		case "QUOTE":
 			fmt.Println("-----QUOTE-----")
-			req, err := http.NewRequest("GET", "http://localhost:1200", nil)
-			req.Header.Add("If-None-Match", `W/"wyzzy"`)
-
-			q := req.URL.Query()
-			q.Add("user", s[1])
-			q.Add("stock", s[2])
-			q.Add("transNum", transNum)
-			req.URL.RawQuery = q.Encode()
-
-			httpclient := http.Client{}
-
-			var resp *http.Response
-			for {
-				resp, err = httpclient.Do(req)
-
-				if err != nil { // trans server down? retry
-					fmt.Println(err)
-				} else {
-					break
-				}
-			}
-
-			body, err := ioutil.ReadAll(resp.Body)
-
-			if err != nil {
-				fmt.Printf("Error reading body: %s", err.Error())
-			}
-
-			// fmt.Println(string(body))
-			split := strings.Split(string(body), ",")[0]
-			price, _ := strconv.ParseFloat(split, 64)
-			fmt.Println(price)
-			resp.Body.Close()
-
-			/* HINCRBYFLOAT: change a float value. Quote costs a User
-			$0.50 */
-			client.Cmd("HINCRBYFLOAT", s[1], "Balance", -0.50)
-
-			/* Display - HGET new balance for display */
-			fmt.Print("QUOTE:	", s[2])
-			x, _ := client.Cmd("HGET", s[1], "Balance").Float64()
-			fmt.Println("	Balance: ", x)
+			username := data[1]
+			stock := data[2]
+			getQuotePrice(transNum, username, stock, client)
 
 		case "COMMIT_BUY":
 			fmt.Println("-----COMMIT_BUY-----")
