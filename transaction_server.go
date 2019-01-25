@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strconv"
@@ -168,15 +169,40 @@ func main() {
 
 		case "SELL":
 			fmt.Println("-----SELL-----")
+			username := data[2]
+			symbol := data[3]
+			amount, _ := strconv.ParseFloat(data[4], 64)
+
 			string2 := s[2] + ":SELL"
-
-			string3 := strings.TrimSpace(s[3])
-			dollar, _ := strconv.ParseFloat(string3, 64)
-
 			/* HSET: set the sell amount in dollars for the chosen stock
 			(still needs to be committed to make sale) */
-			client.Cmd("HSET", s[1], string2, dollar)
-			fmt.Println("SELL:	", dollar)
+			client.Cmd("HSET", username, string2, amount)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol)
+			fmt.Println("SELL:	", amount)
+
+			/*check if user exists or not*/
+			exists, _ := client.Cmd("HGETALL", username).Map()
+			if len(exists) == 0 {
+				message := "Account" + username + " does not exist"
+				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+				return
+			}
+			/*check if cache has stock. if not, senf request to quote server*/
+			if _, ok := stockPrices[symbol]; ok {
+				logSystemEventCommand(transNumInt, data[1], username, symbol, amount)
+			} else {
+				getQuotePrice(transNum, username, symbol, client)
+			}
+			stockPrice := stockPrices[symbol]
+			amountSell := int(math.Ceil(amount / stockPrice))
+			// TODO: check if the amount of stocks user hold is smaller than amount. if yes, call logErrorEventCommand and exit the function
+			if amountSell > stocksAmount[symbol] {
+				message := "Account" + username + " does not have enough stock amount for " + symbol
+				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+				return
+			} else {
+				logAccountTransactionCommand(transNumInt, "add", username, amount)
+			}
 
 		case "QUOTE":
 			fmt.Println("-----QUOTE-----")
