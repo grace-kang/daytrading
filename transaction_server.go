@@ -332,14 +332,15 @@ func main() {
 
 		case "SET_BUY_TRIGGER":
 			fmt.Println("-----SET_BUY_TRIGGER-----")
-			string14 := strings.TrimSpace(s[1])
-			string15 := s[2] + ":TBUYTRIG"
+			username := data[2]
+			symbol := data[3]
+			amount, _ := strconv.ParseFloat(data[4], 64)
+			cmd := symbol + ":TBUYTRIG"
 
 			/* HSET: Set Stock price for when the Buy Trigger will be activated */
-			string16 := strings.TrimSpace(s[3])
-			dollar3, _ := strconv.ParseFloat(string16, 64)
-			client.Cmd("HSET", string14, string15, dollar3)
-			fmt.Println("TBUYTRIG:	", dollar3)
+			client.Cmd("HSET", username, cmd, amount)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
+			fmt.Println("TBUYTRIG:	", amount)
 
 		case "CANCEL_SET_BUY":
 			fmt.Println("-----CANCEL_SET_BUY-----")
