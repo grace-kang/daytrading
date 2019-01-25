@@ -374,9 +374,19 @@ func main() {
 
 		case "SET_SELL_TRIGGER":
 			/* TODO */
+			fmt.Println("-----SET_SELL_TRIGGER-----")
+			username := data[2]
+			symbol := data[3]
+			amount, _ := strconv.ParseFloat(data[4], 64)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
 
 		case "CANCEL_SET_SELL":
 			/* TODO */
+			fmt.Println("-----CANCEL_SET_SELL-----")
+			username := data[2]
+			symbol := data[3]
+			amount, _ := strconv.ParseFloat(data[4], 64)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
 		}
 	}
 	/* How to put a map straight into Redis
