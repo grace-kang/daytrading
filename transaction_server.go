@@ -92,14 +92,35 @@ func main() {
 
 		case "BUY":
 			fmt.Println("-----BUY-----")
-			string2 := s[2] + ":BUY"
-			string3 := strings.TrimSpace(s[3])
-			dollar, _ := strconv.ParseFloat(string3, 64)
+			username := data[2]
+			symbol := data[3]
+			amount, _ := strconv.ParseFloat(data[4], 64)
 
 			/* HSET: set the buy amount in dollars for the chosen stock
 			(still needs to be committed to purchase) */
-			client.Cmd("HSET", s[1], string2, dollar)
-			fmt.Println("BUY:	", dollar)
+			string2 := symbol + ":BUY"
+			client.Cmd("HSET", username, string2, amount)
+			fmt.Println("BUY:	", amount)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol)
+
+			/*check if user exists or not*/
+			exists, _ := client.Cmd("HGETALL", username).Map()
+			if len(exists) == 0 {
+				message := "Account" + username + " does not exist"
+				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+				return
+			}
+			/*get the current balance of user*/
+			currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
+			fmt.Println("	Balance: ", x)
+			hasBalance := currentBalance >= amount
+
+			if !hasBalance {
+				message := "Balance of " + username + " is not enough"
+				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+				return
+			}
+			logSystemEventCommand(transNumInt, data[1], username, symbol, amount)
 
 		case "SELL":
 			fmt.Println("-----SELL-----")
