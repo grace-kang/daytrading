@@ -213,23 +213,32 @@ func main() {
 		case "COMMIT_BUY":
 			fmt.Println("-----COMMIT_BUY-----")
 
-			/* HGET dollar amount from stock BUY action. */
-			string3 := strings.TrimSpace(s[1])
-			x, _ := client.Cmd("HGET", string3, "S:BUY").Float64()
+			username := data[2]
+			symbol := "S"
 
-			/* Stock price is hardcoded to $22.00 for testing.
-			Calculate how many units User can buy with the amount
-			set aside for purchase. */
-			price := 22.0
-			total := x / price
-			units := int(total)
-			final := float64(units) * price
+			/* HGET dollar amount from stock BUY action. */
+			x, _ := client.Cmd("HGET", username, "S:BUY").Float64()
+
+			// TODO: need to check if last buy command is made within 60 seconds. If not, log errorEvent
+
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", x)
+
+			/*check if cache has stock. if not, senf request to quote server*/
+			if _, ok := stockPrices["symbol"]; ok {
+				logSystemEventCommand(transNumInt, data[1], username, symbol, x)
+			} else {
+				getQuotePrice(transNum, username, symbol, client)
+			}
+			stockPrice := stockPrices[symbol]
+			amountSell := int(math.Ceil(x / stockPrice))
+			final := float64(amountSell) * stockPrice
 
 			/* Decrease balance by price */
-			client.Cmd("HINCRBYFLOAT", string3, "Balance", -final)
+			client.Cmd("HINCRBYFLOAT", username, "Balance", -final)
+			logAccountTransactionCommand(transNumInt, "remove", username, final)
 
 			/* get new balance for Display, error checking */
-			y, _ := client.Cmd("HGET", string3, "Balance").Float64()
+			y, _ := client.Cmd("HGET", username, "Balance").Float64()
 			fmt.Println("COMMIT_BUY: ", final, "Balance: ", y)
 
 			//relevant := s[2] + ":Number"
@@ -237,9 +246,9 @@ func main() {
 			/* HINCBRY: Increase the number of stocks a User owns
 			HGET: the number for display
 			Display... */
-			client.Cmd("HINCRBY", string3, "S:Number", units)
-			a, _ := client.Cmd("HGET", string3, "S:Number").Float64()
-			fmt.Println("STOCK(S): ", units, "TOTAL(S): ", a)
+			client.Cmd("HINCRBY", username, "S:Number", amountSell)
+			a, _ := client.Cmd("HGET", username, "S:Number").Float64()
+			fmt.Println("STOCK(S): ", amountSell, "TOTAL(S): ", a)
 
 		case "COMMIT_SELL":
 			fmt.Println("-----COMMIT_SELL-----")
