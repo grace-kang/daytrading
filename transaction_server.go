@@ -11,21 +11,30 @@ import (
 	//"github.com/gomodule/redigo/redis"
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
-	"net/http"
-	"io/ioutil"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
-func main() {
-	client, err := redis.Dial("tcp", "localhost:6379")
+var client *redis.Client
+var stockPrices = map[string]float64{}
+var stocksAmount = map[string]int{}
+
+func dialRedis() *redis.Client {
+	cli, err := redis.Dial("tcp", "localhost:6379")
 	if err != nil {
 		// handle err
 	}
+	return cli
+}
+
+func main() {
+	client := dialRedis()
 
 	lines, err := readLines("workload_files/workload1.txt")
 	if err != nil {
@@ -34,8 +43,8 @@ func main() {
 	for i, line := range lines {
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
-		transNum := strconv.Itoa(i+1)
-		for i=0; i < len(s); i++ {
+		transNum := strconv.Itoa(i + 1)
+		for i = 0; i < len(s); i++ {
 			s[i] = strings.TrimSpace(s[i])
 		}
 
@@ -128,7 +137,7 @@ func main() {
 
 			// fmt.Println(string(body))
 			split := strings.Split(string(body), ",")[0]
-			price, _  := strconv.ParseFloat(split, 64)
+			price, _ := strconv.ParseFloat(split, 64)
 			fmt.Println(price)
 			resp.Body.Close()
 
