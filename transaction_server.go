@@ -65,6 +65,7 @@ func getQuotePrice(transNum string, username string, stock string, client *redis
 	// fmt.Println(string(body))
 	split := strings.Split(string(body), ",")[0]
 	price, _ := strconv.ParseFloat(split, 64)
+	stockPrices[stock] = price
 	fmt.Println(price)
 	resp.Body.Close()
 
@@ -81,7 +82,7 @@ func getQuotePrice(transNum string, username string, stock string, client *redis
 func main() {
 	deleteFile()
 	client := dialRedis()
-
+	client.Cmd("FLUSHALL")
 	lines, err := readLines("workload_files/workload1.txt")
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
@@ -157,7 +158,7 @@ func main() {
 			}
 			/*get the current balance of user*/
 			currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
-			fmt.Println("	Balance: ", x)
+			fmt.Println("	Balance: ", currentBalance)
 			hasBalance := currentBalance >= amount
 
 			if !hasBalance {
@@ -195,10 +196,11 @@ func main() {
 			}
 			stockPrice := stockPrices[symbol]
 			amountSell := int(math.Ceil(amount / stockPrice))
+			fmt.Println("in buy, amount sell is ", strconv.Itoa(amountSell))
 			// TODO: check if the amount of stocks user hold is smaller than amount. if yes, call logErrorEventCommand and exit the function
 			if amountSell > stocksAmount[symbol] {
 				message := "Account" + username + " does not have enough stock amount for " + symbol
-				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+				logErrorEventCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
 				return
 			} else {
 				logAccountTransactionCommand(transNumInt, "add", username, amount)
