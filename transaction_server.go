@@ -224,14 +224,14 @@ func main() {
 			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", x)
 
 			/*check if cache has stock. if not, senf request to quote server*/
-			if _, ok := stockPrices["symbol"]; ok {
+			if _, ok := stockPrices[symbol]; ok {
 				logSystemEventCommand(transNumInt, data[1], username, symbol, x)
 			} else {
 				getQuotePrice(transNum, username, symbol, client)
 			}
 			stockPrice := stockPrices[symbol]
-			amountSell := int(math.Ceil(x / stockPrice))
-			final := float64(amountSell) * stockPrice
+			amountBuy := int(math.Ceil(x / stockPrice))
+			final := float64(amountBuy) * stockPrice
 
 			/* Decrease balance by price */
 			client.Cmd("HINCRBYFLOAT", username, "Balance", -final)
@@ -246,32 +246,43 @@ func main() {
 			/* HINCBRY: Increase the number of stocks a User owns
 			HGET: the number for display
 			Display... */
-			client.Cmd("HINCRBY", username, "S:Number", amountSell)
+			client.Cmd("HINCRBY", username, "S:Number", amountBuy)
 			a, _ := client.Cmd("HGET", username, "S:Number").Float64()
-			fmt.Println("STOCK(S): ", amountSell, "TOTAL(S): ", a)
+			fmt.Println("STOCK(S): ", amountBuy, "TOTAL(S): ", a)
 
 		case "COMMIT_SELL":
 			fmt.Println("-----COMMIT_SELL-----")
-			string5 := strings.TrimSpace(s[1])
+
+			username := data[2]
+			symbol := "S"
 
 			/* HGET: get dollar amount stock SELL action */
-			be, _ := client.Cmd("HGET", string5, "S:SELL").Float64()
+			be, _ := client.Cmd("HGET", username, "S:SELL").Float64()
 
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", be)
+
+			if _, ok := stockPrices[symbol]; ok {
+				logSystemEventCommand(transNumInt, data[1], username, symbol, be)
+			} else {
+				getQuotePrice(transNum, username, symbol, client)
+			}
+			stockPrice := stockPrices[symbol]
+			amountSell := int(math.Ceil(be / stockPrice))
+			finalCost := float64(amountSell) * stockPrice
 			/* Calculate how many stocks User can sell */
-			numU := be / 22.0
-			numUnits := int(numU)
-			fmt.Println("COMMIT_SELL: ", numUnits)
-			cost := numUnits * 22
-			fmt.Println("AT COST: ", cost)
+
+			fmt.Println("COMMIT_SELL: ", amountSell)
+			fmt.Println("AT COST: ", finalCost)
 
 			/* HINCRBY: Decrease User's stocks and then Display # */
-			client.Cmd("HINCRBY", string5, "S:Number", -numUnits)
-			ab, _ := client.Cmd("HGET", string5, "S:Number").Float64()
+			client.Cmd("HINCRBY", username, "S:Number", -amountSell)
+			ab, _ := client.Cmd("HGET", username, "S:Number").Float64()
 			fmt.Println("STOCK(S): ", ab)
 
 			/* HGET: Decrease User's balance and then display new balance */
-			client.Cmd("HINCRBYFLOAT", string5, "Balance", cost)
-			za, _ := client.Cmd("HGET", string5, "Balance").Float64()
+			client.Cmd("HINCRBYFLOAT", username, "Balance", finalCost)
+			logAccountTransactionCommand(transNumInt, "add", username, finalCost)
+			za, _ := client.Cmd("HGET", username, "Balance").Float64()
 			fmt.Println("Balance: ", za)
 
 		case "DISPLAY_SUMMARY":
