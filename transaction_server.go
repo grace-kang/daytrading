@@ -34,6 +34,7 @@ func dialRedis() *redis.Client {
 }
 
 func main() {
+	deleteFile()
 	client := dialRedis()
 
 	lines, err := readLines("workload_files/workload1.txt")
@@ -55,6 +56,11 @@ func main() {
 		data = append(data, s[1:]...)
 		// ParseCommandData(data)
 
+		transNumInt, _ := strconv.Atoi(transNum)
+		if err != nil {
+			panic(err)
+		}
+
 		switch x[1] {
 		case "ADD":
 			fmt.Println("-----ADD-----")
@@ -64,22 +70,24 @@ func main() {
 			s[1] is the user id
 			s[2] is the amount they wish to add. */
 
-			exists, _ := client.Cmd("HGETALL", s[1]).Map()
+			amount, _ := strconv.ParseFloat(data[3], 64)
+			username := data[2]
 
-			string1 := s[2]
-			string1 = strings.TrimSpace(string1)
-			dollar, _ := strconv.ParseFloat(string1, 64)
+			exists, _ := client.Cmd("HGETALL", username).Map()
 
 			if len(exists) == 0 {
-				client.Cmd("HMSET", s[1], "User", s[1], "Balance", dollar)
+				client.Cmd("HMSET", username, "User", username, "Balance", amount)
 			} else {
-				client.Cmd("HINCRBYFLOAT", s[1], "Balance", dollar)
+				client.Cmd("HINCRBYFLOAT", username, "Balance", amount)
 			}
 			/* ------------------------------------*/
 
 			/* Display - get new balance (HGET) */
-			fmt.Print("ADD:	  ", dollar)
-			x, _ := client.Cmd("HGET", s[1], "Balance").Float64()
+			fmt.Print("ADD:	  ", amount)
+			x, _ := client.Cmd("HGET", username, "Balance").Float64()
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount)
+			logAccountTransactionCommand(transNumInt, "add", username, amount)
+
 			fmt.Println("	Balance: ", x)
 
 		case "BUY":
