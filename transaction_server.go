@@ -344,12 +344,12 @@ func main() {
 
 		case "CANCEL_SET_BUY":
 			fmt.Println("-----CANCEL_SET_BUY-----")
-			string1000 := strings.TrimSpace(s[1])
-			stringx00 := strings.TrimSpace(s[2])
-			string115 := stringx00 + ":TBUYAMOUNT"
+			username := data[2]
+			symbol := data[3]
+			cmd := symbol + ":TBUYAMOUNT"
 
 			/* HGET: Get amount stored in reserve in STOCK:TBUYAMOUNT */
-			zzz, _ := client.Cmd("HGET", string1000, string115).Float64()
+			zzz, _ := client.Cmd("HGET", username, cmd).Float64()
 			fmt.Println("Refund: ", zzz)
 
 			/* TODO: Refund balance by reserve stored from above */
