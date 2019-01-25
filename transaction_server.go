@@ -277,6 +277,12 @@ func main() {
 			dollar200, _ := strconv.ParseFloat(string130, 64)
 			client.Cmd("HSET", string100, string110, dollar200)
 			fmt.Println("TSELLAMOUNT:	", dollar200)
+		case "DUMPLOG":
+			if len(data) == 3 {
+				dumpAllLogs(data[2])
+			} else if len(data) == 4 {
+				dumpLog(data[2], data[3])
+			}
 
 		case "SET_SELL_TRIGGER":
 			/* TODO */
