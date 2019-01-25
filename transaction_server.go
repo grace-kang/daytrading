@@ -356,17 +356,19 @@ func main() {
 
 		case "SET_SELL_AMOUNT":
 			fmt.Println("-----SET_SELL_AMOUNT-----")
-			string100 := strings.TrimSpace(s[1])
-			string110 := s[2] + ":TSELLAMOUNT"
-
-			string130 := strings.TrimSpace(s[3])
-			dollar200, _ := strconv.ParseFloat(string130, 64)
-			client.Cmd("HSET", string100, string110, dollar200)
-			fmt.Println("TSELLAMOUNT:	", dollar200)
+			username := data[2]
+			symbol := data[3]
+			amount, _ := strconv.ParseFloat(data[4], 64)
+			cmd := symbol + ":TSELLAMOUNT"
+			client.Cmd("HSET", username, cmd, amount)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
+			fmt.Println("TSELLAMOUNT:	", amount)
 		case "DUMPLOG":
 			if len(data) == 3 {
+				logUserCommand("transNum", transNumInt, "command", data[1], "filename", data[2])
 				dumpAllLogs(data[2])
 			} else if len(data) == 4 {
+				logUserCommand("transNum", transNumInt, "command", data[1], "username", data[2], "filename", data[3])
 				dumpLog(data[2], data[3])
 			}
 
