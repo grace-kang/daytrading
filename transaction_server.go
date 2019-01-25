@@ -203,7 +203,7 @@ func main() {
 				logErrorEventCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
 				return
 			} else {
-				logAccountTransactionCommand(transNumInt, "add", username, amount)
+				// logAccountTransactionCommand(transNumInt, "add", username, amount)
 			}
 
 		case "QUOTE":
