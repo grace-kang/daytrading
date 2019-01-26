@@ -277,8 +277,7 @@ func logDebugMessageCommand(kwds ...interface{}) {
 	logList = append(logList, LogItem{Username: debugMessage.Username, LogData: xml.Header + string(out)})
 }
 
-func dumpLog(username string) {
-
+func dumpLog(username string, filename string) {
 	var logS = ""
 	for _, s := range logList {
 		if s.Username == username {
@@ -286,7 +285,26 @@ func dumpLog(username string) {
 		}
 	}
 
-	f, err := os.OpenFile(log_file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filename+".xml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = f.Write([]byte(logS))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	f.Close()
+}
+
+func dumpAllLogs(filename string) {
+	var logS = ""
+	for _, s := range logList {
+		logS = logS + s.LogData + "\n"
+	}
+
+	f, err := os.OpenFile(filename+".xml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
