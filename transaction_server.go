@@ -154,7 +154,7 @@ func main() {
 			if len(exists) == 0 {
 				message := "Account" + username + " does not exist"
 				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			}
 			/*get the current balance of user*/
 			currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
@@ -164,7 +164,7 @@ func main() {
 			if !hasBalance {
 				message := "Balance of " + username + " is not enough"
 				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			}
 			logSystemEventCommand(transNumInt, data[1], username, symbol, amount)
 
@@ -186,7 +186,7 @@ func main() {
 			if len(exists) == 0 {
 				message := "Account" + username + " does not exist"
 				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			}
 			/*check if cache has stock. if not, senf request to quote server*/
 			if _, ok := stockPrices[symbol]; ok {
@@ -201,7 +201,7 @@ func main() {
 			if amountSell > stocksAmount[symbol] {
 				message := "Account" + username + " does not have enough stock amount for " + symbol
 				logErrorEventCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			} else {
 				// logAccountTransactionCommand(transNumInt, "add", username, amount)
 			}
@@ -350,6 +350,7 @@ func main() {
 
 			/* HGET: Get amount stored in reserve in STOCK:TBUYAMOUNT */
 			zzz, _ := client.Cmd("HGET", username, cmd).Float64()
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol)
 			fmt.Println("Refund: ", zzz)
 
 			/* TODO: Refund balance by reserve stored from above */
@@ -385,8 +386,7 @@ func main() {
 			fmt.Println("-----CANCEL_SET_SELL-----")
 			username := data[2]
 			symbol := data[3]
-			amount, _ := strconv.ParseFloat(data[4], 64)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol)
 		}
 	}
 	/* How to put a map straight into Redis
