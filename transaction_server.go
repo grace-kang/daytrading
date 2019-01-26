@@ -111,30 +111,12 @@ func main() {
 		case "ADD":
 			fmt.Println("-----ADD-----")
 
-			/* Check to see if User already exists. Add User if not
-			else just increase an existing User's balance.
-			s[1] is the user id
-			s[2] is the amount they wish to add. */
-
 			amount, _ := strconv.ParseFloat(data[3], 64)
 			username := data[2]
 
-			exists, _ := client.Cmd("HGETALL", username).Map()
-
-			if len(exists) == 0 {
-				client.Cmd("HMSET", username, "User", username, "Balance", amount)
-			} else {
-				client.Cmd("HINCRBYFLOAT", username, "Balance", amount)
-			}
-			/* ------------------------------------*/
-
-			/* Display - get new balance (HGET) */
-			fmt.Print("ADD:	  ", amount)
-			x, _ := client.Cmd("HGET", username, "Balance").Float64()
+			redisADD(client, username, amount)
 			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount)
 			logAccountTransactionCommand(transNumInt, "add", username, amount)
-
-			fmt.Println("	Balance: ", x)
 
 		case "BUY":
 			fmt.Println("-----BUY-----")
@@ -142,29 +124,22 @@ func main() {
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
 
-			/* HSET: set the buy amount in dollars for the chosen stock
-			(still needs to be committed to purchase) */
-			string2 := symbol + ":BUY"
-			client.Cmd("HSET", username, string2, amount)
-			fmt.Println("BUY:	", amount)
+			redisBUY(client, username, symbol, amount)
 			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol)
 
-			/*check if user exists or not*/
-			exists, _ := client.Cmd("HGETALL", username).Map()
-			if len(exists) == 0 {
+			exists := exists(client, username)
+			if exists == false {
 				message := "Account" + username + " does not exist"
 				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			}
-			/*get the current balance of user*/
-			currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
-			fmt.Println("	Balance: ", currentBalance)
-			hasBalance := currentBalance >= amount
 
+			currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
+			hasBalance := currentBalance >= amount
 			if !hasBalance {
 				message := "Balance of " + username + " is not enough"
 				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			}
 			logSystemEventCommand(transNumInt, data[1], username, symbol, amount)
 
@@ -173,20 +148,15 @@ func main() {
 			username := data[2]
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
+			redisSELL(client, username, symbol, amount)
 
-			string2 := s[2] + ":SELL"
-			/* HSET: set the sell amount in dollars for the chosen stock
-			(still needs to be committed to make sale) */
-			client.Cmd("HSET", username, string2, amount)
 			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol)
-			fmt.Println("SELL:	", amount)
-
 			/*check if user exists or not*/
-			exists, _ := client.Cmd("HGETALL", username).Map()
-			if len(exists) == 0 {
+			exists := exists(client, username)
+			if exists == false {
 				message := "Account" + username + " does not exist"
 				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			}
 			/*check if cache has stock. if not, senf request to quote server*/
 			if _, ok := stockPrices[symbol]; ok {
@@ -201,7 +171,7 @@ func main() {
 			if amountSell > stocksAmount[symbol] {
 				message := "Account" + username + " does not have enough stock amount for " + symbol
 				logErrorEventCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				return
+				continue
 			} else {
 				// logAccountTransactionCommand(transNumInt, "add", username, amount)
 			}
@@ -350,6 +320,7 @@ func main() {
 
 			/* HGET: Get amount stored in reserve in STOCK:TBUYAMOUNT */
 			zzz, _ := client.Cmd("HGET", username, cmd).Float64()
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol)
 			fmt.Println("Refund: ", zzz)
 
 			/* TODO: Refund balance by reserve stored from above */
@@ -385,14 +356,54 @@ func main() {
 			fmt.Println("-----CANCEL_SET_SELL-----")
 			username := data[2]
 			symbol := data[3]
-			amount, _ := strconv.ParseFloat(data[4], 64)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
+			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol)
 		}
 	}
 	/* How to put a map straight into Redis
 	m := map[string]int{"a": 1, "b": 2, "c": 3}
 	err = client.Cmd("HMSET", "user:4", "user", "bob", "balance", 5000, m).Err */
 
+}
+
+func exists(client *redis.Client, username string) bool {
+	//client := dialRedis()
+	exists, _ := client.Cmd("HGETALL", username).Map()
+	if len(exists) == 0 {
+		return false
+	} else {
+		return true
+	}
+}
+
+func redisADD(client *redis.Client, username string, amount float64) {
+	fmt.Println("newADD", username, amount)
+	exists := exists(client, username)
+	if exists == false {
+		client.Cmd("HMSET", username, "User", username, "Balance", amount)
+	} else {
+		client.Cmd("HINCRBYFLOAT", username, "Balance", amount)
+	}
+	/* Display - get new balance (HGET) */
+	fmt.Print("ADD:	  ", amount)
+	x, _ := client.Cmd("HGET", username, "Balance").Float64()
+	fmt.Println("	Balance: ", x)
+}
+
+func redisBUY(client *redis.Client, username string, symbol string, amount float64) {
+	fmt.Println("newBUY", username, symbol, amount)
+	string2 := symbol + ":BUY"
+	client.Cmd("HSET", username, string2, amount)
+	fmt.Println("BUY:	", amount)
+	currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
+	fmt.Println("	Balance: ", currentBalance)
+}
+func redisSELL(client *redis.Client, username string, symbol string, amount float64) {
+	fmt.Println("newSELL", username, symbol, amount)
+	string2 := symbol + ":SELL"
+	/* HSET: set the sell amount in dollars for the chosen stock
+	(still needs to be committed to make sale) */
+	client.Cmd("HSET", username, string2, amount)
+	fmt.Println("SELL:	", amount)
 }
 
 /* readLines reads a whole file into memory
