@@ -9,8 +9,8 @@ import (
 
 const (
 	connHost = "localhost" // Run on the local machine
-	connPort = "1200"       // Same port as on the regular system
-	connType = "tcp"        // NOTE: not HTPP
+	connPort = "1200"      // Same port as on the regular system
+	connType = "tcp"       // NOTE: not HTPP
 )
 
 func main() {
@@ -30,11 +30,11 @@ func makeResponse(stock string, username string) string {
 	crypto := randSeq(25)
 	// (?P<quote>.+),(?P<stock>.+),(?P<user>.+),(?P<time>.+),(?P<key>.+)
 	output := fmt.Sprintf("%s,%s,%s,%d,%s\n",
-	amount,
-	stock,
-	username,
-	now,
-	crypto)
+		amount,
+		stock,
+		username,
+		now,
+		crypto)
 	fmt.Println(output)
 	return output
 }
