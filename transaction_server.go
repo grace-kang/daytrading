@@ -8,13 +8,9 @@ macowner$ redis-cli
 package main
 
 import (
-	//"github.com/gomodule/redigo/redis"
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
-	"math"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -33,52 +29,6 @@ func dialRedis() *redis.Client {
 	return cli
 }
 
-func getQuotePrice(transNum string, username string, stock string, client *redis.Client) {
-	req, err := http.NewRequest("GET", "http://localhost:1200", nil)
-	req.Header.Add("If-None-Match", `W/"wyzzy"`)
-
-	q := req.URL.Query()
-	q.Add("user", username)
-	q.Add("stock", stock)
-	q.Add("transNum", transNum)
-	req.URL.RawQuery = q.Encode()
-
-	httpclient := http.Client{}
-
-	var resp *http.Response
-	for {
-		resp, err = httpclient.Do(req)
-
-		if err != nil { // trans server down? retry
-			fmt.Println(err)
-		} else {
-			break
-		}
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		fmt.Printf("Error reading body: %s", err.Error())
-	}
-
-	// fmt.Println(string(body))
-	split := strings.Split(string(body), ",")[0]
-	price, _ := strconv.ParseFloat(split, 64)
-	stockPrices[stock] = price
-	fmt.Println(price)
-	resp.Body.Close()
-
-	/* HINCRBYFLOAT: change a float value. Quote costs a User
-	$0.50 */
-	client.Cmd("HINCRBYFLOAT", username, "Balance", -0.50)
-
-	/* Display - HGET new balance for display */
-	fmt.Print("QUOTE:	", stock)
-	x, _ := client.Cmd("HGET", username, "Balance").Float64()
-	fmt.Println("	Balance: ", x)
-}
-
 func main() {
 	deleteFile()
 	client := dialRedis()
@@ -90,273 +40,105 @@ func main() {
 	for i, line := range lines {
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
-		transNum := strconv.Itoa(i + 1)
+		command := x[1]
+		transNum := i+1
 		for i = 0; i < len(s); i++ {
 			s[i] = strings.TrimSpace(s[i])
 		}
 
 		data := make([]string, 2)
 		fmt.Println(transNum)
-		data[0] = transNum
+		// data[0] = transNum
 		data[1] = strings.TrimSpace(x[1])
 		data = append(data, s[1:]...)
-		// ParseCommandData(data)
 
-		transNumInt, _ := strconv.Atoi(transNum)
-		if err != nil {
-			panic(err)
-		}
-
-		switch x[1] {
+		switch command {
 		case "ADD":
-			fmt.Println("-----ADD-----")
-
 			amount, _ := strconv.ParseFloat(data[3], 64)
 			username := data[2]
-
-			redisADD(client, username, amount)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount)
-			logAccountTransactionCommand(transNumInt, "add", username, amount)
+			add(transNum, username, amount, client)
 
 		case "BUY":
-			fmt.Println("-----BUY-----")
 			username := data[2]
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
-
-			redisBUY(client, username, symbol, amount)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol)
-
-			exists := exists(client, username)
-			if exists == false {
-				message := "Account" + username + " does not exist"
-				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				continue
-			}
-
-			currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
-			hasBalance := currentBalance >= amount
-			if !hasBalance {
-				message := "Balance of " + username + " is not enough"
-				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				continue
-			}
-			logSystemEventCommand(transNumInt, data[1], username, symbol, amount)
+			buy(transNum, username, symbol, amount, client)
 
 		case "SELL":
-			fmt.Println("-----SELL-----")
 			username := data[2]
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
-			redisSELL(client, username, symbol, amount)
-
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol)
-			/*check if user exists or not*/
-			exists := exists(client, username)
-			if exists == false {
-				message := "Account" + username + " does not exist"
-				logErrorEventCommand("transNum", transNum, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				continue
-			}
-			/*check if cache has stock. if not, senf request to quote server*/
-			if _, ok := stockPrices[symbol]; ok {
-				logSystemEventCommand(transNumInt, data[1], username, symbol, amount)
-			} else {
-				getQuotePrice(transNum, username, symbol, client)
-			}
-			stockPrice := stockPrices[symbol]
-			amountSell := int(math.Ceil(amount / stockPrice))
-			fmt.Println("in buy, amount sell is ", strconv.Itoa(amountSell))
-			// TODO: check if the amount of stocks user hold is smaller than amount. if yes, call logErrorEventCommand and exit the function
-			if amountSell > stocksAmount[symbol] {
-				message := "Account" + username + " does not have enough stock amount for " + symbol
-				logErrorEventCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-				continue
-			} else {
-				// logAccountTransactionCommand(transNumInt, "add", username, amount)
-			}
+			sell(transNum, username, symbol, amount, client)
 
 		case "QUOTE":
-			fmt.Println("-----QUOTE-----")
 			username := data[1]
 			stock := data[2]
-			getQuotePrice(transNum, username, stock, client)
+			quote(transNum, username, stock, client)
 
 		case "COMMIT_BUY":
-			fmt.Println("-----COMMIT_BUY-----")
-
 			username := data[2]
-			symbol := "S"
-
-			/* HGET dollar amount from stock BUY action. */
-			x, _ := client.Cmd("HGET", username, "S:BUY").Float64()
-
-			// TODO: need to check if last buy command is made within 60 seconds. If not, log errorEvent
-
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", x)
-
-			/*check if cache has stock. if not, senf request to quote server*/
-			if _, ok := stockPrices[symbol]; ok {
-				logSystemEventCommand(transNumInt, data[1], username, symbol, x)
-			} else {
-				getQuotePrice(transNum, username, symbol, client)
-			}
-			stockPrice := stockPrices[symbol]
-			amountBuy := int(math.Ceil(x / stockPrice))
-			final := float64(amountBuy) * stockPrice
-
-			/* Decrease balance by price */
-			client.Cmd("HINCRBYFLOAT", username, "Balance", -final)
-			logAccountTransactionCommand(transNumInt, "remove", username, final)
-
-			/* get new balance for Display, error checking */
-			y, _ := client.Cmd("HGET", username, "Balance").Float64()
-			fmt.Println("COMMIT_BUY: ", final, "Balance: ", y)
-
-			//relevant := s[2] + ":Number"
-
-			/* HINCBRY: Increase the number of stocks a User owns
-			HGET: the number for display
-			Display... */
-			client.Cmd("HINCRBY", username, "S:Number", amountBuy)
-			a, _ := client.Cmd("HGET", username, "S:Number").Float64()
-			fmt.Println("STOCK(S): ", amountBuy, "TOTAL(S): ", a)
+			commit_buy(transNum, username, client)
 
 		case "COMMIT_SELL":
-			fmt.Println("-----COMMIT_SELL-----")
-
 			username := data[2]
-			symbol := "S"
-
-			/* HGET: get dollar amount stock SELL action */
-			be, _ := client.Cmd("HGET", username, "S:SELL").Float64()
-
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "amount", be)
-
-			if _, ok := stockPrices[symbol]; ok {
-				logSystemEventCommand(transNumInt, data[1], username, symbol, be)
-			} else {
-				getQuotePrice(transNum, username, symbol, client)
-			}
-			stockPrice := stockPrices[symbol]
-			amountSell := int(math.Ceil(be / stockPrice))
-			finalCost := float64(amountSell) * stockPrice
-			/* Calculate how many stocks User can sell */
-
-			fmt.Println("COMMIT_SELL: ", amountSell)
-			fmt.Println("AT COST: ", finalCost)
-
-			/* HINCRBY: Decrease User's stocks and then Display # */
-			client.Cmd("HINCRBY", username, "S:Number", -amountSell)
-			ab, _ := client.Cmd("HGET", username, "S:Number").Float64()
-			fmt.Println("STOCK(S): ", ab)
-
-			/* HGET: Decrease User's balance and then display new balance */
-			client.Cmd("HINCRBYFLOAT", username, "Balance", finalCost)
-			logAccountTransactionCommand(transNumInt, "add", username, finalCost)
-			za, _ := client.Cmd("HGET", username, "Balance").Float64()
-			fmt.Println("Balance: ", za)
+			commit_sell(transNum, username, client)
 
 		case "DISPLAY_SUMMARY":
-			/* TODO: Not implemented yet, Display User's transaction history */
-			fmt.Println("-----DISPLAY_SUMMARY-----")
+			username := data[1]
+			display_summary(transNum, username)
 
 		case "CANCEL_BUY":
-			fmt.Println("-----CANCEL_BUY-----")
-
-			/* HSET: Cancel stock BUY amount
-			Display new value ex. S:BUY should equal 0 now */
 			username := data[2]
-			client.Cmd("HSET", username, "S:BUY", 0)
-			zas, _ := client.Cmd("HGET", username, "S:BUY").Float64()
-			fmt.Println("BUY: ", zas)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username)
+			cancel_buy(transNum, username, client)
 
 		case "CANCEL_SELL":
-			fmt.Println("-----CANCEL_SELL-----")
-
-			/* HSET: Cancel stock SELL amount
-			Display new value ex. S:SELL should equal 0 now */
 			username := data[2]
-			client.Cmd("HSET", username, "S:SELL", 0)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username)
-			zps, _ := client.Cmd("HGET", username, "S:SELL").Float64()
-			fmt.Println("SELL: ", zps)
+			cancel_sell(transNum, username, client)
 
 		case "SET_BUY_AMOUNT":
-			fmt.Println("-----SET_BUY_AMOUNT-----")
 			username := data[2]
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
-			cmd := symbol + ":TBUYAMOUNT"
-
-			/* HSET: Amount of money set aside for Buy Trigger to be activated */
-			client.Cmd("HSET", username, cmd, amount)
-			fmt.Println("TBUYAMOUNT:	", amount)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
-
-			/* HINCRBYFLOAT: Decrease User's Balance by amount set aside, Display */
-			client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
-			zazz, _ := client.Cmd("HGET", username, "Balance").Float64()
-			fmt.Println("Balance: ", zazz)
+			set_buy_amount(transNum, username, symbol, amount, client)
 
 		case "SET_BUY_TRIGGER":
-			fmt.Println("-----SET_BUY_TRIGGER-----")
 			username := data[2]
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
-			cmd := symbol + ":TBUYTRIG"
-
-			/* HSET: Set Stock price for when the Buy Trigger will be activated */
-			client.Cmd("HSET", username, cmd, amount)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
-			fmt.Println("TBUYTRIG:	", amount)
+			set_buy_trigger(transNum, username, symbol, amount, client)
 
 		case "CANCEL_SET_BUY":
-			fmt.Println("-----CANCEL_SET_BUY-----")
 			username := data[2]
 			symbol := data[3]
-			cmd := symbol + ":TBUYAMOUNT"
-
-			/* HGET: Get amount stored in reserve in STOCK:TBUYAMOUNT */
-			zzz, _ := client.Cmd("HGET", username, cmd).Float64()
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol)
-			fmt.Println("Refund: ", zzz)
-
-			/* TODO: Refund balance by reserve stored from above */
+			cancel_set_buy(transNum, username, symbol, client)
 
 		case "SET_SELL_AMOUNT":
-			fmt.Println("-----SET_SELL_AMOUNT-----")
 			username := data[2]
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
-			cmd := symbol + ":TSELLAMOUNT"
-			client.Cmd("HSET", username, cmd, amount)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
-			fmt.Println("TSELLAMOUNT:	", amount)
+			set_sell_amount(transNum, username, symbol, amount, client)
+
 		case "DUMPLOG":
 			if len(data) == 3 {
-				logUserCommand("transNum", transNumInt, "command", data[1], "filename", data[2])
-				dumpAllLogs(data[2])
+				filename := data[2]
+				dumplog(transNum, filename)
+
 			} else if len(data) == 4 {
-				logUserCommand("transNum", transNumInt, "command", data[1], "username", data[2], "filename", data[3])
-				dumpLog(data[2], data[3])
+				username := data[2]
+				filename := data[3]
+				dumplog(transNum, username, filename)
 			}
 
 		case "SET_SELL_TRIGGER":
-			/* TODO */
-			fmt.Println("-----SET_SELL_TRIGGER-----")
 			username := data[2]
 			symbol := data[3]
 			amount, _ := strconv.ParseFloat(data[4], 64)
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol, "amount", amount)
+			set_sell_trigger(transNum, username, symbol, amount, client)
 
 		case "CANCEL_SET_SELL":
-			/* TODO */
-			fmt.Println("-----CANCEL_SET_SELL-----")
 			username := data[2]
 			symbol := data[3]
-			logUserCommand("transNum", transNumInt, "command", data[1], "username", username, "symbol", symbol)
+			cancel_set_sell(transNum, username, symbol, client)
 		}
 	}
 	/* How to put a map straight into Redis
