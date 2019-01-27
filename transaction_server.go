@@ -14,19 +14,41 @@ import (
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/mediocregopher/radix.v2/redis"
 )
 
 var stockPrices = map[string]float64{}
 var stocksAmount = map[string]int{}
 
-func dialRedis() *redis.Client {
-	cli, err := redis.Dial("tcp", "localhost:6379")
+/* readLines reads a whole file into memory
+and returns a slice of its lines. */
+func readLines(path string) ([]string, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		// handle err
+		return nil, err
 	}
-	return cli
+	defer file.Close()
+
+	var lines []string
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	return lines, scanner.Err()
+}
+
+/* writeLines writes the lines to the given file. */
+func writeLines(lines []string, path string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	w := bufio.NewWriter(file)
+	for _, line := range lines {
+		fmt.Fprintln(w, line)
+	}
+	return w.Flush()
 }
 
 func main() {
@@ -144,78 +166,5 @@ func main() {
 	/* How to put a map straight into Redis
 	m := map[string]int{"a": 1, "b": 2, "c": 3}
 	err = client.Cmd("HMSET", "user:4", "user", "bob", "balance", 5000, m).Err */
-
 }
 
-func exists(client *redis.Client, username string) bool {
-	//client := dialRedis()
-	exists, _ := client.Cmd("HGETALL", username).Map()
-	if len(exists) == 0 {
-		return false
-	} else {
-		return true
-	}
-}
-
-func redisADD(client *redis.Client, username string, amount float64) {
-	fmt.Println("newADD", username, amount)
-	exists := exists(client, username)
-	if exists == false {
-		client.Cmd("HMSET", username, "User", username, "Balance", amount)
-	} else {
-		client.Cmd("HINCRBYFLOAT", username, "Balance", amount)
-	}
-	/* Display - get new balance (HGET) */
-	fmt.Print("ADD:	  ", amount)
-	x, _ := client.Cmd("HGET", username, "Balance").Float64()
-	fmt.Println("	Balance: ", x)
-}
-
-func redisBUY(client *redis.Client, username string, symbol string, amount float64) {
-	fmt.Println("newBUY", username, symbol, amount)
-	string2 := symbol + ":BUY"
-	client.Cmd("HSET", username, string2, amount)
-	fmt.Println("BUY:	", amount)
-	currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
-	fmt.Println("	Balance: ", currentBalance)
-}
-func redisSELL(client *redis.Client, username string, symbol string, amount float64) {
-	fmt.Println("newSELL", username, symbol, amount)
-	string2 := symbol + ":SELL"
-	/* HSET: set the sell amount in dollars for the chosen stock
-	(still needs to be committed to make sale) */
-	client.Cmd("HSET", username, string2, amount)
-	fmt.Println("SELL:	", amount)
-}
-
-/* readLines reads a whole file into memory
-and returns a slice of its lines. */
-func readLines(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	return lines, scanner.Err()
-}
-
-/* writeLines writes the lines to the given file. */
-func writeLines(lines []string, path string) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	w := bufio.NewWriter(file)
-	for _, line := range lines {
-		fmt.Fprintln(w, line)
-	}
-	return w.Flush()
-}
