@@ -185,25 +185,25 @@ func commit_sell(transNum int, username string, client *redis.Client) {
 }
 
 func cancel_buy(transNum int, username string, client *redis.Client) {
-	fmt.Println("-----CANCEL_BUY-----")
 
+	redisCANCEL_BUY(client, username)
 	/* HSET: Cancel stock BUY amount
 	Display new value ex. S:BUY should equal 0 now */
-	client.Cmd("HSET", username, "S:BUY", 0)
-	zas, _ := client.Cmd("HGET", username, "S:BUY").Float64()
-	fmt.Println("BUY: ", zas)
+	//client.Cmd("HSET", username, "S:BUY", 0)
+	//zas, _ := client.Cmd("HGET", username, "S:BUY").Float64()
+	//fmt.Println("BUY: ", zas)
 	logUserCommand("transNum", transNum, "command", "CANCEL_BUY", "username", username)
 }
 
 func cancel_sell(transNum int, username string, client *redis.Client) {
-	fmt.Println("-----CANCEL_SELL-----")
-
+	//fmt.Println("-----CANCEL_SELL-----")
+	redisCANCEL_SELL(client, username)
 	/* HSET: Cancel stock SELL amount
 	Display new value ex. S:SELL should equal 0 now */
-	client.Cmd("HSET", username, "S:SELL", 0)
+	//client.Cmd("HSET", username, "S:SELL", 0)
 	logUserCommand("transNum", transNum, "command", "CANCEL_SELL", "username", username)
-	zps, _ := client.Cmd("HGET", username, "S:SELL").Float64()
-	fmt.Println("SELL: ", zps)
+	//zps, _ := client.Cmd("HGET", username, "S:SELL").Float64()
+	//fmt.Println("SELL: ", zps)
 }
 
 func set_buy_amount(transNum int, username string, symbol string, amount float64, client *redis.Client) {

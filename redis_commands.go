@@ -172,3 +172,25 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 	fmt.Println("Stock: ", stock, "TOTAL: ", stockOWNS)
 
 }
+
+func redisCANCEL_BUY(client *redis.Client, username string) {
+
+	fmt.Println("-----CANCEL_BUY-----")
+	/* Pop off 2 items from buy stack: stock name, and $ amount */
+	string3 := "userBUY:" + username
+	stock, _ := client.Cmd("LPOP", string3).Str()
+	amount, _ := client.Cmd("LPOP", string3).Float64()
+	fmt.Println("Stock:", stock, "Amount:", amount)
+
+}
+
+func redisCANCEL_SELL(client *redis.Client, username string) {
+
+	fmt.Println("-----CANCEL_SELL-----")
+	/* Pop off 2 items from buy stack: stock name, and $ amount */
+	string3 := "userSELL:" + username
+	stock, _ := client.Cmd("LPOP", string3).Str()
+	amount, _ := client.Cmd("LPOP", string3).Float64()
+	fmt.Println("Stock:", stock, "Amount:", amount)
+
+}
