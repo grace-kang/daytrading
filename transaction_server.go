@@ -63,7 +63,7 @@ func main() {
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
 		command := x[1]
-		transNum := i+1
+		transNum := i + 1
 		for i = 0; i < len(s); i++ {
 			s[i] = strings.TrimSpace(s[i])
 		}
@@ -93,8 +93,8 @@ func main() {
 			sell(transNum, username, symbol, amount, client)
 
 		case "QUOTE":
-			username := data[1]
-			stock := data[2]
+			username := data[2]
+			stock := data[3]
 			quote(transNum, username, stock, client)
 
 		case "COMMIT_BUY":
@@ -167,4 +167,3 @@ func main() {
 	m := map[string]int{"a": 1, "b": 2, "c": 3}
 	err = client.Cmd("HMSET", "user:4", "user", "bob", "balance", 5000, m).Err */
 }
-
