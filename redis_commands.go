@@ -3,6 +3,10 @@ package main
 import (
 	"fmt"
 	"math"
+	// "reflect"
+	"time"
+	"strconv"
+	"os"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
@@ -44,6 +48,46 @@ func listStack(client *redis.Client, stackName string) []string {
 	return stack
 }
 
+func saveTransaction(client *redis.Client, username string, command string, params ...string) {
+	// save transaction to HISTORY:username hash set
+	timestamp := time.Now().Local().String()
+	var transaction_string string
+	var save bool
+
+	if len(params) == 2 {
+		// ADD
+		save = true
+		amount := params[0]
+		newBalance := params[1]
+
+		transaction_string = "[" + string(timestamp) + "] " + command + "- Amount: " + amount + ", New Balance: " + newBalance
+
+	} else if len(params) == 5 {
+		// COMMIT BUY OR SELL
+		save = true
+		stock := params[0]
+		number := params[1]
+		number_int, _ := strconv.Atoi(number)
+		if number_int < 1 {
+			save = false
+		}
+		price := params[2]
+		totalCost := params[3]
+		newBalance := params[4]
+
+		transaction_string = "[" + string(timestamp) + "] " + command + "- Stock: " + stock + ", Number: " + number + ", Price: " + price + ", Total Cost: " + totalCost + ", New Balance: " + newBalance
+
+	} else {
+		fmt.Println("Error: Wrong number of arguments for saveTransaction()")
+		os.Exit(1)
+	}
+
+	if save {
+		index, _ := client.Cmd("HLEN", "HISTORY:" + username).Int()
+		client.Cmd("HSET", "HISTORY:" + username, index+1, transaction_string)
+	}
+}
+
 func redisADD(client *redis.Client, username string, amount float64) {
 	oldBalance := getBalance(client, username)
 	fmt.Println("Old Balance: ", oldBalance)
@@ -52,12 +96,13 @@ func redisADD(client *redis.Client, username string, amount float64) {
 		client.Cmd("HMSET", username, "User", username, "Balance", amount)
 	} else {
 		addBalance(client, username, amount)
-		//client.Cmd("HINCRBYFLOAT", username, "Balance", amount)
 	}
+
 	fmt.Println("ADD: ", amount)
 	newBalance := getBalance(client, username)
 	fmt.Println("New Balance: ", newBalance)
 }
+
 func redisQUOTE(client *redis.Client, username string, symbol string) {
 	fmt.Println("-----QUOTE-----")
 	stockPrice, _ := client.Cmd("HGET", username, "QUOTE").Float64()
@@ -142,7 +187,6 @@ func redisCOMMIT_BUY(client *redis.Client, username string) {
 	stockOWNS := stockOwned(client, username, id)
 	//stockOWNS, _ := client.Cmd("HGET", username, stringX).Float64()
 	fmt.Println("Stock:", stock, "TOTAL:", stockOWNS)
-
 }
 
 func redisCOMMIT_SELL(client *redis.Client, username string) {
@@ -193,7 +237,6 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 	stockOWNS := stockOwned(client, username, id)
 	//stockOWNS, _ := client.Cmd("HGET", username, stringX).Float64()
 	fmt.Println("Stock:", stock, "TOTAL:", stockOWNS)
-
 }
 
 func redisCANCEL_BUY(client *redis.Client, username string) {
