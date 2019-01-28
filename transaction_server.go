@@ -14,6 +14,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 var stockPrices = map[string]float64{}
@@ -52,6 +53,8 @@ func writeLines(lines []string, path string) error {
 }
 
 func main() {
+	start := time.Now()
+	count := 0
 	deleteFile()
 	client := dialRedis()
 	client.Cmd("FLUSHALL")
@@ -60,6 +63,7 @@ func main() {
 		log.Fatalf("readLines: %s", err)
 	}
 	for i, line := range lines {
+		count = i + 1
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
 		command := x[1]
@@ -163,6 +167,16 @@ func main() {
 			cancel_set_sell(transNum, username, symbol, client)
 		}
 	}
+
+	//print stats for the workload file
+	fmt.Println("\n\n")
+	fmt.Println("-----STATISTICS-----")
+	end := time.Now()
+	difference := end.Sub(start)
+	difference_seconds := float64(difference)/float64(time.Second)
+	fmt.Println("Total time: ", difference)
+	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
+	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)
 	/* How to put a map straight into Redis
 	m := map[string]int{"a": 1, "b": 2, "c": 3}
 	err = client.Cmd("HMSET", "user:4", "user", "bob", "balance", 5000, m).Err */
