@@ -20,8 +20,6 @@ func add(transNum int, username string, amount float64, client *redis.Client) {
 }
 
 func quote(transNum int, username string, stock string, client *redis.Client) {
-	//fmt.Println("-----QUOTE-----")
-
 	req, err := http.NewRequest("GET", "http://localhost:1200", nil)
 	req.Header.Add("If-None-Match", `W/"wyzzy"`)
 
@@ -61,16 +59,6 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 	resp.Body.Close()
 
 	redisQUOTE(client, username, stock)
-
-	/* HINCRBYFLOAT: change a float value. Quote costs a User
-	$0.50 */
-	client.Cmd("HINCRBYFLOAT", username, "Balance", -0.50)
-
-	/* Display - HGET new balance for display */
-	//fmt.Print("QUOTE: ", stock)
-	//x, _ := client.Cmd("HGET", username, "Balance").Float64()
-	//fmt.Println(" Balance: ", x)
-	//time.Sleep(2 * time.Second)
 }
 
 func buy(transNum int, username string, symbol string, amount float64, client *redis.Client) {
@@ -172,97 +160,78 @@ func commit_sell(transNum int, username string, client *redis.Client) {
 	fmt.Println("COMMIT_SELL: ", amountSell)
 	fmt.Println("AT COST: ", finalCost)
 
-	/* HINCRBY: Decrease User's stocks and then Display # */
-	//client.Cmd("HINCRBY", username, "S:Number", -amountSell)
-	//ab, _ := client.Cmd("HGET", username, "S:Number").Float64()
-	//fmt.Println("STOCK(S): ", ab)
-
-	/* HGET: Decrease User's balance and then display new balance */
-	//client.Cmd("HINCRBYFLOAT", username, "Balance", finalCost)
 	logAccountTransactionCommand(transNum, "add", username, finalCost)
-	//za, _ := client.Cmd("HGET", username, "Balance").Float64()
-	//fmt.Println("Balance: ", za)
 }
 
 func cancel_buy(transNum int, username string, client *redis.Client) {
 
 	redisCANCEL_BUY(client, username)
-	/* HSET: Cancel stock BUY amount
-	Display new value ex. S:BUY should equal 0 now */
-	//client.Cmd("HSET", username, "S:BUY", 0)
-	//zas, _ := client.Cmd("HGET", username, "S:BUY").Float64()
-	//fmt.Println("BUY: ", zas)
 	logUserCommand("transNum", transNum, "command", "CANCEL_BUY", "username", username)
 }
 
 func cancel_sell(transNum int, username string, client *redis.Client) {
-	//fmt.Println("-----CANCEL_SELL-----")
+
 	redisCANCEL_SELL(client, username)
-	/* HSET: Cancel stock SELL amount
-	Display new value ex. S:SELL should equal 0 now */
-	//client.Cmd("HSET", username, "S:SELL", 0)
 	logUserCommand("transNum", transNum, "command", "CANCEL_SELL", "username", username)
-	//zps, _ := client.Cmd("HGET", username, "S:SELL").Float64()
-	//fmt.Println("SELL: ", zps)
+
 }
 
 func set_buy_amount(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	fmt.Println("-----SET_BUY_AMOUNT-----")
-	cmd := symbol + ":TBUYAMOUNT"
-
+	//fmt.Println("-----SET_BUY_AMOUNT-----")
+	//cmd := symbol + ":TBUYAMOUNT"
+	redisSET_BUY_AMOUNT(client, username, symbol, amount)
 	/* HSET: Amount of money set aside for Buy Trigger to be activated */
-	client.Cmd("HSET", username, cmd, amount)
-	fmt.Println("TBUYAMOUNT:  ", amount)
+	//client.Cmd("HSET", username, cmd, amount)
+	//fmt.Println("TBUYAMOUNT:  ", amount)
 	logUserCommand("transNum", transNum, "command", "SET_BUY_AMOUNT", "username", username, "symbol", symbol, "amount", amount)
 
 	/* HINCRBYFLOAT: Decrease User's Balance by amount set aside, Display */
-	client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
-	zazz, _ := client.Cmd("HGET", username, "Balance").Float64()
-	fmt.Println("Balance: ", zazz)
+	//client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
+	//zazz, _ := client.Cmd("HGET", username, "Balance").Float64()
+	//fmt.Println("Balance: ", zazz)
 }
 
 func set_buy_trigger(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	fmt.Println("-----SET_BUY_TRIGGER-----")
-	cmd := symbol + ":TBUYTRIG"
 
+	//cmd := symbol + ":TBUYTRIG"
+	redisSET_BUY_TRIGGER(client, username, symbol, amount)
 	/* HSET: Set Stock price for when the Buy Trigger will be activated */
-	client.Cmd("HSET", username, cmd, amount)
+	//client.Cmd("HSET", username, cmd, amount)
 	logUserCommand("transNum", transNum, "command", "SET_BUY_TRIGGER", "username", username, "symbol", symbol, "amount", amount)
-	fmt.Println("TBUYTRIG:  ", amount)
+	//fmt.Println("TBUYTRIG:  ", amount)
 }
 
 func cancel_set_buy(transNum int, username string, symbol string, client *redis.Client) {
-	fmt.Println("-----CANCEL_SET_BUY-----")
 
-	cmd := symbol + ":TBUYAMOUNT"
-
+	//cmd := symbol + ":TBUYAMOUNT"
+	redisCANCEL_SET_BUY(client, username, symbol)
 	/* HGET: Get amount stored in reserve in STOCK:TBUYAMOUNT */
-	zzz, _ := client.Cmd("HGET", username, cmd).Float64()
+	//zzz, _ := client.Cmd("HGET", username, cmd).Float64()
 	logUserCommand("transNum", transNum, "command", "CANCEL_SET_BUY", "username", username, "symbol", symbol)
-	fmt.Println("Refund: ", zzz)
+	//fmt.Println("Refund: ", zzz)
 
 	/* TODO: Refund balance by reserve stored from above */
 }
 
 func set_sell_amount(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	fmt.Println("-----SET_SELL_AMOUNT-----")
 
-	cmd := symbol + ":TSELLAMOUNT"
+	redisSET_SELL_AMOUNT(client, username, symbol, amount)
+	//cmd := symbol + ":TSELLAMOUNT"
 
-	client.Cmd("HSET", username, cmd, amount)
+	//client.Cmd("HSET", username, cmd, amount)
 	logUserCommand("transNum", transNum, "command", "SET_SELL_AMOUNT", "username", username, "symbol", symbol, "amount", amount)
-	fmt.Println("TSELLAMOUNT: ", amount)
+	//fmt.Println("TSELLAMOUNT: ", amount)
 }
 
 func set_sell_trigger(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	fmt.Println("-----SET_SELL_TRIGGER-----")
-	/* TODO */
+
+	redisSET_SELL_TRIGGER(client, username, symbol, amount)
 	logUserCommand("transNum", transNum, "command", "SET_SELL_TRIGGER", "username", username, "symbol", symbol, "amount", amount)
 }
 
 func cancel_set_sell(transNum int, username string, symbol string, client *redis.Client) {
-	fmt.Println("-----CANCEL_SET_SELL-----")
-	/* TODO */
+
+	redisCANCEL_SET_SELL(client, username, symbol)
 	logUserCommand("transNum", transNum, "command", "CANCEL_SET_SELL", "username", username, "symbol", symbol)
 }
 

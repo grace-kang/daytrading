@@ -49,8 +49,11 @@ func redisQUOTE(client *redis.Client, username string, symbol string) {
 	stockPrice, _ := client.Cmd("HGET", username, "QUOTE").Float64()
 	fmt.Println("QUOTE:", stockPrice)
 
-	price := stockPrices[symbol]
-	fmt.Println("QUOTE2:", price)
+	/* HINCRBYFLOAT: change a float value. Quote costs a User
+	$0.50 */
+	client.Cmd("HINCRBYFLOAT", username, "Balance", -0.50)
+	//price := stockPrices[symbol]
+	//fmt.Println("QUOTE2:", price)
 }
 
 func redisBUY(client *redis.Client, username string, symbol string, amount float64) {
@@ -161,6 +164,7 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 	/* 6 */
 	//fmt.Println(reflect.TypeOf(stockPrice))
 	stringX := stock + ":OWNED"
+	fmt.Println(stringX)
 
 	//stockXX, _ := client.Cmd("HGET", username, "QUOTE").Float64()
 
@@ -192,5 +196,135 @@ func redisCANCEL_SELL(client *redis.Client, username string) {
 	stock, _ := client.Cmd("LPOP", string3).Str()
 	amount, _ := client.Cmd("LPOP", string3).Float64()
 	fmt.Println("Stock:", stock, "Amount:", amount)
+
+}
+
+func redisSET_BUY_AMOUNT(client *redis.Client, username string, symbol string, amount float64) {
+	fmt.Println("-----SET_BUY_AMOUNT-----")
+	string3 := symbol + ":BUY:" + username
+	client.Cmd("LPUSH", string3, amount)
+
+	/*
+		push amount then trigger price in SET_BUY_TRIGGER
+		these two operate in pairs
+	*/
+
+	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
+	fmt.Println("SETBUYTRIGGERStack: ", stack)
+
+	/*
+		decrease balance put in reserve
+	*/
+
+	client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
+	getBAL2 := getBalance(client, username)
+	fmt.Println("NEWBalance:", getBAL2)
+}
+func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64) {
+	fmt.Println("-----SET_BUY_TRIGGER-----")
+	string3 := symbol + ":BUY:" + username
+	client.Cmd("LPUSH", string3, amount)
+	//client.Cmd("LPUSH", string3, symbol)
+
+	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
+	fmt.Println("SETBUYTRIGGERStack: ", stack)
+}
+func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
+	fmt.Println("-----CANCEL_SET_BUY-----")
+	/* get length of stack */
+	string3 := symbol + ":BUY:" + username
+	stackLength, _ := client.Cmd("LLEN", string3).Int()
+	fmt.Println("Stack length:", stackLength)
+	/* if even number of items on stack
+	refund second pop
+	*/
+	if stackLength%2 == 0 {
+		client.Cmd("LPOP", string3)
+		refund, _ := client.Cmd("LPOP", string3).Float64()
+		client.Cmd("HINCRBYFLOAT", username, "Balance", refund)
+		getBAL2 := getBalance(client, username)
+		fmt.Println("NEWBalance(refund):", getBAL2)
+		/* else if odd # refund first pop */
+	} else if stackLength%2 == 1 {
+		//client.Cmd("LPOP", string3)
+		refund, _ := client.Cmd("LPOP", string3).Float64()
+		client.Cmd("HINCRBYFLOAT", username, "Balance", refund)
+		getBAL2 := getBalance(client, username)
+		fmt.Println("NEWBalance(refund):", getBAL2)
+	}
+
+}
+
+func redisSET_SELL_AMOUNT(client *redis.Client, username string, symbol string, amount float64) {
+	fmt.Println("-----SET_SELL_AMOUNT-----")
+	string3 := symbol + ":SELL:" + username
+	client.Cmd("LPUSH", string3, amount)
+
+	/*
+		push amount then trigger price in SET_BUY_TRIGGER
+		these two operate in pairs
+	*/
+
+	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
+	fmt.Println("SETSELLTRIGGERStack: ", stack)
+
+	//sellStr := symbol + ":OWNED"
+	//client.Cmd("HINCRBYFLOAT", username, sellStr, -amount)
+	//getBAL2 := getBalance(client, username)
+	//fmt.Println("NEWBalance:", getBAL2)
+}
+func redisSET_SELL_TRIGGER(client *redis.Client, username string, symbol string, amount float64) {
+	fmt.Println("-----SET_SELL_TRIGGER-----")
+	string3 := symbol + ":SELL:" + username
+
+	//client.Cmd("LPUSH", string3, symbol)
+
+	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
+	fmt.Println("SETSELLTRIGGERStack: ", stack)
+
+	/* must set aside stocks on reserve */
+	/* TODO ||||| */
+	reserveAmount, _ := client.Cmd("LPOP", string3).Float64()
+	numStocks := int(math.Floor(reserveAmount / amount))
+
+	sellStr := symbol + ":OWNED"
+
+	if numStocks > 0 {
+		client.Cmd("HINCRBYFLOAT", username, sellStr, -numStocks)
+	}
+	//getBAL2 := getBalance(client, username)
+	//fmt.Println("NEWBalance:", getBAL2)
+	client.Cmd("LPUSH", string3, reserveAmount)
+	client.Cmd("LPUSH", string3, amount)
+
+}
+func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string) {
+	fmt.Println("-----CANCEL_SET_SELL-----")
+	/* get length of stack */
+	string3 := symbol + ":SELL:" + username
+	stackLength, _ := client.Cmd("LLEN", string3).Int()
+	fmt.Println("Stack length:", stackLength)
+
+	/* if even number of items on stack
+	refund second pop
+	*/
+	stringy := symbol + ":OWNED"
+	if stackLength%2 == 0 && stackLength >= 2 {
+		price, _ := client.Cmd("LPOP", string3).Float64()
+		amount, _ := client.Cmd("LPOP", string3).Float64()
+		refund := int(math.Floor(amount / price))
+
+		client.Cmd("HINCRBYFLOAT", username, stringy, refund)
+
+		//getBAL2 := getBalance(client, username)
+		//fmt.Println("NEWBalance(refund):", getBAL2)
+		/* else if odd # refund first pop */
+	} else if stackLength%2 == 1 {
+		//client.Cmd("LPOP", string3)
+		client.Cmd("LPOP", string3).Float64()
+		//client.Cmd("HINCRBYFLOAT", username, "Balance", refund)
+		//getBAL2 := getBalance(client, username)
+		//fmt.Println("NEWBalance(refund):", getBAL2)
+	}
 
 }
