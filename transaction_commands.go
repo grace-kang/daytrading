@@ -52,8 +52,6 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 	price, _ := strconv.ParseFloat(split, 64)
 	stockPrices[stock] = price
 
-	fmt.Println("QUOTE0:", price)
-
 	client.Cmd("HSET", username, "QUOTE", price)
 
 	resp.Body.Close()
@@ -157,8 +155,8 @@ func commit_sell(transNum int, username string, client *redis.Client) {
 	finalCost := float64(amountSell) * stockPrice
 	/* Calculate how many stocks User can sell */
 
-	fmt.Println("COMMIT_SELL: ", amountSell)
-	fmt.Println("AT COST: ", finalCost)
+	//fmt.Println("COMMIT_SELL: ", amountSell)
+	//fmt.Println("AT COST: ", finalCost)
 
 	logAccountTransactionCommand(transNum, "add", username, finalCost)
 }
