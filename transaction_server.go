@@ -56,6 +56,7 @@ func main() {
 	start := time.Now()
 	count := 0
 	client := dialRedis()
+	initAuditServer()
 	client.Cmd("FLUSHALL")
 	lines, err := readLines("workload_files/workload1.txt")
 	if err != nil {

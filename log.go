@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"time"
+
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
 type LogItem struct {
@@ -13,12 +15,11 @@ type LogItem struct {
 	LogData  string
 }
 
-var logList []LogItem
-
 type Command string
 type stockSymbolType string
 
 var server = "server1" // need to be replaced later
+var client *redis.Client
 
 const (
 	// A generic XML header suitable for use with the output of Marshal.
@@ -115,6 +116,10 @@ type DebugType struct {
 	DebugMessage      string          `xml:"errorMessage,omitempty"`
 }
 
+func initAuditServer() {
+	client = dialRedis()
+}
+
 func getUnixTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
@@ -160,8 +165,7 @@ func logUserCommand(kwds ...interface{}) {
 	if err != nil {
 		panic(err)
 	}
-
-	logList = append(logList, LogItem{Username: userCommandData.Username, LogData: xml.Header + string(out)})
+	addCommandLogs(userCommandData.Username, string(out))
 }
 
 func logAccountTransactionCommand(transNum int, action string, username string, amount float64) {
@@ -174,8 +178,7 @@ func logAccountTransactionCommand(transNum int, action string, username string, 
 		panic(err)
 	}
 
-	logList = append(logList, LogItem{Username: username, LogData: xml.Header + string(out)})
-
+	addCommandLogs(username, string(out))
 }
 
 func logSystemEventCommand(transNum int, command string, username string, stock string, amount float64) {
@@ -188,7 +191,7 @@ func logSystemEventCommand(transNum int, command string, username string, stock 
 		panic(err)
 	}
 
-	logList = append(logList, LogItem{Username: username, LogData: xml.Header + string(out)})
+	addCommandLogs(username, string(out))
 
 }
 
@@ -202,7 +205,7 @@ func logQuoteServerCommand(transNum int, price float64, stock string, username s
 		panic(err)
 	}
 
-	logList = append(logList, LogItem{Username: username, LogData: xml.Header + string(out)})
+	addCommandLogs(username, string(out))
 
 }
 
@@ -238,7 +241,7 @@ func logErrorEventCommand(kwds ...interface{}) {
 		panic(err)
 	}
 
-	logList = append(logList, LogItem{Username: errorEvent.Username, LogData: xml.Header + string(out)})
+	addCommandLogs(errorEvent.Username, string(out))
 }
 
 func logDebugMessageCommand(kwds ...interface{}) {
@@ -273,15 +276,14 @@ func logDebugMessageCommand(kwds ...interface{}) {
 		panic(err)
 	}
 
-	logList = append(logList, LogItem{Username: debugMessage.Username, LogData: xml.Header + string(out)})
+	addCommandLogs(debugMessage.Username, string(out))
 }
 
 func dumpLog(username string, filename string) {
-	var logS = ""
+	var logS = xml.Header
+	logList := getCommandLogs(username, filename)
 	for _, s := range logList {
-		if s.Username == username {
-			logS = logS + s.LogData + "\n"
-		}
+		logS = logS + s + "\n"
 	}
 
 	f, err := os.OpenFile(filename+".xml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -298,9 +300,10 @@ func dumpLog(username string, filename string) {
 }
 
 func dumpAllLogs(filename string) {
-	var logS = ""
+	var logS = xml.Header
+	logList := getCommandLogs(filename)
 	for _, s := range logList {
-		logS = logS + s.LogData + "\n"
+		logS = logS + s + "\n"
 	}
 
 	deleteFile(filename)
@@ -337,4 +340,27 @@ func isError(err error) bool {
 	}
 
 	return (err != nil)
+}
+
+func addCommandLogs(username string, log string) {
+	cmd := "LOGS:" + username
+	client.Cmd("RPUSH", cmd, log)
+
+	cmdAll := "ALLLOGS"
+	client.Cmd("RPUSH", cmdAll, log)
+}
+
+func getCommandLogs(params ...string) []string {
+	if (len(params)) == 1 {
+		cmd := "ALLLOGS"
+		logs, _ := client.Cmd("LRANGE", cmd, 0, -1).List()
+		return logs
+	}
+	if (len(params)) == 2 {
+		cmd := "LOGS:" + params[0]
+		logs, _ := client.Cmd("LRANGE", cmd, 0, -1).List()
+		return logs
+	}
+	return nil
+
 }
