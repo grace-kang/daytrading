@@ -110,8 +110,8 @@ func main() {
 			commit_sell(transNum, username, client)
 
 		case "DISPLAY_SUMMARY":
-			username := data[1]
-			display_summary(transNum, username)
+			username := data[2]
+			display_summary(transNum, username, client)
 
 		case "CANCEL_BUY":
 			username := data[2]

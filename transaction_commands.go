@@ -248,7 +248,8 @@ func dumplog(transNum int, params ...string) {
 	}
 }
 
-func display_summary(transNum int, username string) {
+func display_summary(transNum int, username string, client *redis.Client) {
 	fmt.Println("-----DISPLAY_SUMMARY-----")
 	/* TODO: Not implemented yet, Display User's transaction history */
+	redisDISPLAY_SUMMARY(client, username)
 }
