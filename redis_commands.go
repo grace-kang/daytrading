@@ -190,6 +190,9 @@ func redisCOMMIT_BUY(client *redis.Client, username string) {
 	stockOWNS := stockOwned(client, username, id)
 	//stockOWNS, _ := client.Cmd("HGET", username, stringX).Float64()
 	fmt.Println("Stock:", stock, "TOTAL:", stockOWNS)
+
+	// save to transaction history
+	saveTransaction(client, username, "COMMIT_BUY", stock, strconv.Itoa(stock2BUY), strconv.FormatFloat(stockPrice, 'f', 2, 64), strconv.FormatFloat(totalCOST, 'f', 2, 64), strconv.FormatFloat(getBAL2, 'f', 2, 64))
 }
 
 func redisCOMMIT_SELL(client *redis.Client, username string) {
@@ -240,6 +243,10 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 	stockOWNS := stockOwned(client, username, id)
 	//stockOWNS, _ := client.Cmd("HGET", username, stringX).Float64()
 	fmt.Println("Stock:", stock, "TOTAL:", stockOWNS)
+
+	// save to transaction history
+	saveTransaction(client, username, "COMMIT_SELL", stock, strconv.Itoa(stock2SELL), strconv.FormatFloat(stockPrice, 'f', 2, 64), strconv.FormatFloat(totalCOST, 'f', 2, 64), strconv.FormatFloat(getBAL3, 'f', 2, 64))
+
 }
 
 func redisCANCEL_BUY(client *redis.Client, username string) {
