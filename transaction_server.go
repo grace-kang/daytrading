@@ -52,7 +52,6 @@ func writeLines(lines []string, path string) error {
 }
 
 func main() {
-	deleteFile()
 	client := dialRedis()
 	client.Cmd("FLUSHALL")
 	lines, err := readLines("workload_files/workload1.txt")
