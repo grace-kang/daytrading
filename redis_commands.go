@@ -101,6 +101,9 @@ func redisADD(client *redis.Client, username string, amount float64) {
 	fmt.Println("ADD: ", amount)
 	newBalance := getBalance(client, username)
 	fmt.Println("New Balance: ", newBalance)
+
+	//save to transaction history
+	saveTransaction(client, username, "ADD", strconv.FormatFloat(amount, 'f', 2, 64), strconv.FormatFloat(newBalance, 'f', 2, 64))
 }
 
 func redisQUOTE(client *redis.Client, username string, symbol string) {
