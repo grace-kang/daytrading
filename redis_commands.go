@@ -115,7 +115,8 @@ func redisCOMMIT_BUY(client *redis.Client, username string) {
 
 	/* 4 */
 	//stockPrice := stockPrices[stock]
-	stockPrice, _ := client.Cmd("HGET", username, "QUOTE").Float64()
+	stockQ := stock + ":QUOTE"
+	stockPrice, _ := client.Cmd("HGET", username, stockQ).Float64()
 	//fmt.Println("QUOTE:", stockPrice)
 	stock2BUY := int(math.Floor(amount / stockPrice))
 	totalCOST := stockPrice * float64(stock2BUY)
@@ -168,23 +169,27 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 	totalCOST := stockPrice * float64(stock2SELL)
 	fmt.Println("Price:", stockPrice, "SELLAmount:", stock2SELL)
 	fmt.Println("TotalCost:", totalCOST)
-
-	/* 5 */
-	client.Cmd("HINCRBYFLOAT", username, "Balance", totalCOST)
-	getBAL3 := getBalance(client, username)
-	fmt.Println("NEWBalance:", getBAL3)
-
-	/* 6 */
-	//fmt.Println(reflect.TypeOf(stockPrice))
 	id := stock + ":OWNED"
-	//fmt.Println(id)
 
-	//stockXX, _ := client.Cmd("HGET", username, "QUOTE").Float64()
+	stocksOwned := stockOwned(client, username, id)
+	/* 5 */
+	if stocksOwned >= stock2SELL {
+		client.Cmd("HINCRBYFLOAT", username, "Balance", totalCOST)
+		getBAL3 := getBalance(client, username)
+		fmt.Println("NEWBalance:", getBAL3)
 
-	if stock2SELL > 0 {
-		client.Cmd("HINCRBY", username, id, -stock2SELL)
+		/* 6 */
+		//fmt.Println(reflect.TypeOf(stockPrice))
 
+		//fmt.Println(id)
+
+		//stockXX, _ := client.Cmd("HGET", username, "QUOTE").Float64()
+
+		if stock2SELL > 0 {
+			client.Cmd("HINCRBY", username, id, -stock2SELL)
+		}
 	}
+
 	stockOWNS := stockOwned(client, username, id)
 	//stockOWNS, _ := client.Cmd("HGET", username, stringX).Float64()
 	fmt.Println("Stock:", stock, "TOTAL:", stockOWNS)
@@ -249,8 +254,6 @@ func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
 	fmt.Println("-----CANCEL_SET_BUY-----")
 	/* get length of stack */
 	string3 := symbol + ":BUY:" + username
-	//stackLength, _ := client.Cmd("LLEN", string3).Int()
-	//fmt.Println("Stack length:", stackLength)
 
 	stackLength, _ := client.Cmd("LLEN", string3).Int()
 	fmt.Println("Stack length:", stackLength)
@@ -262,8 +265,6 @@ func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
 		fmt.Println("Refund:", refund)
 		fmt.Println("New Balance:", getBAL2)
 	}
-
-	//client.Cmd("HINCRBYFLOAT", username, "Balance", refund)
 
 	string4 := symbol + ":BUYTRIG"
 	client.Cmd("HSET", username, string4, 0.00)
