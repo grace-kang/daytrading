@@ -55,7 +55,6 @@ func writeLines(lines []string, path string) error {
 func main() {
 	start := time.Now()
 	count := 0
-	deleteFile()
 	client := dialRedis()
 	client.Cmd("FLUSHALL")
 	lines, err := readLines("workload_files/workload1.txt")
@@ -173,7 +172,7 @@ func main() {
 	fmt.Println("-----STATISTICS-----")
 	end := time.Now()
 	difference := end.Sub(start)
-	difference_seconds := float64(difference)/float64(time.Second)
+	difference_seconds := float64(difference) / float64(time.Second)
 	fmt.Println("Total time: ", difference)
 	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
 	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)

@@ -18,8 +18,7 @@ var logList []LogItem
 type Command string
 type stockSymbolType string
 
-var server = "server1"        // need to be replaced later
-var log_file = "log_File.xml" // need to be replaced later
+var server = "server1" // need to be replaced later
 
 const (
 	// A generic XML header suitable for use with the output of Marshal.
@@ -304,6 +303,8 @@ func dumpAllLogs(filename string) {
 		logS = logS + s.LogData + "\n"
 	}
 
+	deleteFile(filename)
+
 	f, err := os.OpenFile(filename+".xml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -317,14 +318,17 @@ func dumpAllLogs(filename string) {
 	f.Close()
 }
 
-func deleteFile() {
+func deleteFile(logFileName string) {
 	// delete file
-	var err = os.Remove(log_file)
+	if _, err := os.Stat(logFileName + ".xml"); os.IsNotExist(err) {
+		return
+	}
+	var err = os.Remove(logFileName + ".xml")
 	if isError(err) {
 		return
 	}
 
-	fmt.Println("File Deleted")
+	// fmt.Println("File Deleted")
 }
 
 func isError(err error) bool {
