@@ -52,7 +52,8 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 	price, _ := strconv.ParseFloat(split, 64)
 	stockPrices[stock] = price
 
-	client.Cmd("HSET", username, "QUOTE", price)
+	stringQ := stock + ":QUOTE"
+	client.Cmd("HSET", username, stringQ, price)
 
 	resp.Body.Close()
 
