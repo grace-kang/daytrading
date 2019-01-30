@@ -51,6 +51,7 @@ const (
 // }
 
 type Log struct {
+	XMLName xml.Name `xml:"log"`
 	LogData []LogType
 }
 
