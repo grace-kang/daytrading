@@ -48,9 +48,12 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 		fmt.Printf("Error reading body: %s", err.Error())
 	}
 
-	split := strings.Split(string(body), ",")[0]
+	quoteReponses := strings.Split(string(body), ",")
+	split := quoteReponses[0]
 	price, _ := strconv.ParseFloat(split, 64)
 	stockPrices[stock] = price
+	cryptoKey := strings.TrimSuffix(quoteReponses[4], "\n")
+	logQuoteServerCommand(transNum, price, stock, username, quoteReponses[3], cryptoKey)
 
 	stringQ := stock + ":QUOTE"
 	client.Cmd("HSET", username, stringQ, price)

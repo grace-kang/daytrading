@@ -5,15 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
-
-type LogItem struct {
-	Username string
-	LogData  string
-}
 
 type Command string
 type stockSymbolType string
@@ -21,11 +17,14 @@ type stockSymbolType string
 var server = "server1" // need to be replaced later
 var client *redis.Client
 
+var localLog Log
+var localUserLogs = map[string]Log{}
+
 const (
 	// A generic XML header suitable for use with the output of Marshal.
 	// This is not automatically added to any output of this package,
 	// it is provided as a convenience.
-	Header = `<?xml version="1.0" encoding="UTF-8"?>` + "\n"
+	Header = `<?xml version="1.0"?>` + "\n"
 )
 
 const (
@@ -46,6 +45,46 @@ const (
 	DUMPLOG          = Command("DUMPLOG")
 	DISPLAY_SUMMARY  = Command("DISPLAY_SUMMARY")
 )
+
+// type RESPONSE struct {
+// 	compactData
+// }
+
+type Log struct {
+	XMLName xml.Name `xml:"log"`
+	LogData []LogType
+}
+
+func (cd *LogType) MarshalXML(e *xml.Encoder, start xml.StartElement) error {
+	if err := e.EncodeElement(cd.UserCommand, xml.StartElement{Name: xml.Name{Local: "userCommand"}}); err != nil {
+		return err
+	}
+	if err := e.EncodeElement(cd.QuoteServer, xml.StartElement{Name: xml.Name{Local: "quoteServer"}}); err != nil {
+		return err
+	}
+	if err := e.EncodeElement(cd.AccountTransaction, xml.StartElement{Name: xml.Name{Local: "accountTransaction"}}); err != nil {
+		return err
+	}
+	if err := e.EncodeElement(cd.SystemEvent, xml.StartElement{Name: xml.Name{Local: "systemEvent"}}); err != nil {
+		return err
+	}
+	if err := e.EncodeElement(cd.ErrorEvent, xml.StartElement{Name: xml.Name{Local: "errorEvent"}}); err != nil {
+		return err
+	}
+	if err := e.EncodeElement(cd.DebugEvent, xml.StartElement{Name: xml.Name{Local: "debugEvent"}}); err != nil {
+		return err
+	}
+	return nil
+}
+
+type LogType struct {
+	UserCommand        *UserCommandType        `xml:"userCommand"`
+	QuoteServer        *QuoteServerType        `xml:"quoteServer"`
+	AccountTransaction *AccountTransactionType `xml:"accountTransaction"`
+	SystemEvent        *SystemEventType        `xml:"systemEvent"`
+	ErrorEvent         *ErrorEventType         `xml:"errorEvent"`
+	DebugEvent         *DebugType              `xml:"debugEvent"`
+}
 
 type UserCommandType struct {
 	XMLName           xml.Name        `xml:"userCommand"`
@@ -118,6 +157,7 @@ type DebugType struct {
 
 func initAuditServer() {
 	client = dialRedis()
+	localLog.LogData = make([]LogType, 0)
 }
 
 func getUnixTimestamp() int64 {
@@ -160,53 +200,44 @@ func logUserCommand(kwds ...interface{}) {
 		userCommandData.Filename = value.(string)
 	}
 
-	out, err := xml.MarshalIndent(userCommandData, "", "   ")
+	newUserCommandLog := LogType{UserCommand: userCommandData}
+	localLog.LogData = append(localLog.LogData, newUserCommandLog)
+	// if val, ok := localUserLogs[userCommandData.Username]; ok {
+	// 	//do nothing
+	// } else {
+	// 	logData := make([]LogType, 0)
+	// 	localUserLogs[userCommandData.Username] = Log{LogData: logData}
+	// }
 
-	if err != nil {
-		panic(err)
-	}
-	addCommandLogs(userCommandData.Username, string(out))
+	// localUserLogs[userCommandData.Username].LogData = append(localUserLogs[userCommandData.Username], newUserCommandLog)
 }
 
 func logAccountTransactionCommand(transNum int, action string, username string, amount float64) {
 	time := getUnixTimestamp()
 	amountF := fmt.Sprintf("%.2f", amount)
 	transCommandData := &AccountTransactionType{Timestamp: time, Server: server, TransactionNumber: transNum, Action: action, Username: username, Funds: amountF}
-	out, err := xml.MarshalIndent(transCommandData, "", "   ")
 
-	if err != nil {
-		panic(err)
-	}
-
-	addCommandLogs(username, string(out))
+	newTransCommandLog := LogType{AccountTransaction: transCommandData}
+	localLog.LogData = append(localLog.LogData, newTransCommandLog)
 }
 
 func logSystemEventCommand(transNum int, command string, username string, stock string, amount float64) {
 	time := getUnixTimestamp()
 	amountF := fmt.Sprintf("%.2f", amount)
 	systemEventCommandData := &SystemEventType{Timestamp: time, Server: server, TransactionNumber: transNum, Command: Command(command), Username: username, StockSymbol: stockSymbolType(stock), Funds: amountF}
-	out, err := xml.MarshalIndent(systemEventCommandData, "", "   ")
-
-	if err != nil {
-		panic(err)
-	}
-
-	addCommandLogs(username, string(out))
+	newSystemCommandLog := LogType{SystemEvent: systemEventCommandData}
+	localLog.LogData = append(localLog.LogData, newSystemCommandLog)
 
 }
 
-func logQuoteServerCommand(transNum int, price float64, stock string, username string, quoteServerTime int64, cryptoKey string) {
+func logQuoteServerCommand(transNum int, price float64, stock string, username string, quoteServerTime string, cryptoKey string) {
 	time := getUnixTimestamp()
 	stockPrice2f := fmt.Sprintf("%.2f", price)
-	quoteEventCommandData := &QuoteServerType{Timestamp: time, Server: server, TransactionNumber: transNum, Price: stockPrice2f, StockSymbol: stockSymbolType(stock), Username: username, QuoteServerTime: quoteServerTime, CryptoKey: cryptoKey}
-	out, err := xml.MarshalIndent(quoteEventCommandData, "", "   ")
+	quoteTime, _ := strconv.ParseInt(quoteServerTime, 10, 64)
+	quoteEventCommandData := &QuoteServerType{Timestamp: time, Server: server, TransactionNumber: transNum, Price: stockPrice2f, StockSymbol: stockSymbolType(stock), Username: username, QuoteServerTime: quoteTime, CryptoKey: cryptoKey}
 
-	if err != nil {
-		panic(err)
-	}
-
-	addCommandLogs(username, string(out))
-
+	quoteServerCommandLog := LogType{QuoteServer: quoteEventCommandData}
+	localLog.LogData = append(localLog.LogData, quoteServerCommandLog)
 }
 
 func logErrorEventCommand(kwds ...interface{}) {
@@ -234,14 +265,8 @@ func logErrorEventCommand(kwds ...interface{}) {
 	if value, ok := args["errorMessage"]; ok {
 		errorEvent.ErrorMessage = value.(string)
 	}
-
-	out, err := xml.MarshalIndent(errorEvent, "", "   ")
-
-	if err != nil {
-		panic(err)
-	}
-
-	addCommandLogs(errorEvent.Username, string(out))
+	errorEventCommandLog := LogType{ErrorEvent: errorEvent}
+	localLog.LogData = append(localLog.LogData, errorEventCommandLog)
 }
 
 func logDebugMessageCommand(kwds ...interface{}) {
@@ -270,21 +295,20 @@ func logDebugMessageCommand(kwds ...interface{}) {
 		debugMessage.DebugMessage = value.(string)
 	}
 
-	out, err := xml.MarshalIndent(debugMessage, "", "   ")
+	debugEventCommandLog := LogType{DebugEvent: debugMessage}
+	localLog.LogData = append(localLog.LogData, debugEventCommandLog)
+}
+
+func dumpLog(username string, filename string) {
+	fmt.Println("in dumpAllLogs")
+	out, err := xml.MarshalIndent(localLog, "", "   ")
 
 	if err != nil {
 		panic(err)
 	}
 
-	addCommandLogs(debugMessage.Username, string(out))
-}
-
-func dumpLog(username string, filename string) {
-	var logS = xml.Header
-	logList := getCommandLogs(username, filename)
-	for _, s := range logList {
-		logS = logS + s + "\n"
-	}
+	var logS = Header
+	logS += string(out)
 
 	f, err := os.OpenFile(filename+".xml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -300,11 +324,16 @@ func dumpLog(username string, filename string) {
 }
 
 func dumpAllLogs(filename string) {
-	var logS = xml.Header
-	logList := getCommandLogs(filename)
-	for _, s := range logList {
-		logS = logS + s + "\n"
+
+	fmt.Println("in dumpAllLogs")
+	out, err := xml.MarshalIndent(localLog, "", "   ")
+
+	if err != nil {
+		panic(err)
 	}
+
+	var logS = Header
+	logS += string(out)
 
 	deleteFile(filename)
 
