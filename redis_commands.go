@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"math"
-	// "reflect"
 	"time"
 	"strconv"
 	"os"
@@ -51,7 +50,8 @@ func listStack(client *redis.Client, stackName string) []string {
 
 func saveTransaction(client *redis.Client, username string, command string, params ...string) {
 	// save transaction to HISTORY:username hash set
-	timestamp := time.Now().Local().String()
+	timestamp := time.Now().Local()
+	timestamp_str := timestamp.String()
 	var transaction_string string
 	var save bool
 
@@ -61,7 +61,7 @@ func saveTransaction(client *redis.Client, username string, command string, para
 		amount := params[0]
 		newBalance := params[1]
 
-		transaction_string = "[" + string(timestamp) + "] " + command + "- Amount: " + amount + ", New Balance: " + newBalance
+		transaction_string = "[" + string(timestamp_str) + "] " + command + "- Amount: " + amount + ", New Balance: " + newBalance
 
 	} else if len(params) == 5 {
 		// COMMIT BUY OR SELL
@@ -76,7 +76,7 @@ func saveTransaction(client *redis.Client, username string, command string, para
 		totalCost := params[3]
 		newBalance := params[4]
 
-		transaction_string = "[" + string(timestamp) + "] " + command + "- Stock: " + stock + ", Number: " + number + ", Price: " + price + ", Total Cost: " + totalCost + ", New Balance: " + newBalance
+		transaction_string = "[" + string(timestamp_str) + "] " + command + "- Stock: " + stock + ", Number: " + number + ", Price: " + price + ", Total Cost: " + totalCost + ", New Balance: " + newBalance
 
 	} else {
 		fmt.Println("Error: Wrong number of arguments for saveTransaction()")
@@ -84,8 +84,7 @@ func saveTransaction(client *redis.Client, username string, command string, para
 	}
 
 	if save {
-		index, _ := client.Cmd("LLEN", "HISTORY:" + username).Int()
-		client.Cmd("LPUSH", "HISTORY:" + username, index+1, transaction_string)
+		client.Cmd("ZADD", "HISTORY:" + username, timestamp.UnixNano(), transaction_string)
 	}
 }
 
@@ -409,8 +408,8 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) {
 	}
 	fmt.Println("Transaction history: ")
 	client.Cmd("SORT", "HISTORY:"+username)
-	history, _ := client.Cmd("LRANGE", "HISTORY:"+username, 0, -1).Map()
-	for key, val := range history {
-		fmt.Println("    " + key + val)
+	history, _ := client.Cmd("ZRANGE", "HISTORY:"+username, 0, -1).List()
+	for _, val := range history {
+		fmt.Println("    " + val)
 	}
 }
