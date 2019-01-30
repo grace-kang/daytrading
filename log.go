@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/mediocregopher/radix.v2/redis"
@@ -195,10 +196,12 @@ func logSystemEventCommand(transNum int, command string, username string, stock 
 
 }
 
-func logQuoteServerCommand(transNum int, price float64, stock string, username string, quoteServerTime int64, cryptoKey string) {
+func logQuoteServerCommand(transNum int, price float64, stock string, username string, quoteServerTime string, cryptoKey string) {
 	time := getUnixTimestamp()
 	stockPrice2f := fmt.Sprintf("%.2f", price)
-	quoteEventCommandData := &QuoteServerType{Timestamp: time, Server: server, TransactionNumber: transNum, Price: stockPrice2f, StockSymbol: stockSymbolType(stock), Username: username, QuoteServerTime: quoteServerTime, CryptoKey: cryptoKey}
+	quoteTime, _ := strconv.ParseInt(quoteServerTime, 10, 64)
+	quoteEventCommandData := &QuoteServerType{Timestamp: time, Server: server, TransactionNumber: transNum, Price: stockPrice2f, StockSymbol: stockSymbolType(stock), Username: username, QuoteServerTime: quoteTime, CryptoKey: cryptoKey}
+
 	out, err := xml.MarshalIndent(quoteEventCommandData, "", "   ")
 
 	if err != nil {
