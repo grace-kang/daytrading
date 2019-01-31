@@ -14,8 +14,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+var wg sync.WaitGroup
 
 var stockPrices = map[string]float64{}
 var stocksAmount = map[string]int{}
@@ -54,30 +57,77 @@ func writeLines(lines []string, path string) error {
 
 func main() {
 	start := time.Now()
-	count := 0
-	client := dialRedis()
+	numUsers := 10
+	wg.Add(numUsers + 1)
 	initAuditServer()
 	client.Cmd("FLUSHALL")
-	lines, err := readLines("workload_files/workload2.txt")
+	lines, err := readLines("workload_files/workload3.txt")
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
 	}
+	User := make(map[string]int)
+
 	for i, line := range lines {
-		count = i + 1
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
-		command := x[1]
-		transNum := i + 1
 		for i = 0; i < len(s); i++ {
 			s[i] = strings.TrimSpace(s[i])
 		}
+		data := make([]string, 2)
+		data[1] = strings.TrimSpace(x[1])
+		data = append(data, s[1:]...)
+		User[data[2]] = 1
+	}
+
+	go linearLogic(lines)
+	p := 0
+	userS := make([]string, 100)
+	for key, value := range User {
+		userS[p] = key
+		fmt.Println(userS[p])
+		p = p + 1
+		fmt.Println("Key:", key, "Value:", value)
+	}
+	for u := 0; u < 11; u++ {
+
+		if userS[u] != "./testLOG" && userS[u] != "" {
+			//fmt.Println(u, ":", userS[u])
+			go concurrencyLogic(lines, userS[u])
+		}
+	}
+	wg.Wait()
+
+	//print stats for the workload file
+	count := 10000
+	fmt.Println("\n\n")
+	fmt.Println("-----STATISTICS-----")
+	end := time.Now()
+	difference := end.Sub(start)
+	difference_seconds := float64(difference) / float64(time.Second)
+	fmt.Println("Total time: ", difference)
+	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
+	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)
+
+}
+func linearLogic(lines []string) {
+	client := dialRedis()
+	defer wg.Done()
+	for i, line := range lines {
+		s := strings.Split(line, ",")
+		x := strings.Split(s[0], " ")
+		command := x[1]
+
+		for ik := 0; ik < len(s); ik++ {
+			s[ik] = strings.TrimSpace(s[ik])
+		}
 
 		data := make([]string, 2)
-		fmt.Println(transNum)
-		// data[0] = transNum
+
 		data[1] = strings.TrimSpace(x[1])
 		data = append(data, s[1:]...)
 
+		transNum := i + 1
+		fmt.Println(transNum)
 		switch command {
 		case "ADD":
 			amount, _ := strconv.ParseFloat(data[3], 64)
@@ -108,11 +158,11 @@ func main() {
 		case "COMMIT_SELL":
 			username := data[2]
 			commit_sell(transNum, username, client)
-
-		case "DISPLAY_SUMMARY":
-			username := data[2]
-			display_summary(transNum, username, client)
-
+			/*
+				case "DISPLAY_SUMMARY":
+					username := data[2]
+					display_summary(transNum, username, client)
+			*/
 		case "CANCEL_BUY":
 			username := data[2]
 			cancel_buy(transNum, username, client)
@@ -148,7 +198,6 @@ func main() {
 			if len(data) == 3 {
 				filename := data[2]
 				dumplog(transNum, filename)
-
 			} else if len(data) == 4 {
 				username := data[2]
 				filename := data[3]
@@ -166,18 +215,94 @@ func main() {
 			symbol := data[3]
 			cancel_set_sell(transNum, username, symbol, client)
 		}
+
+	}
+}
+func concurrencyLogic(lines []string, username string) {
+	defer wg.Done()
+	client := dialRedis()
+	for i, line := range lines {
+		s := strings.Split(line, ",")
+		x := strings.Split(s[0], " ")
+		command := x[1]
+
+		for ij := 0; ij < len(s); ij++ {
+			s[ij] = strings.TrimSpace(s[ij])
+		}
+
+		data := make([]string, 2)
+
+		data[1] = strings.TrimSpace(x[1])
+		data = append(data, s[1:]...)
+
+		if username == data[2] {
+			transNum := i + 1
+			fmt.Println(transNum)
+			switch command {
+			case "ADD":
+				amount, _ := strconv.ParseFloat(data[3], 64)
+				redisADD(client, username, amount)
+
+			case "BUY":
+				symbol := data[3]
+				amount, _ := strconv.ParseFloat(data[4], 64)
+				redisBUY(client, username, symbol, amount)
+
+			case "SELL":
+				symbol := data[3]
+				amount, _ := strconv.ParseFloat(data[4], 64)
+				redisSELL(client, username, symbol, amount)
+
+			case "QUOTE":
+				stock := data[3]
+				quote(transNum, username, stock, client)
+				redisQUOTE(client, username, stock)
+
+			case "COMMIT_BUY":
+				redisCOMMIT_BUY(client, username)
+
+			case "COMMIT_SELL":
+				redisCOMMIT_SELL(client, username)
+
+			case "CANCEL_BUY":
+				redisCANCEL_BUY(client, username)
+
+			case "CANCEL_SELL":
+				redisCANCEL_SELL(client, username)
+
+			case "SET_BUY_AMOUNT":
+				symbol := data[3]
+				amount, _ := strconv.ParseFloat(data[4], 64)
+				redisSET_BUY_AMOUNT(client, username, symbol, amount)
+
+			case "SET_BUY_TRIGGER":
+				symbol := data[3]
+				amount, _ := strconv.ParseFloat(data[4], 64)
+				redisSET_BUY_TRIGGER(client, username, symbol, amount)
+
+			case "CANCEL_SET_BUY":
+				symbol := data[3]
+				redisCANCEL_SET_BUY(client, username, symbol)
+
+			case "DISPLAY_SUMMARY":
+				username := data[2]
+				display_summary(transNum, username, client)
+
+			case "SET_SELL_AMOUNT":
+				symbol := data[3]
+				amount, _ := strconv.ParseFloat(data[4], 64)
+				redisSET_SELL_AMOUNT(client, username, symbol, amount)
+
+			case "SET_SELL_TRIGGER":
+				symbol := data[3]
+				amount, _ := strconv.ParseFloat(data[4], 64)
+				redisSET_SELL_TRIGGER(client, username, symbol, amount)
+
+			case "CANCEL_SET_SELL":
+				symbol := data[3]
+				redisCANCEL_SET_SELL(client, username, symbol)
+			}
+		}
 	}
 
-	//print stats for the workload file
-	fmt.Println("\n\n")
-	fmt.Println("-----STATISTICS-----")
-	end := time.Now()
-	difference := end.Sub(start)
-	difference_seconds := float64(difference) / float64(time.Second)
-	fmt.Println("Total time: ", difference)
-	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
-	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)
-	/* How to put a map straight into Redis
-	m := map[string]int{"a": 1, "b": 2, "c": 3}
-	err = client.Cmd("HMSET", "user:4", "user", "bob", "balance", 5000, m).Err */
 }

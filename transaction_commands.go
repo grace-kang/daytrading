@@ -12,9 +12,6 @@ import (
 )
 
 func add(transNum int, username string, amount float64, client *redis.Client) {
-	fmt.Println("-----ADD-----")
-
-	redisADD(client, username, amount)
 	logUserCommand("transNum", transNum, "command", "ADD", "username", username, "amount", amount)
 	logAccountTransactionCommand(transNum, "add", username, amount)
 }
@@ -51,7 +48,7 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 	quoteReponses := strings.Split(string(body), ",")
 	split := quoteReponses[0]
 	price, _ := strconv.ParseFloat(split, 64)
-	stockPrices[stock] = price
+	//stockPrices[stock] = price
 	cryptoKey := strings.TrimSuffix(quoteReponses[4], "\n")
 	logQuoteServerCommand(transNum, price, stock, username, quoteReponses[3], cryptoKey)
 
@@ -59,14 +56,9 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 	client.Cmd("HSET", username, stringQ, price)
 
 	resp.Body.Close()
-
-	redisQUOTE(client, username, stock)
 }
 
 func buy(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	fmt.Println("-----BUY-----")
-
-	redisBUY(client, username, symbol, amount)
 	logUserCommand("transNum", transNum, "command", "BUY", "username", username, "amount", amount, "symbol", symbol)
 
 	exists := exists(client, username)
@@ -85,10 +77,6 @@ func buy(transNum int, username string, symbol string, amount float64, client *r
 }
 
 func sell(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	fmt.Println("-----SELL-----")
-
-	redisSELL(client, username, symbol, amount)
-
 	logUserCommand("transNum", transNum, "command", "SELL", "username", username, "amount", amount, "symbol", symbol)
 	/*check if user exists or not*/
 	exists := exists(client, username)
@@ -135,13 +123,9 @@ func commit_buy(transNum int, username string, client *redis.Client) {
 	final := float64(amountBuy) * stockPrice
 
 	logAccountTransactionCommand(transNum, "remove", username, final)
-
-	redisCOMMIT_BUY(client, username)
 }
 
 func commit_sell(transNum int, username string, client *redis.Client) {
-
-	redisCOMMIT_SELL(client, username)
 
 	symbol := "S"
 	/* HGET: get dollar amount stock SELL action */
@@ -157,83 +141,47 @@ func commit_sell(transNum int, username string, client *redis.Client) {
 	stockPrice := stockPrices[symbol]
 	amountSell := int(math.Ceil(be / stockPrice))
 	finalCost := float64(amountSell) * stockPrice
-	/* Calculate how many stocks User can sell */
-
-	//fmt.Println("COMMIT_SELL: ", amountSell)
-	//fmt.Println("AT COST: ", finalCost)
 
 	logAccountTransactionCommand(transNum, "add", username, finalCost)
 }
 
 func cancel_buy(transNum int, username string, client *redis.Client) {
-
-	redisCANCEL_BUY(client, username)
 	logUserCommand("transNum", transNum, "command", "CANCEL_BUY", "username", username)
 }
 
 func cancel_sell(transNum int, username string, client *redis.Client) {
-
-	redisCANCEL_SELL(client, username)
 	logUserCommand("transNum", transNum, "command", "CANCEL_SELL", "username", username)
-
 }
 
 func set_buy_amount(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	//fmt.Println("-----SET_BUY_AMOUNT-----")
-	//cmd := symbol + ":TBUYAMOUNT"
-	redisSET_BUY_AMOUNT(client, username, symbol, amount)
-	/* HSET: Amount of money set aside for Buy Trigger to be activated */
-	//client.Cmd("HSET", username, cmd, amount)
-	//fmt.Println("TBUYAMOUNT:  ", amount)
-	logUserCommand("transNum", transNum, "command", "SET_BUY_AMOUNT", "username", username, "symbol", symbol, "amount", amount)
 
-	/* HINCRBYFLOAT: Decrease User's Balance by amount set aside, Display */
-	//client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
-	//zazz, _ := client.Cmd("HGET", username, "Balance").Float64()
-	//fmt.Println("Balance: ", zazz)
+	logUserCommand("transNum", transNum, "command", "SET_BUY_AMOUNT", "username", username, "symbol", symbol, "amount", amount)
 }
 
 func set_buy_trigger(transNum int, username string, symbol string, amount float64, client *redis.Client) {
 
-	//cmd := symbol + ":TBUYTRIG"
-	redisSET_BUY_TRIGGER(client, username, symbol, amount)
-	/* HSET: Set Stock price for when the Buy Trigger will be activated */
-	//client.Cmd("HSET", username, cmd, amount)
 	logUserCommand("transNum", transNum, "command", "SET_BUY_TRIGGER", "username", username, "symbol", symbol, "amount", amount)
-	//fmt.Println("TBUYTRIG:  ", amount)
+
 }
 
 func cancel_set_buy(transNum int, username string, symbol string, client *redis.Client) {
 
-	//cmd := symbol + ":TBUYAMOUNT"
-	redisCANCEL_SET_BUY(client, username, symbol)
-	/* HGET: Get amount stored in reserve in STOCK:TBUYAMOUNT */
-	//zzz, _ := client.Cmd("HGET", username, cmd).Float64()
 	logUserCommand("transNum", transNum, "command", "CANCEL_SET_BUY", "username", username, "symbol", symbol)
-	//fmt.Println("Refund: ", zzz)
-
-	/* TODO: Refund balance by reserve stored from above */
 }
 
 func set_sell_amount(transNum int, username string, symbol string, amount float64, client *redis.Client) {
 
-	redisSET_SELL_AMOUNT(client, username, symbol, amount)
-	//cmd := symbol + ":TSELLAMOUNT"
-
-	//client.Cmd("HSET", username, cmd, amount)
 	logUserCommand("transNum", transNum, "command", "SET_SELL_AMOUNT", "username", username, "symbol", symbol, "amount", amount)
-	//fmt.Println("TSELLAMOUNT: ", amount)
+
 }
 
 func set_sell_trigger(transNum int, username string, symbol string, amount float64, client *redis.Client) {
 
-	redisSET_SELL_TRIGGER(client, username, symbol, amount)
 	logUserCommand("transNum", transNum, "command", "SET_SELL_TRIGGER", "username", username, "symbol", symbol, "amount", amount)
 }
 
 func cancel_set_sell(transNum int, username string, symbol string, client *redis.Client) {
 
-	redisCANCEL_SET_SELL(client, username, symbol)
 	logUserCommand("transNum", transNum, "command", "CANCEL_SET_SELL", "username", username, "symbol", symbol)
 }
 
