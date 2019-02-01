@@ -56,12 +56,18 @@ func writeLines(lines []string, path string) error {
 }
 
 func main() {
+	if len(os.Args) != 4 {
+		fmt.Println("Error: Argument format is file, numUsers, numTransactions")
+		os.Exit(1)
+	}
+	file := os.Args[1]
+	numUsers, _ := strconv.Atoi(os.Args[2])
+	count, _ := strconv.Atoi(os.Args[3])
 	start := time.Now()
-	numUsers := 10
 	wg.Add(numUsers + 1)
 	initAuditServer()
 	client.Cmd("FLUSHALL")
-	lines, err := readLines("workload_files/workload3.txt")
+	lines, err := readLines(file)
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
 	}
@@ -98,7 +104,6 @@ func main() {
 	wg.Wait()
 
 	//print stats for the workload file
-	count := 10000
 	fmt.Println("\n\n")
 	fmt.Println("-----STATISTICS-----")
 	end := time.Now()
