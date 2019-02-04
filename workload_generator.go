@@ -64,7 +64,7 @@ func main() {
 	numUsers, _ := strconv.Atoi(os.Args[2])
 	count, _ := strconv.Atoi(os.Args[3])
 	start := time.Now()
-	wg.Add(numUsers + 1)
+	wg.Add(numUsers + 3)
 	initAuditServer()
 	client.Cmd("FLUSHALL")
 	lines, err := readLines(file)
@@ -86,6 +86,8 @@ func main() {
 	}
 
 	go linearLogic(lines)
+	go linearLogic2(lines)
+	go linearLogic3(lines)
 	p := 0
 	userS := make([]string, 100)
 	for key, value := range User {
@@ -94,7 +96,7 @@ func main() {
 		p = p + 1
 		fmt.Println("Key:", key, "Value:", value)
 	}
-	for u := 0; u < 11; u++ {
+	for u := 0; u < (numUsers + 1); u++ {
 
 		if userS[u] != "./testLOG" && userS[u] != "" {
 			//fmt.Println(u, ":", userS[u])
@@ -151,30 +153,31 @@ func linearLogic(lines []string) {
 			amount, _ := strconv.ParseFloat(data[4], 64)
 			sell(transNum, username, symbol, amount, client)
 
-		case "QUOTE":
-			username := data[2]
-			stock := data[3]
-			quote(transNum, username, stock, client)
+		}
 
-		case "COMMIT_BUY":
-			username := data[2]
-			commit_buy(transNum, username, client)
+	}
+}
 
-		case "COMMIT_SELL":
-			username := data[2]
-			commit_sell(transNum, username, client)
-			/*
-				case "DISPLAY_SUMMARY":
-					username := data[2]
-					display_summary(transNum, username, client)
-			*/
-		case "CANCEL_BUY":
-			username := data[2]
-			cancel_buy(transNum, username, client)
+func linearLogic2(lines []string) {
+	client := dialRedis()
+	defer wg.Done()
+	for i, line := range lines {
+		s := strings.Split(line, ",")
+		x := strings.Split(s[0], " ")
+		command := x[1]
 
-		case "CANCEL_SELL":
-			username := data[2]
-			cancel_sell(transNum, username, client)
+		for ik := 0; ik < len(s); ik++ {
+			s[ik] = strings.TrimSpace(s[ik])
+		}
+
+		data := make([]string, 2)
+
+		data[1] = strings.TrimSpace(x[1])
+		data = append(data, s[1:]...)
+
+		transNum := i + 1
+		fmt.Println(transNum)
+		switch command {
 
 		case "SET_BUY_AMOUNT":
 			username := data[2]
@@ -223,6 +226,58 @@ func linearLogic(lines []string) {
 
 	}
 }
+
+func linearLogic3(lines []string) {
+	client := dialRedis()
+	defer wg.Done()
+	for i, line := range lines {
+		s := strings.Split(line, ",")
+		x := strings.Split(s[0], " ")
+		command := x[1]
+
+		for ik := 0; ik < len(s); ik++ {
+			s[ik] = strings.TrimSpace(s[ik])
+		}
+
+		data := make([]string, 2)
+
+		data[1] = strings.TrimSpace(x[1])
+		data = append(data, s[1:]...)
+
+		transNum := i + 1
+		fmt.Println(transNum)
+		switch command {
+
+		case "QUOTE":
+			username := data[2]
+			stock := data[3]
+			quote(transNum, username, stock, client)
+
+		case "COMMIT_BUY":
+			username := data[2]
+			commit_buy(transNum, username, client)
+
+		case "COMMIT_SELL":
+			username := data[2]
+			commit_sell(transNum, username, client)
+			/*
+				case "DISPLAY_SUMMARY":
+					username := data[2]
+					display_summary(transNum, username, client)
+			*/
+		case "CANCEL_BUY":
+			username := data[2]
+			cancel_buy(transNum, username, client)
+
+		case "CANCEL_SELL":
+			username := data[2]
+			cancel_sell(transNum, username, client)
+
+		}
+
+	}
+}
+
 func concurrencyLogic(lines []string, username string) {
 	defer wg.Done()
 	client := dialRedis()
@@ -290,8 +345,8 @@ func concurrencyLogic(lines []string, username string) {
 				redisCANCEL_SET_BUY(client, username, symbol)
 
 			case "DISPLAY_SUMMARY":
-				username := data[2]
-				display_summary(transNum, username, client)
+				//username := data[2]
+				//display_summary(transNum, username, client)
 
 			case "SET_SELL_AMOUNT":
 				symbol := data[3]
