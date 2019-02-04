@@ -249,9 +249,9 @@ func linearLogic3(lines []string) {
 		switch command {
 
 		case "QUOTE":
-			username := data[2]
-			stock := data[3]
-			quote(transNum, username, stock, client)
+			//username := data[2]
+			//stock := data[3]
+			//quote(transNum, username, stock, client)
 
 		case "COMMIT_BUY":
 			username := data[2]
@@ -316,7 +316,7 @@ func concurrencyLogic(lines []string, username string) {
 			case "QUOTE":
 				stock := data[3]
 				quote(transNum, username, stock, client)
-				redisQUOTE(client, username, stock)
+				//redisQUOTE(client, username, stock)
 
 			case "COMMIT_BUY":
 				redisCOMMIT_BUY(client, username)
