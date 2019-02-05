@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/mediocregopher/radix.v2/redis"
@@ -19,6 +20,7 @@ var client *redis.Client
 
 var localLog Log
 var localUserLogs = map[string]Log{}
+var mutex = &sync.Mutex{} // used to lock localUserLogs map
 
 const (
 	// A generic XML header suitable for use with the output of Marshal.
@@ -174,6 +176,33 @@ func GetKwds(kwds []interface{}) map[string]interface{} {
 	return result
 }
 
+func addLogIntouserLogs(username string, newCommandLog LogType) {
+	var newLogItems []LogType
+	mutex.Lock()
+	if val, ok := localUserLogs[username]; ok {
+		mutex.Unlock()
+		newLogItems = append(val.LogData, newCommandLog)
+	} else {
+		mutex.Unlock()
+		// initialize list in golang map
+		newLogItems = []LogType{newCommandLog}
+
+	}
+	newLogData := Log{LogData: newLogItems}
+	mutex.Lock()
+	localUserLogs[username] = newLogData
+	mutex.Unlock()
+
+	// fmt.Println("in user log")
+	// out, err := xml.MarshalIndent(localUserLogs[username].LogData, "", "   ")
+
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// s := string(out)
+	// fmt.Println("in user log, log is " + s)
+}
+
 func logUserCommand(kwds ...interface{}) {
 	time := getUnixTimestamp()
 	args := GetKwds(kwds)
@@ -202,14 +231,8 @@ func logUserCommand(kwds ...interface{}) {
 
 	newUserCommandLog := LogType{UserCommand: userCommandData}
 	localLog.LogData = append(localLog.LogData, newUserCommandLog)
-	// if val, ok := localUserLogs[userCommandData.Username]; ok {
-	// 	//do nothing
-	// } else {
-	// 	logData := make([]LogType, 0)
-	// 	localUserLogs[userCommandData.Username] = Log{LogData: logData}
-	// }
+	addLogIntouserLogs(userCommandData.Username, newUserCommandLog)
 
-	// localUserLogs[userCommandData.Username].LogData = append(localUserLogs[userCommandData.Username], newUserCommandLog)
 }
 
 func logAccountTransactionCommand(transNum int, action string, username string, amount float64) {
@@ -219,6 +242,7 @@ func logAccountTransactionCommand(transNum int, action string, username string, 
 
 	newTransCommandLog := LogType{AccountTransaction: transCommandData}
 	localLog.LogData = append(localLog.LogData, newTransCommandLog)
+	addLogIntouserLogs(username, newTransCommandLog)
 }
 
 func logSystemEventCommand(transNum int, command string, username string, stock string, amount float64) {
@@ -227,6 +251,7 @@ func logSystemEventCommand(transNum int, command string, username string, stock 
 	systemEventCommandData := &SystemEventType{Timestamp: time, Server: server, TransactionNumber: transNum, Command: Command(command), Username: username, StockSymbol: stockSymbolType(stock), Funds: amountF}
 	newSystemCommandLog := LogType{SystemEvent: systemEventCommandData}
 	localLog.LogData = append(localLog.LogData, newSystemCommandLog)
+	addLogIntouserLogs(username, newSystemCommandLog)
 
 }
 
@@ -238,6 +263,7 @@ func logQuoteServerCommand(transNum int, price float64, stock string, username s
 
 	quoteServerCommandLog := LogType{QuoteServer: quoteEventCommandData}
 	localLog.LogData = append(localLog.LogData, quoteServerCommandLog)
+	addLogIntouserLogs(username, quoteServerCommandLog)
 }
 
 func logErrorEventCommand(kwds ...interface{}) {
@@ -267,6 +293,7 @@ func logErrorEventCommand(kwds ...interface{}) {
 	}
 	errorEventCommandLog := LogType{ErrorEvent: errorEvent}
 	localLog.LogData = append(localLog.LogData, errorEventCommandLog)
+	addLogIntouserLogs(errorEvent.Username, errorEventCommandLog)
 }
 
 func logDebugMessageCommand(kwds ...interface{}) {
@@ -297,18 +324,29 @@ func logDebugMessageCommand(kwds ...interface{}) {
 
 	debugEventCommandLog := LogType{DebugEvent: debugMessage}
 	localLog.LogData = append(localLog.LogData, debugEventCommandLog)
+	addLogIntouserLogs(debugMessage.Username, debugEventCommandLog)
 }
 
-func dumpLog(username string, filename string) {
+func dumpLog(transNum int, username string, filename string) {
 	fmt.Println("in dumpAllLogs")
-	out, err := xml.MarshalIndent(localLog, "", "   ")
+	var logS string
+	mutex.Lock()
+	if val, ok := localUserLogs[username]; ok {
+		mutex.Unlock()
+		out, err := xml.MarshalIndent(val, "", "   ")
 
-	if err != nil {
-		panic(err)
+		if err != nil {
+			panic(err)
+		}
+
+		logS = Header
+		logS += string(out)
+
+	} else {
+		mutex.Unlock()
+		message := "Account" + username + " does not exist. Cannot log messages for " + username
+		logErrorEventCommand("transNum", transNum, "command", "BUY", "username", username, "errorMessage", message)
 	}
-
-	var logS = Header
-	logS += string(out)
 
 	f, err := os.OpenFile(filename+".xml", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -323,9 +361,8 @@ func dumpLog(username string, filename string) {
 	f.Close()
 }
 
-func dumpAllLogs(filename string) {
+func dumpAllLogs(transNum int, filename string) {
 
-	fmt.Println("in dumpAllLogs")
 	out, err := xml.MarshalIndent(localLog, "", "   ")
 
 	if err != nil {
