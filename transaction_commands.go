@@ -190,12 +190,12 @@ func dumplog(transNum int, params ...string) {
 	if len(params) == 1 {
 		filename := params[0]
 		logUserCommand("transNum", transNum, "command", "DUMPLOG", "filename", filename)
-		dumpAllLogs(filename)
+		dumpAllLogs(transNum, filename)
 	} else if len(params) == 2 {
 		username := params[0]
 		filename := params[1]
 		logUserCommand("transNum", transNum, "command", "DUMPLOG", "username", username, "filename", filename)
-		dumpLog(username, filename)
+		dumpLog(transNum, username, filename)
 	}
 }
 
