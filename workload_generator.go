@@ -55,14 +55,47 @@ func writeLines(lines []string, path string) error {
 	return w.Flush()
 }
 
+/* won't return error because readlines worked */
+func getTransactionCount(file string) int {
+	var count int
+	if file == "workload1" {
+		count = 100
+	} else if file == "workload2" || file == "workload3" || file == "workload4" {
+		count = 10000
+	} else {
+		fmt.Println("invalid workload file. exiting.")
+		os.Exit(1)
+	}
+	return count
+}
+
+func getNumUsers(file string) int {
+	var count int
+	if file == "workload1" {
+		count = 1
+	} else if file == "workload2" {
+		count = 2
+	} else if file == "workload3" {
+		count = 10
+	} else if file == "workload4" {
+		count = 45
+	} else {
+		fmt.Println("invalid workload file. exiting.")
+		os.Exit(1)
+	}
+	return count
+}
+
 func main() {
-	if len(os.Args) != 4 {
-		fmt.Println("Error: Argument format is file, numUsers, numTransactions")
+	if len(os.Args) != 2 {
+		fmt.Println("Error please specify the workload file (eg. workload2)")
 		os.Exit(1)
 	}
 	file := os.Args[1]
-	numUsers, _ := strconv.Atoi(os.Args[2])
-	count, _ := strconv.Atoi(os.Args[3])
+	count := getTransactionCount(file)
+	numUsers := getNumUsers(file)
+	file = "workload_files/" + file + ".txt"
+
 	start := time.Now()
 	wg.Add(numUsers + 3)
 	initAuditServer()
@@ -71,6 +104,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
 	}
+
+
 	User := make(map[string]int)
 
 	for i, line := range lines {
