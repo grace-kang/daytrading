@@ -17,7 +17,7 @@ func add(transNum int, username string, amount float64, client *redis.Client) {
 }
 
 func quote(transNum int, username string, stock string, client *redis.Client) {
-	req, err := http.NewRequest("GET", "http://localhost:1200", nil)
+	req, err := http.NewRequest("GET", "http://quote:1200", nil)
 	req.Header.Add("If-None-Match", `W/"wyzzy"`)
 
 	q := req.URL.Query()

@@ -4,7 +4,14 @@ macowner$ redis-cli
 127.0.0.1:6379> flushall
 127.0.0.1:6379> hgetall oY01WVirLr
 */
+/*
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+sudo go get -u github.com/kardianos/govendor
 
+govendor init
+govendor add +external
+*/
 package main
 
 import (
@@ -104,7 +111,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("readLines: %s", err)
 	}
-
 
 	User := make(map[string]int)
 

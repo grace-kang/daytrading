@@ -1,0 +1,9 @@
+FROM golang:alpine 
+
+RUN apk update && apk add --no-cache bash git
+
+COPY . /go/src/quote_server/
+RUN go get /go/src/quote_server 
+RUN go install /go/src/quote_server
+
+ENTRYPOINT /go/bin/quote_server
