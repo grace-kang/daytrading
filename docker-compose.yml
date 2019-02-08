@@ -1,0 +1,25 @@
+version: "2"
+
+services:
+  daytrading:
+    image: golang:latest
+    volumes:
+      - .:/go/src/daytrading
+    working_dir: /go/src/daytrading
+    command: go get -u github.com/mediocregopher/radix.v2/redis
+    command: go build -o daytrading
+    command: go run daytrading workload3
+    links:
+      - redis
+    depends_on:
+      - quote
+    environment:
+      REDIS_URL: redis:6379
+  
+  redis:
+    image: redis:latest
+
+  quote:
+    build: quote_server/
+    ports:
+      - 1200:1200
