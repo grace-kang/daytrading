@@ -39,7 +39,7 @@ func makeResponse(stock string, username string) string {
 	return output
 }
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 
 func randSeq(n int) string {
 	b := make([]rune, n)
