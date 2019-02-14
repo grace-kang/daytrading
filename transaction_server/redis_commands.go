@@ -20,7 +20,7 @@ func dialRedis() *redis.Client {
 }
 
 func flushRedis(client *redis.Client) {
-  client.Cmd("FLUSHALL")
+	client.Cmd("FLUSHALL")
 }
 
 func getBalance(client *redis.Client, username string) float64 {
@@ -107,10 +107,10 @@ func redisADD(client *redis.Client, username string, amount float64) {
 
 func displayADD(client *redis.Client, username string, amount float64) {
 	fmt.Println("-----ADD-----")
-  fmt.Println("User: ", username)
+	fmt.Println("User: ", username)
 	oldBalance := getBalance(client, username)
 	fmt.Println("Old Balance: ", oldBalance)
-  redisADD(client, username, amount)
+	redisADD(client, username, amount)
 	fmt.Println("ADD: ", amount)
 	newBalance := getBalance(client, username)
 	fmt.Println("New Balance: ", newBalance, "\n")
@@ -142,7 +142,7 @@ func redisBUY(client *redis.Client, username string, symbol string, amount float
 
 func displayBUY(client *redis.Client, username string, symbol string, amount float64) {
 	fmt.Println("-----BUY-----")
-  redisBUY(client, username, symbol, amount)
+	redisBUY(client, username, symbol, amount)
 	string3 := "userBUY:" + username
 	stack := listStack(client, string3)
 	fmt.Println("User:", username, " BUYStack:", stack, "\n")
@@ -158,8 +158,8 @@ func redisSELL(client *redis.Client, username string, symbol string, amount floa
 }
 
 func displaySELL(client *redis.Client, username string, symbol string, amount float64) {
-  fmt.Println("-----SELL-----")
-  redisSELL(client, username, symbol, amount)
+	fmt.Println("-----SELL-----")
+	redisSELL(client, username, symbol, amount)
 	string3 := "userSELL:" + username
 	stack := listStack(client, string3)
 	fmt.Println("User: ", username, "SELLStack: ", stack, "\n")
@@ -216,10 +216,10 @@ func displayCOMMIT_BUY(client *redis.Client, username string) {
 	fmt.Println("-----COMMIT_BUY-----")
 	fmt.Println("User: ", username)
 	/* 3 */
-  getBAL := getBalance(client, username)
+	getBAL := getBalance(client, username)
 	fmt.Println("Old Balance:", getBAL)
 
-  redisCOMMIT_BUY(client, username)
+	redisCOMMIT_BUY(client, username)
 
 	getBAL2 := getBalance(client, username)
 	fmt.Println("New Balance:", getBAL2, "\n")
@@ -279,10 +279,10 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 func displayCOMMIT_SELL(client *redis.Client, username string) {
 	fmt.Println("-----COMMIT_SELL-----")
 	fmt.Println("User: ", username)
-  getBAL := getBalance(client, username)
+	getBAL := getBalance(client, username)
 	fmt.Println("Old Balance:", getBAL)
 
-  redisCOMMIT_SELL(client, username)
+	redisCOMMIT_SELL(client, username)
 
 	getBAL2 := getBalance(client, username)
 	fmt.Println("New Balance:", getBAL2, "\n")
@@ -352,7 +352,7 @@ func displaySET_BUY_AMOUNT(client *redis.Client, username string, symbol string,
 
 	string3 := symbol + ":BUY:" + username
 	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
-	fmt.Println("SETBUYAMOUNTstack for ", symbol, ":",  stack)
+	fmt.Println("SETBUYAMOUNTstack for ", symbol, ":", stack)
 
 	getBAL2 := getBalance(client, username)
 	fmt.Println("NEWBalance:", getBAL2, "\n")
@@ -369,11 +369,11 @@ func displaySET_BUY_TRIGGER(client *redis.Client, username string, symbol string
 	fmt.Println("-----SET_BUY_TRIGGER-----")
 	fmt.Println("Username: ", username)
 
-  redisSET_BUY_TRIGGER(client, username, symbol, amount)
+	redisSET_BUY_TRIGGER(client, username, symbol, amount)
 
-  string3 := "BUYTRIGGERS:" + username
-  triggers, _ := client.Cmd("HGETALL", string3).List()
-  fmt.Println("BUYTRIGGERS: ", triggers, "\n")
+	string3 := "BUYTRIGGERS:" + username
+	triggers, _ := client.Cmd("HGETALL", string3).List()
+	fmt.Println("BUYTRIGGERS: ", triggers, "\n")
 }
 
 func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
@@ -405,11 +405,11 @@ func displayCANCEL_SET_BUY(client *redis.Client, username string, symbol string)
 
 	string3 := symbol + ":BUY:" + username
 	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
-	fmt.Println("SETBUYAMOUNTstack for ", symbol, ":",  stack)
+	fmt.Println("SETBUYAMOUNTstack for ", symbol, ":", stack)
 
-  string4 := "BUYTRIGGERS:" + username
-  triggers, _ := client.Cmd("HGETALL", string4).List()
-  fmt.Println("BUYTRIGGERS: ", triggers)
+	string4 := "BUYTRIGGERS:" + username
+	triggers, _ := client.Cmd("HGETALL", string4).List()
+	fmt.Println("BUYTRIGGERS: ", triggers)
 
 	getBAL2 := getBalance(client, username)
 	fmt.Println("NEWBalance:", getBAL2, "\n")
@@ -475,11 +475,11 @@ func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string
 
 	string3 := symbol + ":SELL:" + username
 	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
-	fmt.Println("SETSELLAMOUNTstack for ", symbol, ":",  stack)
+	fmt.Println("SETSELLAMOUNTstack for ", symbol, ":", stack)
 
-  string4 := "SELLTRIGGERS:" + username
-  triggers, _ := client.Cmd("HGETALL", string4).List()
-  fmt.Println("SELLTRIGGERS: ", triggers)
+	string4 := "SELLTRIGGERS:" + username
+	triggers, _ := client.Cmd("HGETALL", string4).List()
+	fmt.Println("SELLTRIGGERS: ", triggers)
 
 	getBAL2 := getBalance(client, username)
 	fmt.Println("NEWBalance:", getBAL2, "\n")
