@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/mediocregopher/radix.v2/pool"
 )
 
 const (
@@ -14,6 +17,17 @@ const (
 )
 
 var display bool
+var db *pool.Pool
+
+func init() {
+	var err error
+	// Establish a pool of 10 connections to the Redis server listening on
+	// port 6379 of the local machine.
+	db, err = pool.New("tcp", "localhost:6379", 10)
+	if err != nil {
+		log.Panic(err)
+	}
+}
 
 func main() {
 	if len(os.Args) == 1 {
@@ -61,7 +75,8 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -80,7 +95,8 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
@@ -100,7 +116,8 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
@@ -120,7 +137,8 @@ func quoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
@@ -139,7 +157,8 @@ func commitBuyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 
 	if display == false {
@@ -157,7 +176,8 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 
 	if display == false {
@@ -175,7 +195,8 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 
 	if display == false {
@@ -193,7 +214,8 @@ func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 
 	if display == false {
@@ -211,7 +233,8 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
@@ -231,7 +254,8 @@ func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
@@ -251,7 +275,8 @@ func cancelSetBuyHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 
@@ -270,7 +295,8 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
@@ -290,7 +316,8 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
@@ -310,7 +337,8 @@ func cancelSetSellHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client := dialRedis()
+	client, _ := db.Get()
+	defer db.Put(client)
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 
@@ -330,7 +358,8 @@ func displaySummaryHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if display == true {
-		client := dialRedis()
+		client, _ := db.Get()
+		defer db.Put(client)
 		user := r.Form.Get("user")
 		redisDISPLAY_SUMMARY(client, user)
 	}

@@ -20,45 +20,49 @@ func add(transNum int, username string, amount float64, client *redis.Client) {
 }
 
 func quote(transNum int, username string, stock string, client *redis.Client) {
-	req, err := http.NewRequest("GET", "http://localhost:1200", nil)
-	req.Header.Add("If-None-Match", `W/"wyzzy"`)
-
-	q := req.URL.Query()
-	q.Add("user", username)
-	q.Add("stock", stock)
-	q.Add("transNum", strconv.Itoa(transNum))
-	req.URL.RawQuery = q.Encode()
-
-	httpclient := http.Client{}
-
-	var resp *http.Response
-	for {
-		resp, err = httpclient.Do(req)
-
-		if err != nil { // trans server down? retry
-			fmt.Println(err)
-		} else {
-			break
-		}
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if err != nil {
-		fmt.Printf("Error reading body: %s", err.Error())
-	}
-
-	quoteReponses := strings.Split(string(body), ",")
-	split := quoteReponses[0]
-	price, _ := strconv.ParseFloat(split, 64)
-	//stockPrices[stock] = price
-	cryptoKey := strings.TrimSuffix(quoteReponses[4], "\n")
-	logQuoteServerCommand(transNum, price, stock, username, quoteReponses[3], cryptoKey)
-
 	stringQ := stock + ":QUOTE"
-	client.Cmd("HSET", username, stringQ, price)
+	ex := exists(client, stringQ)
+	if ex == false {
 
-	resp.Body.Close()
+		req, err := http.NewRequest("GET", "http://localhost:1200", nil)
+		req.Header.Add("If-None-Match", `W/"wyzzy"`)
+
+		q := req.URL.Query()
+		q.Add("user", username)
+		q.Add("stock", stock)
+		q.Add("transNum", strconv.Itoa(transNum))
+		req.URL.RawQuery = q.Encode()
+
+		httpclient := http.Client{}
+
+		var resp *http.Response
+		for {
+			resp, err = httpclient.Do(req)
+
+			if err != nil { // trans server down? retry
+				fmt.Println(err)
+			} else {
+				break
+			}
+		}
+
+		body, err := ioutil.ReadAll(resp.Body)
+
+		if err != nil {
+			fmt.Printf("Error reading body: %s", err.Error())
+		}
+
+		quoteReponses := strings.Split(string(body), ",")
+		split := quoteReponses[0]
+		price, _ := strconv.ParseFloat(split, 64)
+		//stockPrices[stock] = price
+		//cryptoKey := strings.TrimSuffix(quoteReponses[4], "\n")
+		//logQuoteServerCommand(transNum, price, stock, username, quoteReponses[3], cryptoKey)
+
+		client.Cmd("HSET", stringQ, stringQ, price)
+		resp.Body.Close()
+	}
+
 }
 
 func buy(transNum int, username string, symbol string, amount float64, client *redis.Client) {
