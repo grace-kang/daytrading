@@ -12,7 +12,7 @@ import (
 )
 
 func dialRedis() *redis.Client {
-	cli, err := redis.Dial("tcp", "localhost:6379")
+	cli, err := redis.Dial("tcp", "redis:6379")
 	if err != nil {
 		// handle err
 	}

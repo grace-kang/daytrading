@@ -115,15 +115,15 @@ func main() {
 			//fmt.Println(u, ":", userS[u])
 			time.Sleep(50 * time.Millisecond)
 			if u%5 == 0 {
-				go concurrencyLogic("http://localhost:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 1 {
-				go concurrencyLogic("http://localhost:1301", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 2 {
-				go concurrencyLogic("http://localhost:1302", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 3 {
-				go concurrencyLogic("http://localhost:1303", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 4 {
-				go concurrencyLogic("http://localhost:1304", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			}
 		}
 	}
