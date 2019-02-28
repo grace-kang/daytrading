@@ -42,6 +42,10 @@ func getTransactionCount(file string) int {
 		count = 100
 	} else if file == "workload2" || file == "workload3" || file == "workload4" {
 		count = 10000
+	} else if file == "workload5" {
+		count = 100000
+	} else if file == "2018" {
+		count = 1200000
 	} else {
 		fmt.Println("invalid workload file. exiting.")
 		os.Exit(1)
@@ -59,6 +63,10 @@ func getNumUsers(file string) int {
 		count = 10
 	} else if file == "workload4" {
 		count = 45
+	} else if file == "workload5" {
+		count = 100
+	} else if file == "2018" {
+		count = 10000
 	} else {
 		fmt.Println("invalid workload file. exiting.")
 		os.Exit(1)
@@ -104,10 +112,13 @@ func main() {
 	p := 0
 	userS := make([]string, 100)
 	for key, value := range User {
-		userS[p] = key
-		fmt.Println(userS[p])
-		p = p + 1
-		fmt.Println("Key:", key, "Value:", value)
+		if value == 1 {
+			userS[p] = key
+			//userCount += 1
+			fmt.Println(userS[p])
+			p = p + 1
+			fmt.Println("Key:", key, "Value:", value)
+		}
 	}
 	for u := 0; u < (numUsers + 1); u++ {
 
@@ -117,13 +128,13 @@ func main() {
 			if u%5 == 0 {
 				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 1 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction2:1301", lines, userS[u])
 			} else if u%5 == 2 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction3:1302", lines, userS[u])
 			} else if u%5 == 3 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction4:1303", lines, userS[u])
 			} else if u%5 == 4 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction5:1304", lines, userS[u])
 			}
 		}
 	}
