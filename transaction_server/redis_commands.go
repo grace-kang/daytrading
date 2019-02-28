@@ -183,11 +183,9 @@ func redisCOMMIT_BUY(client *redis.Client, username string) {
 
 	/* 4 */
 	stockQ := stock + ":QUOTE"
-	stockPrice, _ := client.Cmd("HGET", username, stockQ).Float64()
+	stockPrice, _ := client.Cmd("HGET", stockQ, stockQ).Float64()
 	stock2BUY := int(math.Floor(amount / stockPrice))
 	totalCOST := stockPrice * float64(stock2BUY)
-	//fmt.Println("Price:", stockPrice, "BUYAmount:", stock2BUY)
-	//fmt.Println("TotalCost:", totalCOST)
 
 	/* 5 */
 	addBalance(client, username, -totalCOST)
@@ -202,11 +200,6 @@ func redisCOMMIT_BUY(client *redis.Client, username string) {
 	}
 
 	getBAL2 := getBalance(client, username)
-	//fmt.Println("New Balance:", getBAL2)
-	//stockOWNS := stockOwned(client, username, id)
-	//fmt.Println("Stock:", stock, "TOTAL:", stockOWNS)
-
-	// save to transaction history
 	saveTransaction(client, username, "COMMIT_BUY", stock, strconv.Itoa(stock2BUY), strconv.FormatFloat(stockPrice, 'f', 2, 64), strconv.FormatFloat(totalCOST, 'f', 2, 64), strconv.FormatFloat(getBAL2, 'f', 2, 64))
 }
 
@@ -243,35 +236,26 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 	string3 := "userSELL:" + username
 	stock, _ := client.Cmd("LPOP", string3).Str()
 	amount, _ := client.Cmd("LPOP", string3).Float64()
-	//fmt.Println("SYMBOL:", stock, "AMOUNT:", amount)
 
 	/* 4 */
-	stockPrice, _ := client.Cmd("HGET", username, "QUOTE").Float64()
-	//fmt.Println("QUOTE:", stockPrice)
+	stockQ := stock + ":QUOTE"
+	stockPrice, _ := client.Cmd("HGET", stockQ, stockQ).Float64()
 	stock2SELL := int(math.Floor(amount / stockPrice))
 	totalCOST := stockPrice * float64(stock2SELL)
-	//fmt.Println("Price:", stockPrice, "SELLAmount:", stock2SELL)
-	//fmt.Println("TotalCost:", totalCOST)
 	id := stock + ":OWNED"
-
 	stocksOwned := stockOwned(client, username, id)
+
 	/* 5 */
 	if stocksOwned >= stock2SELL {
 		client.Cmd("HINCRBYFLOAT", username, "Balance", totalCOST)
 		getBAL3 := getBalance(client, username)
-		//fmt.Println("NEWBalance:", getBAL3)
 
 		/* 6 */
-
 		if stock2SELL > 0 {
 			client.Cmd("HINCRBY", username, id, -stock2SELL)
 			saveTransaction(client, username, "COMMIT_SELL", stock, strconv.Itoa(stock2SELL), strconv.FormatFloat(stockPrice, 'f', 2, 64), strconv.FormatFloat(totalCOST, 'f', 2, 64), strconv.FormatFloat(getBAL3, 'f', 2, 64))
 		}
 	}
-
-	//stockOWNS := stockOwned(client, username, id)
-	//fmt.Println("Stock:", stock, "TOTAL:", stockOWNS)
-
 	// save to transaction history
 
 }

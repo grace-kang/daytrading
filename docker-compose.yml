@@ -22,6 +22,58 @@ services:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
 
+  transaction2:
+    build: transaction_server_1301/
+    ports:
+      - 1301:1301
+    links:
+      - redis
+    depends_on:
+      - redis
+      - quote
+    environment:
+      REDIS_URL: redis:6379
+      QUOTE_URL: quote:1200
+
+  transaction3:
+    build: transaction_server_1302/
+    ports:
+      - 1302:1302
+    links:
+      - redis
+    depends_on:
+      - redis
+      - quote
+    environment:
+      REDIS_URL: redis:6379
+      QUOTE_URL: quote:1200
+
+  transaction4:
+    build: transaction_server_1303/
+    ports:
+      - 1303:1303
+    links:
+      - redis
+    depends_on:
+      - redis
+      - quote
+    environment:
+      REDIS_URL: redis:6379
+      QUOTE_URL: quote:1200
+
+  transaction5:
+    build: transaction_server_1304/
+    ports:
+      - 1304:1304
+    links:
+      - redis
+    depends_on:
+      - redis
+      - quote
+    environment:
+      REDIS_URL: redis:6379
+      QUOTE_URL: quote:1200
+
   workload:
     image: golang:alpine
     volumes: 
@@ -30,6 +82,10 @@ services:
       - redis
     depends_on:
       - transaction
+      - transaction2
+      - transaction3
+      - transaction4
+      - transaction5
       - redis
       - quote
     working_dir: /go/src/daytrading
@@ -37,5 +93,9 @@ services:
     command: go run daytrading workload4
     environment:
       TRANSACTION_URL: transaction:1300
+      TRANSACTION2_URL: transaction2:1301
+      TRANSACTION3_URL: transaction3:1302
+      TRANSACTION4_URL: transaction4:1303
+      TRANSACTION5_URL: transaction5:1304
 
 
