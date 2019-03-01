@@ -37,6 +37,11 @@ func init() {
 
 }
 
+func ParseUint(s string, base int, bitSize int) uint64 {
+	unit_, _ := strconv.ParseUint(s, base, bitSize)
+	return unit_
+}
+
 func main() {
 	if len(os.Args) == 1 {
 		display = false

@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/mediocregopher/radix.v2/pool"
 )
@@ -14,8 +17,11 @@ const (
 	connHost = "localhost"
 	connPort = "1304"
 	connType = "http"
+	server   = "trans1"
+	address  = "http://audit:1400"
 )
 
+var logger Logger
 var display bool
 var db *pool.Pool
 
@@ -27,6 +33,12 @@ func init() {
 	if err != nil {
 		log.Panic(err)
 	}
+
+}
+
+func ParseUint(s string, base int, bitSize int) uint64 {
+	unit_, _ := strconv.ParseUint(s, base, bitSize)
+	return unit_
 }
 
 func main() {
@@ -62,10 +74,76 @@ func main() {
 	http.HandleFunc("/set_sell_trigger", setSellTriggerHandler)
 	http.HandleFunc("/cancel_set_sell", cancelSetSellHandler)
 	http.HandleFunc("/display_summary", displaySummaryHandler)
+	http.HandleFunc("/dumpLog", dumpLogHandler)
 
-	err := http.ListenAndServe(":1304", nil)
+	err := http.ListenAndServe(":1300", nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
+	}
+}
+
+func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
+	filename := r.Form.Get("filename")
+	username := r.Form.Get("username")
+	if username != "" {
+		go logger.LogUserCommand(server, transNum, "DUMPLOG", username, nil, nil, filename)
+		logger.DumpLog(filename, username)
+	} else {
+		go logger.LogSystemEventCommand(server, transNum, "DUMPLOG", nil, nil, nil, filename)
+		logger.DumpLog(filename, nil)
+	}
+}
+
+func quote(transNum int, username string, stock string, client *redis.Client) {
+	stringQ := stock + ":QUOTE"
+	ex := exists(client, stringQ)
+	if ex == false {
+		conn, _ := net.Dial("tcp", "quote:1200")
+		conn.Write([]byte((stock + "," + username + "\n")))
+		respBuf := make([]byte, 2048)
+		_, err := conn.Read(respBuf)
+		conn.Close()
+
+		if err != nil {
+			fmt.Printf("Error reading body: %s", err.Error())
+		}
+		respBuf = bytes.Trim(respBuf, "\x00")
+		message := bytes.NewBuffer(respBuf).String()
+		message = strings.TrimSpace(message)
+
+		fmt.Println(string(message))
+
+		split := strings.Split(message, ",")
+		priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
+		price, _ := strconv.ParseFloat(priceStr, 64)
+		if err != nil {
+			return
+		}
+		quoteTimestamp := strings.TrimSpace(split[3])
+		crytpoKey := split[4]
+
+		quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
+		logger.LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
+
+		stringQ := stock + ":QUOTE"
+		client.Cmd("HSET", stringQ, stringQ, price)
+	} else {
+		stringQ := stock + ":QUOTE"
+		currentprice, _ := client.Cmd("HGET", stringQ, stringQ).Float64()
+		logger.LogSystemEventCommand(server, transNum, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
+	}
+}
+
+func checkUserExists(transNum int, username string, command string, client *redis.Client) {
+	exists := exists(client, username)
+	if exists == false {
+		message := "Account" + username + " does not exist"
+		logger.LogErrorEventCommand(server, transNum, command, username, nil, nil, nil, message)
 	}
 }
 
@@ -77,6 +155,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -86,6 +165,9 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		displayADD(client, user, amount)
 	}
 
+	logger.LogUserCommand(server, transNum, "ADD", user, r.Form.Get("amount"), nil, nil)
+	checkUserExists(transNum, user, "ADD", client)
+	logger.LogAccountTransactionCommand(server, transNum, "add", user, r.Form.Get("amount"))
 	//w.Write([]byte("ADD complete"))
 }
 
@@ -97,9 +179,20 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+
+	logger.LogUserCommand(server, transNum, "BUY", user, r.Form.Get("amount"), symbol, nil)
+	checkUserExists(transNum, user, "ADD", client)
+	// currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
+	// hasBalance := currentBalance >= amount
+	// if !hasBalance {
+	//message := "Balance of " + username + " is not enough"
+	//logErrorEventCommand("transNum", transNum, "command", "BUY", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+	//}
+	//logSystemEventCommand(transNum, "BUY", username, symbol, amount)
 
 	if display == false {
 		redisBUY(client, user, symbol, amount)
@@ -118,9 +211,14 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+
+	logger.LogUserCommand(server, transNum, "SELL", user, r.Form.Get("amount"), symbol, nil)
+	/*check if user exists or not*/
+	checkUserExists(transNum, user, "ADD", client)
 
 	if display == false {
 		redisSELL(client, user, symbol, amount)
@@ -159,7 +257,11 @@ func commitBuyHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
+
+	logger.LogUserCommand(server, transNum, "COMMIT_BUY", user, nil, nil, nil)
+	checkUserExists(transNum, user, "ADD", client)
 
 	if display == false {
 		redisCOMMIT_BUY(client, user)
@@ -178,6 +280,7 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 
 	if display == false {
@@ -186,6 +289,7 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 		displayCOMMIT_SELL(client, user)
 	}
 
+	logger.LogUserCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil)
 	//w.Write([]byte("COMMIT SELL complete"))
 }
 
@@ -197,7 +301,10 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
+
+	logger.LogUserCommand(server, transNum, "CANCEL_BUY", user, nil, nil, nil)
 
 	if display == false {
 		redisCANCEL_BUY(client, user)
@@ -216,7 +323,10 @@ func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
+
+	logger.LogUserCommand(server, transNum, "CANCEL_SELL", user, nil, nil, nil)
 
 	if display == false {
 		redisCANCEL_SELL(client, user)
@@ -235,9 +345,12 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+
+	logger.LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
 		redisSET_BUY_AMOUNT(client, user, symbol, amount)
@@ -256,9 +369,12 @@ func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+
+	logger.LogUserCommand(server, transNum, "SET_BUY_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
 		redisSET_BUY_TRIGGER(client, user, symbol, amount)
@@ -277,8 +393,11 @@ func cancelSetBuyHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
+
+	logger.LogUserCommand(server, transNum, "CANCEL_SET_BUY", user, nil, symbol, nil)
 
 	if display == false {
 		redisCANCEL_SET_BUY(client, user, symbol)
@@ -297,9 +416,12 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+
+	logger.LogUserCommand(server, transNum, "SET_SELL_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
 		redisSET_SELL_AMOUNT(client, user, symbol, amount)
@@ -318,9 +440,12 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+
+	logger.LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
 		redisSET_SELL_TRIGGER(client, user, symbol, amount)
@@ -339,8 +464,11 @@ func cancelSetSellHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
+
+	logger.LogUserCommand(server, transNum, "CANCEL_SET_SELL", user, nil, symbol, nil)
 
 	if display == false {
 		redisCANCEL_SET_SELL(client, user, symbol)
@@ -357,10 +485,12 @@ func displaySummaryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
+	user := r.Form.Get("user")
+	logger.LogUserCommand(server, transNum, "DISPLAY_SUMMARY", user, nil, nil, nil)
 	if display == true {
 		client, _ := db.Get()
 		defer db.Put(client)
-		user := r.Form.Get("user")
 		redisDISPLAY_SUMMARY(client, user)
 	}
 

@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -35,134 +36,285 @@ func convertStringToDecimal(value string) string {
 }
 
 func (logger Logger) LogUserCommand(server string, transNum int, command string, username interface{}, funds interface{}, stockSymbol interface{}, filename interface{}) {
-	params := map[string]string{
-		"server":         server,
-		"command":        command,
-		"transactionNum": strconv.Itoa(transNum),
+	// params := map[string]string{
+	// 	"server":         server,
+	// 	"command":        command,
+	// 	"transactionNum": strconv.Itoa(transNum),
+	// }
+
+	// if username != nil {
+	// 	params["username"] = username.(string)
+	// }
+	// if funds != nil {
+	// 	params["funds"] = convertStringToDecimal(funds.(string))
+	// }
+	// if stockSymbol != nil {
+	// 	params["stockSymbol"] = stockSymbol.(string)
+	// }
+	// if filename != nil {
+	// 	params["filename"] = filename.(string)
+	// }
+	// logger.SendRequest("/userCommand", params)
+
+	addr := address + "/userCommand"
+	v := url.Values{
+		"server":         {server},
+		"command":        {command},
+		"transactionNum": {strconv.Itoa(transNum)},
 	}
 
 	if username != nil {
-		params["username"] = username.(string)
+		v.Set("username", username.(string))
 	}
 	if funds != nil {
-		params["funds"] = convertStringToDecimal(funds.(string))
+		v.Set("funds", convertStringToDecimal(funds.(string)))
 	}
 	if stockSymbol != nil {
-		params["stockSymbol"] = stockSymbol.(string)
+		v.Set("stockSymbol", stockSymbol.(string))
 	}
 	if filename != nil {
-		params["filename"] = filename.(string)
+		v.Set("filename", filename.(string))
 	}
-
-	logger.SendRequest("/userCommand", params)
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
 
 }
 
 func (logger Logger) LogAccountTransactionCommand(server string, transNum int, action string, username string, funds string) {
-	params := map[string]string{
-		"server":         server,
-		"transactionNum": strconv.Itoa(transNum),
-		"action":         action,
-		"username":       username,
-		"funds":          convertStringToDecimal(funds),
+	// params := map[string]string{
+	// 	"server":         server,
+	// 	"transactionNum": strconv.Itoa(transNum),
+	// 	"action":         action,
+	// 	"username":       username,
+	// 	"funds":          convertStringToDecimal(funds),
+	// }
+	// logger.SendRequest("/accountTransactionCommand", params)
+
+	addr := address + "/accountTransactionCommand"
+	v := url.Values{
+		"server":         {server},
+		"transactionNum": {strconv.Itoa(transNum)},
+		"action":         {action},
+		"username":       {username},
+		"funds":          {convertStringToDecimal(funds)},
 	}
-	logger.SendRequest("/accountTransactionCommand", params)
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
 }
 
 func (logger Logger) LogSystemEventCommand(server string, transNum int, command string, username interface{}, funds interface{}, stockSymbol interface{}, filename interface{}) {
-	params := map[string]string{
-		"server":         server,
-		"command":        command,
-		"transactionNum": strconv.Itoa(transNum),
+	// params := map[string]string{
+	// 	"server":         server,
+	// 	"command":        command,
+	// 	"transactionNum": strconv.Itoa(transNum),
+	// }
+
+	// if username != nil {
+	// 	params["username"] = username.(string)
+	// }
+	// if funds != nil {
+	// 	params["funds"] = convertStringToDecimal(funds.(string))
+	// }
+	// if stockSymbol != nil {
+	// 	params["stockSymbol"] = stockSymbol.(string)
+	// }
+	// if filename != nil {
+	// 	params["filename"] = filename.(string)
+	// }
+
+	// logger.SendRequest("/systemEventCommand", params)
+
+	addr := address + "/systemEventCommand"
+	v := url.Values{
+		"server":         {server},
+		"command":        {command},
+		"transactionNum": {strconv.Itoa(transNum)},
 	}
 
 	if username != nil {
-		params["username"] = username.(string)
+		v.Set("username", username.(string))
 	}
 	if funds != nil {
-		params["funds"] = convertStringToDecimal(funds.(string))
+		v.Set("funds", convertStringToDecimal(funds.(string)))
 	}
 	if stockSymbol != nil {
-		params["stockSymbol"] = stockSymbol.(string)
+		v.Set("stockSymbol", stockSymbol.(string))
 	}
 	if filename != nil {
-		params["filename"] = filename.(string)
+		v.Set("filename", filename.(string))
 	}
-
-	logger.SendRequest("/systemEventCommand", params)
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
 }
 
 func (logger Logger) LogQuoteServerCommand(server string, transNum int, price string, stock string, username string, quoteServerTime uint64, cryptoKey string) {
-	params := map[string]string{
-		"server":          server,
-		"transactionNum":  strconv.Itoa(transNum),
-		"price":           price,
-		"stockSymbol":     stock,
-		"username":        username,
-		"quoteServerTime": strconv.FormatUint(quoteServerTime, 10),
-		"cryptokey":       cryptoKey,
+	// params := map[string]string{
+	// 	"server":          server,
+	// 	"transactionNum":  strconv.Itoa(transNum),
+	// 	"price":           price,
+	// 	"stockSymbol":     stock,
+	// 	"username":        username,
+	// 	"quoteServerTime": strconv.FormatUint(quoteServerTime, 10),
+	// 	"cryptokey":       cryptoKey,
+	// }
+	// logger.SendRequest("/quoteServerCommand", params)
+
+	addr := address + "/quoteServerCommand"
+	v := url.Values{
+		"server":          {server},
+		"transactionNum":  {strconv.Itoa(transNum)},
+		"price":           {price},
+		"stockSymbol":     {stock},
+		"username":        {username},
+		"quoteServerTime": {strconv.FormatUint(quoteServerTime, 10)},
+		"cryptokey":       {cryptoKey},
 	}
-	logger.SendRequest("/quoteServerCommand", params)
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
+
 }
 
 func (logger Logger) LogErrorEventCommand(server string, transNum int, command string, username interface{}, funds interface{}, stockSymbol interface{}, filename interface{}, errorMessage interface{}) {
-	params := map[string]string{
-		"server":         server,
-		"transactionNum": strconv.Itoa(transNum),
-		"command":        command,
+	// params := map[string]string{
+	// 	"server":         server,
+	// 	"transactionNum": strconv.Itoa(transNum),
+	// 	"command":        command,
+	// }
+	// if username != nil {
+	// 	params["username"] = username.(string)
+	// }
+	// if funds != nil {
+	// 	params["funds"] = convertStringToDecimal(funds.(string))
+	// }
+	// if stockSymbol != nil {
+	// 	params["stockSymbol"] = stockSymbol.(string)
+	// }
+	// if filename != nil {
+	// 	params["filename"] = filename.(string)
+	// }
+	// if errorMessage != nil {
+	// 	params["errorMessage"] = errorMessage.(string)
+	// }
+	// logger.SendRequest("/errorEventCommand", params)
+
+	addr := address + "/errorEventCommand"
+	v := url.Values{
+		"server":         {server},
+		"command":        {command},
+		"transactionNum": {strconv.Itoa(transNum)},
 	}
+
 	if username != nil {
-		params["username"] = username.(string)
+		v.Set("username", username.(string))
 	}
 	if funds != nil {
-		params["funds"] = convertStringToDecimal(funds.(string))
+		v.Set("funds", convertStringToDecimal(funds.(string)))
 	}
 	if stockSymbol != nil {
-		params["stockSymbol"] = stockSymbol.(string)
+		v.Set("stockSymbol", stockSymbol.(string))
 	}
 	if filename != nil {
-		params["filename"] = filename.(string)
+		v.Set("filename", filename.(string))
 	}
 	if errorMessage != nil {
-		params["errorMessage"] = errorMessage.(string)
+		v.Set("errorMessage", errorMessage.(string))
 	}
-	logger.SendRequest("/errorEventCommand", params)
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
 }
 
 func (logger Logger) LogDebugEventCommand(server string, transNum int, command string, username interface{}, funds interface{}, stockSymbol interface{}, filename interface{}, debugMessage interface{}) {
-	params := map[string]string{
-		"server":         server,
-		"transactionNum": strconv.Itoa(transNum),
-		"command":        command,
+	// params := map[string]string{
+	// 	"server":         server,
+	// 	"transactionNum": strconv.Itoa(transNum),
+	// 	"command":        command,
+	// }
+	// if username != nil {
+	// 	params["username"] = username.(string)
+	// }
+	// if funds != nil {
+	// 	params["funds"] = convertStringToDecimal(funds.(string))
+	// }
+	// if stockSymbol != nil {
+	// 	params["stockSymbol"] = stockSymbol.(string)
+	// }
+	// if filename != nil {
+	// 	params["filename"] = filename.(string)
+	// }
+	// if debugMessage != nil {
+	// 	params["debugMessage"] = debugMessage.(string)
+	// }
+	// logger.SendRequest("/debugEventCommand", params)
+
+	addr := address + "/debugEventCommand"
+	v := url.Values{
+		"server":         {server},
+		"command":        {command},
+		"transactionNum": {strconv.Itoa(transNum)},
 	}
+
 	if username != nil {
-		params["username"] = username.(string)
+		v.Set("username", username.(string))
 	}
 	if funds != nil {
-		params["funds"] = convertStringToDecimal(funds.(string))
+		v.Set("funds", convertStringToDecimal(funds.(string)))
 	}
 	if stockSymbol != nil {
-		params["stockSymbol"] = stockSymbol.(string)
+		v.Set("stockSymbol", stockSymbol.(string))
 	}
 	if filename != nil {
-		params["filename"] = filename.(string)
+		v.Set("filename", filename.(string))
 	}
 	if debugMessage != nil {
-		params["debugMessage"] = debugMessage.(string)
+		v.Set("debugMessage", debugMessage.(string))
 	}
-	logger.SendRequest("/debugEventCommand", params)
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
 }
 
 func (logger Logger) DumpLog(filename string, username interface{}) {
 	fmt.Println("in DumpLog")
-	params := map[string]string{
-		"filename": filename,
+	// params := map[string]string{
+	// 	"filename": filename,
+	// }
+	// if username != nil {
+	// 	params["username"] = username.(string)
+	// }
+	// fmt.Println("in DumpLog, ready to send request")
+	// logger.SendRequest("/dumpLog", params)
+
+	addr := address + "/dumpLog"
+	v := url.Values{
+		"filename": {filename},
 	}
+
 	if username != nil {
-		params["username"] = username.(string)
+		v.Set("username", username.(string))
 	}
-	fmt.Println("in DumpLog, ready to send request")
-	logger.SendRequest("/dumpLog", params)
+
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
 }
 
 func (logger Logger) SendRequestTest() {
