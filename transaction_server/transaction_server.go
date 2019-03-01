@@ -131,7 +131,7 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 	} else {
 		stringQ := stock + ":QUOTE"
 		currentprice, _ := client.Cmd("HGET", stringQ, stringQ).Float64()
-		logger.LogSystemEventCommand(server, transNum, "QUOTE", username, currentprice, stock, nil)
+		logger.LogSystemEventCommand(server, transNum, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
 	}
 }
 
