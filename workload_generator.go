@@ -128,13 +128,13 @@ func main() {
 			if u%5 == 0 {
 				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 1 {
-				go concurrencyLogic("http://transaction2:1301", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 2 {
-				go concurrencyLogic("http://transaction3:1302", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 3 {
-				go concurrencyLogic("http://transaction4:1303", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			} else if u%5 == 4 {
-				go concurrencyLogic("http://transaction5:1304", lines, userS[u])
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			}
 		}
 	}
