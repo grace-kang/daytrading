@@ -3,20 +3,48 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"net"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
-var stockPrices = map[string]float64{}
-var stocksAmount = map[string]int{}
+/* Logger: log obj from loggingService.LoggingService */
+var logger Logger
+var mutex = &sync.Mutex{}
 
-func add(transNum int, username string, amount float64, client *redis.Client) {
-	logUserCommand("transNum", transNum, "command", "ADD", "username", username, "amount", amount)
-	logAccountTransactionCommand(transNum, "add", username, amount)
+/* Server: server name for transaction server
+Address: address for audit server*/
+const (
+	server  = "trans1"
+	address = "http://audit:1400"
+)
+
+func init() {
+	logger = Logger{Address: address}
+}
+
+func FloatToString(input_num float64) string {
+	// to convert a float number to a string
+	return strconv.FormatFloat(input_num, 'f', 6, 64)
+}
+
+func IntToString(input_num int) string {
+	// to convert a float number to a string
+	return strconv.Itoa(input_num)
+}
+
+func ParseUint(s string, base int, bitSize int) uint64 {
+	unit_, _ := strconv.ParseUint(s, base, bitSize)
+	return unit_
+}
+
+func add(transNum int, username string, amount string, client *redis.Client) {
+
+	logger.LogUserCommand(server, transNum, "ADD", username, amount, nil, nil)
+	logger.LogAccountTransactionCommand(server, transNum, "add", username, amount)
 }
 
 func quote(transNum int, username string, stock string, client *redis.Client) {
@@ -44,163 +72,124 @@ func quote(transNum int, username string, stock string, client *redis.Client) {
 		if err != nil {
 			return
 		}
-		quoteTimestamp := strings.TrimSpace(split[3])
+		//quoteTimestamp := strings.TrimSpace(split[3])
 		crytpoKey := split[4]
 
-		logQuoteServerCommand(transNum, price, stock, username, quoteTimestamp, crytpoKey)
+		quoteServerTime := ParseUint(split[3], 10, 64)
+		logger.LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
 
 		stringQ := stock + ":QUOTE"
 		client.Cmd("HSET", stringQ, stringQ, price)
 	} else {
-		stringQ := stock + ":QUOTE"
-		currentprice, _ := client.Cmd("HGET", stringQ, stringQ).Float64()
-		logSystemEventCommand(transNum, "QUOTE", username, stock, currentprice)
+		//stringQ := stock + ":QUOTE"
+		//currentprice, _ := client.Cmd("HGET", stringQ, stringQ).Float64()
+		//logSystemEventCommand(transNum, "QUOTE", username, stock, currentprice)
 	}
 }
 
 func buy(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	logUserCommand("transNum", transNum, "command", "BUY", "username", username, "amount", amount, "symbol", symbol)
+	logger.LogUserCommand(server, transNum, "BUY", username, amount, symbol, nil)
 
 	exists := exists(client, username)
 	if exists == false {
-		message := "Account" + username + " does not exist"
-		logErrorEventCommand("transNum", transNum, "command", "BUY", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+		//message := "Account" + username + " does not exist"
+		//logErrorEventCommand("transNum", transNum, "command", "BUY", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
 	}
 
 	currentBalance, _ := client.Cmd("HGET", username, "Balance").Float64()
 	hasBalance := currentBalance >= amount
 	if !hasBalance {
-		message := "Balance of " + username + " is not enough"
-		logErrorEventCommand("transNum", transNum, "command", "BUY", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
+		//message := "Balance of " + username + " is not enough"
+		//logErrorEventCommand("transNum", transNum, "command", "BUY", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
 	}
-	logSystemEventCommand(transNum, "BUY", username, symbol, amount)
+	//logSystemEventCommand(transNum, "BUY", username, symbol, amount)
 }
 
 func sell(transNum int, username string, symbol string, amount float64, client *redis.Client) {
-	logUserCommand("transNum", transNum, "command", "SELL", "username", username, "amount", amount, "symbol", symbol)
+	logger.LogUserCommand(server, transNum, "SELL", username, amount, symbol, nil)
 	/*check if user exists or not*/
 	exists := exists(client, username)
 	if exists == false {
-		message := "Account" + username + " does not exist"
-		logErrorEventCommand("transNum", transNum, "command", "SELL", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-	}
-	/*check if cache has stock. if not, senf request to quote server*/
-	if _, ok := stockPrices[symbol]; ok {
-		logSystemEventCommand(transNum, "SELL", username, symbol, amount)
-	} else {
-		quote(transNum, username, symbol, client)
-	}
-	stockPrice := stockPrices[symbol]
-	amountSell := int(math.Ceil(amount / stockPrice))
-	fmt.Println("in buy, amount sell is ", strconv.Itoa(amountSell))
-	// TODO: check if the amount of stocks user hold is smaller than amount. if yes, call logErrorEventCommand and exit the function
-	if amountSell > stocksAmount[symbol] {
-		message := "Account" + username + " does not have enough stock amount for " + symbol
-		logErrorEventCommand("transNum", transNum, "command", "SELL", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
-	} else {
-		// logAccountTransactionCommand(transNumInt, "add", username, amount)
+		//message := "Account" + username + " does not exist"
+		//logErrorEventCommand("transNum", transNum, "command", "SELL", "username", username, "amount", amount, "symbol", symbol, "errorMessage", message)
 	}
 }
 
 func commit_buy(transNum int, username string, client *redis.Client) {
 
-	symbol := "S"
+	//symbol := "S"
 	/* HGET dollar amount from stock BUY action. */
 	x, _ := client.Cmd("HGET", username, "S:BUY").Float64()
 
-	// TODO: need to check if last buy command is made within 60 seconds. If not, log errorEvent
-
-	logUserCommand("transNum", transNum, "command", "COMMIT_BUY", "username", username, "amount", x)
-
-	/*check if cache has stock. if not, senf request to quote server*/
-	if _, ok := stockPrices[symbol]; ok {
-		logSystemEventCommand(transNum, "COMMIT_BUY", username, symbol, x)
-	} else {
-		quote(transNum, username, symbol, client)
-	}
-	stockPrice := stockPrices[symbol]
-	amountBuy := int(math.Ceil(x / stockPrice))
-	final := float64(amountBuy) * stockPrice
-
-	logAccountTransactionCommand(transNum, "remove", username, final)
+	logger.LogUserCommand(server, transNum, "COMMIT_BUY", username, fmt.Sprintf("%f", x), nil, nil)
 }
 
 func commit_sell(transNum int, username string, client *redis.Client) {
 
-	symbol := "S"
+	//symbol := "S"
 	/* HGET: get dollar amount stock SELL action */
 	be, _ := client.Cmd("HGET", username, "S:SELL").Float64()
 
-	logUserCommand("transNum", transNum, "command", "COMMIT_SELL", "username", username, "amount", be)
-
-	if _, ok := stockPrices[symbol]; ok {
-		logSystemEventCommand(transNum, "COMMIT_SELL", username, symbol, be)
-	} else {
-		quote(transNum, username, symbol, client)
-	}
-	stockPrice := stockPrices[symbol]
-	amountSell := int(math.Ceil(be / stockPrice))
-	finalCost := float64(amountSell) * stockPrice
-
-	logAccountTransactionCommand(transNum, "add", username, finalCost)
+	logger.LogUserCommand(server, transNum, "COMMIT_SELL", username, fmt.Sprintf("%f", be), nil, nil)
 }
 
 func cancel_buy(transNum int, username string, client *redis.Client) {
-	logUserCommand("transNum", transNum, "command", "CANCEL_BUY", "username", username)
+	logger.LogUserCommand(server, transNum, "CANCEL_BUY", username, nil, nil, nil)
 }
 
 func cancel_sell(transNum int, username string, client *redis.Client) {
-	logUserCommand("transNum", transNum, "command", "CANCEL_SELL", "username", username)
+	logger.LogUserCommand(server, transNum, "CANCEL_SELL", username, nil, nil, nil)
 }
 
 func set_buy_amount(transNum int, username string, symbol string, amount float64, client *redis.Client) {
 
-	logUserCommand("transNum", transNum, "command", "SET_BUY_AMOUNT", "username", username, "symbol", symbol, "amount", amount)
+	logger.LogUserCommand(server, transNum, "SET_BUY_AMOUNT", username, amount, symbol, nil)
 }
 
 func set_buy_trigger(transNum int, username string, symbol string, amount float64, client *redis.Client) {
 
-	logUserCommand("transNum", transNum, "command", "SET_BUY_TRIGGER", "username", username, "symbol", symbol, "amount", amount)
+	logger.LogUserCommand(server, transNum, "SET_BUY_TRIGGER", username, amount, symbol, nil)
 
 }
 
 func cancel_set_buy(transNum int, username string, symbol string, client *redis.Client) {
 
-	logUserCommand("transNum", transNum, "command", "CANCEL_SET_BUY", "username", username, "symbol", symbol)
+	logger.LogUserCommand(server, transNum, "CANCEL_SET_BUY", username, nil, symbol, nil)
 }
 
 func set_sell_amount(transNum int, username string, symbol string, amount float64, client *redis.Client) {
 
-	logUserCommand("transNum", transNum, "command", "SET_SELL_AMOUNT", "username", username, "symbol", symbol, "amount", amount)
-
+	logger.LogUserCommand(server, transNum, "SET_SELL_AMOUNT", username, amount, symbol, nil)
 }
 
 func set_sell_trigger(transNum int, username string, symbol string, amount float64, client *redis.Client) {
 
-	logUserCommand("transNum", transNum, "command", "SET_SELL_TRIGGER", "username", username, "symbol", symbol, "amount", amount)
+	logger.LogUserCommand(server, transNum, "SET_SELL_TRIGGER", username, amount, symbol, nil)
 }
 
 func cancel_set_sell(transNum int, username string, symbol string, client *redis.Client) {
 
-	logUserCommand("transNum", transNum, "command", "CANCEL_SET_SELL", "username", username, "symbol", symbol)
+	logger.LogUserCommand(server, transNum, "CANCEL_SET_SELL", username, nil, symbol, nil)
 }
 
 func dumplog(transNum int, params ...string) {
 	fmt.Println("-----DUMPLOG-----")
-	if len(params) == 1 {
-		filename := params[0]
-		logUserCommand("transNum", transNum, "command", "DUMPLOG", "filename", filename)
-		dumpAllLogs(transNum, filename)
-	} else if len(params) == 2 {
-		username := params[0]
-		filename := params[1]
-		logUserCommand("transNum", transNum, "command", "DUMPLOG", "username", username, "filename", filename)
-		dumpLog(transNum, username, filename)
+	if (len(params)) == 1 {
+		go logger.LogSystemEventCommand(server, transNum, "DUMPLOG", nil, nil, nil, params[0])
+		fmt.Println("in dumplog param 0 is " + params[0])
+		logger.DumpLog(params[0], nil)
 	}
+	if (len(params)) == 2 {
+		go logger.LogUserCommand(server, transNum, "DUMPLOG", params[0], nil, nil, params[1])
+		logger.DumpLog(params[1], params[0])
+	}
+
+	fmt.Println("-----DUMPLOG-----")
 }
 
 func display_summary(transNum int, username string, client *redis.Client) {
 	fmt.Println("-----DISPLAY_SUMMARY-----")
 	/* TODO: Not implemented yet, Display User's transaction history */
 	redisDISPLAY_SUMMARY(client, username)
+	logger.LogUserCommand(server, transNum, "DISPLAY_SUMMARY", username, nil, nil, nil)
 }

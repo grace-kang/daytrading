@@ -8,7 +8,11 @@ services:
     build: quote_server/
     ports:
       - 1200:1200
-
+  audit:
+    build: audit_server/
+    ports:
+      - 1400:1400
+      
   transaction:
     build: transaction_server/
     ports:
@@ -18,6 +22,7 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200

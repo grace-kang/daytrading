@@ -62,11 +62,23 @@ func main() {
 	http.HandleFunc("/set_sell_trigger", setSellTriggerHandler)
 	http.HandleFunc("/cancel_set_sell", cancelSetSellHandler)
 	http.HandleFunc("/display_summary", displaySummaryHandler)
+	http.HandleFunc("/dumpLog", dumpLogHandler)
 
 	err := http.ListenAndServe(":1300", nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
+}
+
+func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+	//transNum := r.Form.Get("transNum")
+	//user := r.Form.Get("username")
+	//filename := r.Form.Get("filename")
+
 }
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
