@@ -90,7 +90,7 @@ services:
       - quote
     working_dir: /go/src/daytrading
     command: go build -o daytrading
-    command: go run daytrading workload4
+    command: go run daytrading workload5
     environment:
       TRANSACTION_URL: transaction:1300
       TRANSACTION2_URL: transaction2:1301
