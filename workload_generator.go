@@ -110,7 +110,7 @@ func main() {
 	// go linearLogic2(lines)
 	// go linearLogic3(lines)
 	p := 0
-	userS := make([]string, 100)
+	userS := make([]string, numUsers+100)
 	for key, value := range User {
 		if value == 1 {
 			userS[p] = key
