@@ -1,30 +1,27 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"net"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
 
 /* Logger: log obj from loggingService.LoggingService */
-var logger Logger
+// var logger Logger
 var mutex = &sync.Mutex{}
 
 /* Server: server name for transaction server
 Address: address for audit server*/
 const (
-	server  = "trans1"
-	address = "http://audit:1400"
+// server  = "trans1"
+// address = "http://audit:1400"
 )
 
-func init() {
-	logger = Logger{Address: address}
-}
+// func init() {
+// 	logger = Logger{Address: address}
+// }
 
 func FloatToString(input_num float64) string {
 	// to convert a float number to a string
@@ -45,46 +42,6 @@ func add(transNum int, username string, amount string, client *redis.Client) {
 
 	logger.LogUserCommand(server, transNum, "ADD", username, amount, nil, nil)
 	logger.LogAccountTransactionCommand(server, transNum, "add", username, amount)
-}
-
-func quote(transNum int, username string, stock string, client *redis.Client) {
-	stringQ := stock + ":QUOTE"
-	ex := exists(client, stringQ)
-	if ex == false {
-		conn, _ := net.Dial("tcp", "quote:1200")
-		conn.Write([]byte((stock + "," + username + "\n")))
-		respBuf := make([]byte, 2048)
-		_, err := conn.Read(respBuf)
-		conn.Close()
-
-		if err != nil {
-			fmt.Printf("Error reading body: %s", err.Error())
-		}
-		respBuf = bytes.Trim(respBuf, "\x00")
-		message := bytes.NewBuffer(respBuf).String()
-		message = strings.TrimSpace(message)
-
-		fmt.Println(string(message))
-
-		split := strings.Split(message, ",")
-		priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
-		price, _ := strconv.ParseFloat(priceStr, 64)
-		if err != nil {
-			return
-		}
-		//quoteTimestamp := strings.TrimSpace(split[3])
-		crytpoKey := split[4]
-
-		quoteServerTime := ParseUint(split[3], 10, 64)
-		logger.LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
-
-		stringQ := stock + ":QUOTE"
-		client.Cmd("HSET", stringQ, stringQ, price)
-	} else {
-		//stringQ := stock + ":QUOTE"
-		//currentprice, _ := client.Cmd("HGET", stringQ, stringQ).Float64()
-		//logSystemEventCommand(transNum, "QUOTE", username, stock, currentprice)
-	}
 }
 
 func buy(transNum int, username string, symbol string, amount float64, client *redis.Client) {

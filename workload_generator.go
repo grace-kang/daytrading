@@ -323,7 +323,9 @@ func dumpLogFile(address string, transNum string, username interface{}, filename
 	v.Set("transNum", transNum)
 	v.Set("filename", filename)
 	if username != nil {
-		v.Set("filename", username.(string))
+		v.Set("username", username.(string))
+	} else {
+		v.Set("username", "")
 	}
 	resp, err := http.PostForm(addr, v)
 	if err != nil {
