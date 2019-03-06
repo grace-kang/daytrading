@@ -21,7 +21,6 @@ const (
 
 var display bool
 var db *pool.Pool
-var transNum = 10000
 var server = "server1"
 
 func init() {
@@ -75,7 +74,7 @@ func main() {
 	}
 }
 
-func quote(transNumber int, username string, stock string) {
+func quote(transNum int, username string, stock string) {
 	stringQ := stock + ":QUOTE"
 	client, _ := db.Get()
 	defer db.Put(client)
@@ -106,14 +105,14 @@ func quote(transNumber int, username string, stock string) {
 		crytpoKey := split[4]
 
 		quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
-		LogQuoteServerCommand(server, transNumber, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
+		LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
 
 		stringQ := stock + ":QUOTE"
 		client.Cmd("HSET", stringQ, stringQ, price)
 	} else {
 		stringQ := stock + ":QUOTE"
 		currentprice, _ := client.Cmd("HGET", stringQ, stringQ).Float64()
-		LogSystemEventCommand(server, transNumber, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
+		LogSystemEventCommand(server, transNum, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
 	}
 }
 
@@ -158,6 +157,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
 	if display == false {
@@ -181,6 +181,7 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -205,6 +206,7 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -250,6 +252,7 @@ func commitBuyHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
 	LogUserCommand(server, transNum, "COMMIT_BUY", user, nil, nil, nil)
 	checkUserExists(transNum, user, "COMMIT_BUY")
@@ -272,6 +275,7 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
 	LogUserCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil)
 
@@ -293,6 +297,7 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
 	LogUserCommand(server, transNum, "CANCEL_BUY", user, nil, nil, nil)
 
@@ -314,6 +319,7 @@ func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
 	LogUserCommand(server, transNum, "CANCEL_SELL", user, nil, nil, nil)
 
@@ -335,6 +341,7 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -358,6 +365,7 @@ func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -381,6 +389,7 @@ func cancelSetBuyHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 
 	LogUserCommand(server, transNum, "CANCEL_SET_BUY", user, nil, symbol, nil)
@@ -403,6 +412,7 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -426,6 +436,7 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
@@ -449,6 +460,7 @@ func cancelSetSellHandler(w http.ResponseWriter, r *http.Request) {
 	client, _ := db.Get()
 	defer db.Put(client)
 	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 
 	LogUserCommand(server, transNum, "CANCEL_SET_SELL", user, nil, symbol, nil)
@@ -468,13 +480,13 @@ func displaySummaryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := "user1"
+	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	LogUserCommand(server, transNum, "DISPLAY_SUMMARY", user, nil, nil, nil)
 
 	if display == true {
 		client, _ := db.Get()
 		defer db.Put(client)
-		user := r.Form.Get("user")
 		redisDISPLAY_SUMMARY(client, user)
 	}
 

@@ -20,9 +20,6 @@ var channel = make(chan LogType, 20000)
 var mutex = &sync.Mutex{} // used to lock localUserLogs map
 
 const (
-	// A generic XML header suitable for use with the output of Marshal.
-	// This is not automatically added to any output of this package,
-	// it is provided as a convenience.
 	Header = `<?xml version="1.0"?>` + "\n"
 )
 
@@ -45,10 +42,6 @@ const (
 	DISPLAY_SUMMARY  = Command("DISPLAY_SUMMARY")
 )
 
-// type RESPONSE struct {
-// 	compactData
-// }
-
 func isError(err error) bool {
 	if err != nil {
 		fmt.Println(err.Error())
@@ -58,7 +51,6 @@ func isError(err error) bool {
 }
 
 func initAuditServer() {
-	//client = dialRedis()
 	localLog = Log{LogData: make([]LogType, 500000)}
 }
 
@@ -96,127 +88,141 @@ func worker() {
 }
 
 func UserCommandHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("in usercommandHandler")
-	query := r.URL.Query()
-	transNum, _ := strconv.Atoi(query.Get("transactionNum"))
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+
+	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
+
 	data := &UserCommandType{
 		Timestamp:         getUnixTimestamp(),
-		Server:            query.Get("server"),
+		Server:            r.Form.Get("server"),
 		TransactionNumber: transNum,
-		Command:           Command(query.Get("command")),
-		Username:          query.Get("username"),
-		StockSymbol:       stockSymbolType(query.Get("stockSymbol")),
-		Filename:          query.Get("filename"),
-		Funds:             query.Get("funds"),
+		Command:           Command(r.Form.Get("command")),
+		Username:          r.Form.Get("username"),
+		StockSymbol:       stockSymbolType(r.Form.Get("stockSymbol")),
+		Filename:          r.Form.Get("filename"),
+		Funds:             r.Form.Get("funds"),
 	}
 	channel <- LogType{UserCommand: data}
-
-	w.Write([]byte("OK"))
 }
 
 func quoteServerHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	transNum, _ := strconv.Atoi(query.Get("transactionNum"))
-	QuoteServerTime, _ := strconv.ParseInt(query.Get("quoteServerTime"), 10, 64)
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+
+	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
+	QuoteServerTime, _ := strconv.ParseInt(r.Form.Get("quoteServerTime"), 10, 64)
+
 	data := &QuoteServerType{
 		Timestamp:         getUnixTimestamp(),
-		Server:            query.Get("server"),
+		Server:            r.Form.Get("server"),
 		TransactionNumber: transNum,
-		Username:          query.Get("username"),
-		StockSymbol:       stockSymbolType(query.Get("stockSymbol")),
-		Price:             query.Get("price"),
+		Username:          r.Form.Get("username"),
+		StockSymbol:       stockSymbolType(r.Form.Get("stockSymbol")),
+		Price:             r.Form.Get("price"),
 		QuoteServerTime:   QuoteServerTime,
-		CryptoKey:         query.Get("cryptokey"),
+		CryptoKey:         r.Form.Get("cryptokey"),
 	}
 	channel <- LogType{QuoteServer: data}
-
-	w.Write([]byte("OK"))
-
 }
 
 func accountTransactionHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	transNum, _ := strconv.Atoi(query.Get("transactionNum"))
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+
+	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
+
 	data := &AccountTransactionType{
 		Timestamp:         getUnixTimestamp(),
-		Server:            query.Get("server"),
+		Server:            r.Form.Get("server"),
 		TransactionNumber: transNum,
-		Action:            query.Get("action"),
-		Username:          query.Get("username"),
-		Funds:             query.Get("funds"),
+		Action:            r.Form.Get("action"),
+		Username:          r.Form.Get("username"),
+		Funds:             r.Form.Get("funds"),
 	}
 	channel <- LogType{AccountTransaction: data}
-
-	w.Write([]byte("OK"))
-
 }
 
 func systemEventHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	transNum, _ := strconv.Atoi(query.Get("transactionNum"))
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+
+	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
+
 	data := &SystemEventType{
 		Timestamp:         getUnixTimestamp(),
-		Server:            query.Get("server"),
+		Server:            r.Form.Get("server"),
 		TransactionNumber: transNum,
-		Command:           Command(query.Get("command")),
-		Username:          query.Get("username"),
-		StockSymbol:       stockSymbolType(query.Get("stockSymbol")),
-		Filename:          query.Get("filename"),
-		Funds:             query.Get("funds"),
+		Command:           Command(r.Form.Get("command")),
+		Username:          r.Form.Get("username"),
+		StockSymbol:       stockSymbolType(r.Form.Get("stockSymbol")),
+		Filename:          r.Form.Get("filename"),
+		Funds:             r.Form.Get("funds"),
 	}
 	channel <- LogType{SystemEvent: data}
-
-	w.Write([]byte("OK"))
-
 }
 
 func errorEventHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	transNum, _ := strconv.Atoi(query.Get("transactionNum"))
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+
+	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
+
 	data := &ErrorEventType{
 		Timestamp:         getUnixTimestamp(),
-		Server:            query.Get("server"),
+		Server:            r.Form.Get("server"),
 		TransactionNumber: transNum,
-		Command:           Command(query.Get("command")),
-		Username:          query.Get("username"),
-		StockSymbol:       stockSymbolType(query.Get("stockSymbol")),
-		Filename:          query.Get("filename"),
-		Funds:             query.Get("funds"),
-		ErrorMessage:      query.Get("errorMessage"),
+		Command:           Command(r.Form.Get("command")),
+		Username:          r.Form.Get("username"),
+		StockSymbol:       stockSymbolType(r.Form.Get("stockSymbol")),
+		Filename:          r.Form.Get("filename"),
+		Funds:             r.Form.Get("funds"),
+		ErrorMessage:      r.Form.Get("errorMessage"),
 	}
 	channel <- LogType{ErrorEvent: data}
-
-	w.Write([]byte("OK"))
-
 }
 
 func debugEventHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query()
-	transNum, _ := strconv.Atoi(query.Get("transactionNum"))
-	data := &DebugType{
-		Timestamp:         getUnixTimestamp(),
-		Server:            query.Get("server"),
-		TransactionNumber: transNum,
-		Command:           Command(query.Get("command")),
-		Username:          query.Get("username"),
-		StockSymbol:       stockSymbolType(query.Get("stockSymbol")),
-		Filename:          query.Get("filename"),
-		Funds:             query.Get("funds"),
-		DebugMessage:      query.Get("debugMessage"),
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
 	}
 
+	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
+	data := &DebugType{
+		Timestamp:         getUnixTimestamp(),
+		Server:            r.Form.Get("server"),
+		TransactionNumber: transNum,
+		Command:           Command(r.Form.Get("command")),
+		Username:          r.Form.Get("username"),
+		StockSymbol:       stockSymbolType(r.Form.Get("stockSymbol")),
+		Filename:          r.Form.Get("filename"),
+		Funds:             r.Form.Get("funds"),
+		DebugMessage:      r.Form.Get("debugMessage"),
+	}
 	channel <- LogType{DebugEvent: data}
-
-	w.Write([]byte("OK"))
-
 }
 
 func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("dumpLogHandler")
-	query := r.URL.Query()
-	// username := query.Get("username")
-	filename := query.Get("filename")
-	filePath := os.Getenv("log_dir") + "/" + filename + ".xml"
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+	// username := r.Form.Get("username")
+	filename := r.Form.Get("filename")
+	// filePath := os.Getenv("log_dir") + filename + ".xml"
+	filePath := filename + ".xml"
 	fmt.Println("filepath is " + filePath)
 	mutex.Lock()
 	out, err := xml.MarshalIndent(localLog, "", "   ")
@@ -248,9 +254,7 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 func main() {
 	mux := http.NewServeMux()
 	initAuditServer()
-	// mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-	// 	fmt.Println(w, "Hello, %q", html.EscapeString(r.URL.Path))
-	// })
+
 	mux.HandleFunc("/userCommand", UserCommandHandler)
 	mux.HandleFunc("/quoteServerCommand", quoteServerHandler)
 	mux.HandleFunc("/accountTransactionCommand", accountTransactionHandler)
