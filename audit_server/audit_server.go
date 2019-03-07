@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/xml"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
@@ -219,36 +218,85 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-	// username := r.Form.Get("username")
-	filename := r.Form.Get("filename")
-	// filePath := os.Getenv("log_dir") + filename + ".xml"
-	filePath := filename + ".xml"
-	fmt.Println("filepath is " + filePath)
-	mutex.Lock()
-	out, err := xml.MarshalIndent(localLog, "", "   ")
+	// // username := r.Form.Get("username")
+	// filename := r.Form.Get("filename")
+	// // filePath := os.Getenv("log_dir") + filename + ".xml"
+	// logFilePath := filename + ".xml"
+	// fmt.Println("filepath is " + logFilePath)
 
+	// d1 := []byte("hello\ngo\n")
+	// e := ioutil.WriteFile(logFilePath, d1, 0644)
+	// if e != nil {
+	// 	panic("in writing to file error: " + e.Error())
+	// }
+
+	// data, err := ioutil.ReadFile(logFilePath)
+	// if err != nil {
+	// 	panic("in reading file error: " + err.Error())
+	// }
+	// fmt.Print(string("reading data from file: " + string(data)))
+
+	// dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	// if err != nil {
+	// 	log.Fatal("error is " + err.Error())
+	// }
+	// fmt.Println("dir of current folder is " + dir)
+
+	// mutex.Lock()
+	// out, err := xml.MarshalIndent(localLog, "", "   ")
+
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// var logS = Header
+	// logS += string(out)
+
+	// fmt.Println("log is " + string(logS))
+	// // deleteFile(filePath)
+
+	// f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// if err != nil {
+	// 	log.Fatal("cannot cretae the file, error is " + err.Error())
+	// }
+
+	// _, err = f.Write([]byte(logS))
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// f.Close()
+	// fmt.Println("after close file in dumploghandler")
+	// mutex.Unlock()
+
+	// d1 := []byte("hello\ngo\n")
+	// e := ioutil.WriteFile("test.xml", d1, 0644)
+	// if e != nil {
+	// 	panic("in writing test.xml error: " + e.Error())
+	// }
+
+	data, err := ioutil.ReadFile("test.xml")
 	if err != nil {
-		panic(err)
+		panic("in reading test.xml error: " + err.Error())
 	}
+	fmt.Print(string("reading data from test.xml: " + string(data)))
 
-	var logS = Header
-	logS += string(out)
+	// e = ioutil.WriteFile("test.txt", d1, 0644)
+	// if e != nil {
+	// 	panic("in writing test.txt error: " + e.Error())
+	// }
 
-	fmt.Println("log is " + string(logS))
-	deleteFile(filePath)
+	// dat, err := ioutil.ReadFile("test.txt")
+	// if err != nil {
+	// 	panic("in reading test.txt error: " + err.Error())
+	// }
+	// fmt.Print(string("reading data from test.txt: " + string(dat)))
 
-	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal("cannot cretae the file, error is " + err.Error())
-	}
+	// data, err := ioutil.ReadFile("test.xml")
+	// if err != nil {
+	// 	panic("in reading test.xml error: " + err.Error())
+	// }
+	// fmt.Print(string("reading data from test.xml: " + string(data)))
 
-	_, err = f.Write([]byte(logS))
-	if err != nil {
-		panic(err)
-	}
-	f.Close()
-	fmt.Println("after close file in dumploghandler")
-	mutex.Unlock()
 }
 
 func main() {
