@@ -13,7 +13,7 @@ services:
     ports:
       - 1400:1400
     volumes:
-      - .:/go/src/daytrading
+      - .:/go/src/audit_server
 
   transaction:
     build: transaction_server/
