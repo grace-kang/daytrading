@@ -137,25 +137,25 @@ func main() {
 			fmt.Println("Key:", key, "Value:", value)
 		}
 	}
-	// for u := 0; u < (numUsers + 1); u++ {
+	for u := 0; u < (numUsers + 1); u++ {
 
-	// 	if userS[u] != "./testLOG" && userS[u] != "" {
-	// 		//fmt.Println(u, ":", userS[u])
-	// 		time.Sleep(50 * time.Millisecond)
-	// 		if u%5 == 0 {
-	// 			go concurrencyLogic("http://transaction:1300", lines, userS[u])
-	// 		} else if u%5 == 1 {
-	// 			go concurrencyLogic("http://transaction:1300", lines, userS[u])
-	// 		} else if u%5 == 2 {
-	// 			go concurrencyLogic("http://transaction:1300", lines, userS[u])
-	// 		} else if u%5 == 3 {
-	// 			go concurrencyLogic("http://transaction:1300", lines, userS[u])
-	// 		} else if u%5 == 4 {
-	// 			go concurrencyLogic("http://transaction:1300", lines, userS[u])
-	// 		}
-	// 	}
-	// }
-	// wg.Wait()
+		if userS[u] != "./testLOG" && userS[u] != "" {
+			//fmt.Println(u, ":", userS[u])
+			time.Sleep(50 * time.Millisecond)
+			if u%5 == 0 {
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+			} else if u%5 == 1 {
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+			} else if u%5 == 2 {
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+			} else if u%5 == 3 {
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+			} else if u%5 == 4 {
+				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+			}
+		}
+	}
+	wg.Wait()
 
 	dumpLogFile("http://transaction:1300", "100000", nil, "./testLOG")
 	//print stats for the workload file
