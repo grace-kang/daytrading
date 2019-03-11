@@ -268,11 +268,11 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println("after close file in dumploghandler")
 	// mutex.Unlock()
 
-	// d1 := []byte("hello\ngo\n")
-	// e := ioutil.WriteFile("test.xml", d1, 0644)
-	// if e != nil {
-	// 	panic("in writing test.xml error: " + e.Error())
-	// }
+	d1 := []byte("hello\ngo\n")
+	 e := ioutil.WriteFile("test.xml", d1, 0644)
+	 if e != nil {
+	 	panic("in writing test.xml error: " + e.Error())
+	}
 
 	data, err := ioutil.ReadFile("test.xml")
 	if err != nil {
