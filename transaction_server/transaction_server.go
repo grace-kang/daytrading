@@ -140,10 +140,10 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 	filename := r.Form.Get("filename")
 	username := r.Form.Get("username")
 	if username != "" {
-		go LogUserCommand(server, transNum, "DUMPLOG", username, nil, nil, filename)
-		go DumpLog(filename, username)
+		LogUserCommand(server, transNum, "DUMPLOG", username, nil, nil, filename)
+		DumpLog(filename, username)
 	} else {
-		go LogSystemEventCommand(server, transNum, "DUMPLOG", nil, nil, nil, filename)
+		LogSystemEventCommand(server, transNum, "DUMPLOG", nil, nil, nil, filename)
 		DumpLog(filename, nil)
 	}
 }
