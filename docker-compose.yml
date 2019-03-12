@@ -8,6 +8,20 @@ services:
     build: quote_server/
     ports:
       - 1200:1200
+  
+  audit:
+    build: audit_server/
+    ports:
+      - 1400:1400
+    volumes:
+      - .:/go/src/audit_server
+
+  audit2:
+    build: audit_server2/
+    ports:
+      - 1401:1401
+    volumes:
+      - .:/go/src/audit_server2
 
   transaction:
     build: transaction_server/
@@ -18,9 +32,12 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction2:
     build: transaction_server_1301/
@@ -31,9 +48,12 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction3:
     build: transaction_server_1302/
@@ -44,9 +64,12 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction4:
     build: transaction_server_1303/
@@ -57,9 +80,12 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction5:
     build: transaction_server_1304/
@@ -70,9 +96,12 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   workload:
     image: golang:alpine
@@ -88,6 +117,7 @@ services:
       - transaction5
       - redis
       - quote
+      - audit
     working_dir: /go/src/daytrading
     command: go build -o daytrading
     command: go run daytrading workload5
@@ -97,13 +127,3 @@ services:
       TRANSACTION3_URL: transaction3:1302
       TRANSACTION4_URL: transaction4:1303
       TRANSACTION5_URL: transaction5:1304
-
-  reverse-proxy:
-    image: traefik # The official Traefik docker image
-    command: --api --docker # Enables the web UI and tells Traefik to listen to docker
-    ports:
-      - "80:80"     # The HTTP port
-      - "8080:8080" # The Web UI (enabled by --api)
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
-

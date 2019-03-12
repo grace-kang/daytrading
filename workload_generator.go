@@ -74,6 +74,23 @@ func getNumUsers(file string) int {
 	return count
 }
 
+func dumpLogFile(address string, transNum string, username interface{}, filename string) {
+	addr := address + "/dumpLog"
+	v := url.Values{}
+	v.Set("transNum", transNum)
+	v.Set("filename", filename)
+	if username != nil {
+		v.Set("username", username.(string))
+	} else {
+		v.Set("username", "")
+	}
+	resp, err := http.PostForm(addr, v)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Println("Error please specify the workload file (eg. workload2)")
@@ -110,7 +127,7 @@ func main() {
 	// go linearLogic2(lines)
 	// go linearLogic3(lines)
 	p := 0
-	userS := make([]string, numUsers+100)
+	userS := make([]string, numUsers+10)
 	for key, value := range User {
 		if value == 1 {
 			userS[p] = key
@@ -124,22 +141,24 @@ func main() {
 
 		if userS[u] != "./testLOG" && userS[u] != "" {
 			//fmt.Println(u, ":", userS[u])
-			time.Sleep(50 * time.Millisecond)
+			time.Sleep(130 * time.Millisecond)
 			if u%5 == 0 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction2:1301", lines, userS[u])
 			} else if u%5 == 1 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction3:1302", lines, userS[u])
 			} else if u%5 == 2 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction4:1303", lines, userS[u])
 			} else if u%5 == 3 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction5:1304", lines, userS[u])
 			} else if u%5 == 4 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+				go concurrencyLogic("http://transaction4:1303", lines, userS[u])
 			}
 		}
 	}
 	wg.Wait()
-
+	//wg.Add(1)
+	dumpLogFile("http://transaction2:1301", "120000", nil, "./testLOG")
+	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
 	fmt.Println("-----STATISTICS-----")
@@ -149,6 +168,7 @@ func main() {
 	fmt.Println("Total time: ", difference)
 	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
 	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)
+
 }
 
 // func linearLogic(lines []string) {
@@ -333,6 +353,7 @@ func concurrencyLogic(address string, lines []string, username string) {
 
 		if username == data[2] {
 			transNum := i + 1
+			transNum_str := strconv.Itoa(transNum)
 			fmt.Println(transNum)
 			//time.Sleep(5 * time.Millisecond)
 			switch command {
@@ -341,8 +362,9 @@ func concurrencyLogic(address string, lines []string, username string) {
 				amount := data[3]
 				addr := address + "/add"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"amount": {amount}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"amount":   {amount}})
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -353,9 +375,10 @@ func concurrencyLogic(address string, lines []string, username string) {
 				amount := data[4]
 				addr := address + "/buy"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol},
-					"amount": {amount}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -367,9 +390,10 @@ func concurrencyLogic(address string, lines []string, username string) {
 				amount := data[4]
 				addr := address + "/sell"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol},
-					"amount": {amount}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -381,9 +405,9 @@ func concurrencyLogic(address string, lines []string, username string) {
 				addr := address + "/quote"
 				transNum_str := strconv.Itoa(transNum)
 				resp, err := http.PostForm(addr, url.Values{
+					"transNum": {transNum_str},
 					"user":     {username},
-					"symbol":   {symbol},
-					"transNum": {transNum_str}})
+					"symbol":   {symbol}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -393,7 +417,8 @@ func concurrencyLogic(address string, lines []string, username string) {
 			case "COMMIT_BUY":
 				addr := address + "/commit_buy"
 				resp, err := http.PostForm(addr, url.Values{
-					"user": {username}})
+					"transNum": {transNum_str},
+					"user":     {username}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -403,7 +428,8 @@ func concurrencyLogic(address string, lines []string, username string) {
 			case "COMMIT_SELL":
 				addr := address + "/commit_sell"
 				resp, err := http.PostForm(addr, url.Values{
-					"user": {username}})
+					"transNum": {transNum_str},
+					"user":     {username}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -413,7 +439,8 @@ func concurrencyLogic(address string, lines []string, username string) {
 			case "CANCEL_BUY":
 				addr := address + "/cancel_buy"
 				resp, err := http.PostForm(addr, url.Values{
-					"user": {username}})
+					"transNum": {transNum_str},
+					"user":     {username}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -423,7 +450,8 @@ func concurrencyLogic(address string, lines []string, username string) {
 			case "CANCEL_SELL":
 				addr := address + "/cancel_sell"
 				resp, err := http.PostForm(addr, url.Values{
-					"user": {username}})
+					"transNum": {transNum_str},
+					"user":     {username}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -435,9 +463,10 @@ func concurrencyLogic(address string, lines []string, username string) {
 				amount := data[4]
 				addr := address + "/set_buy_amount"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol},
-					"amount": {amount}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -449,9 +478,10 @@ func concurrencyLogic(address string, lines []string, username string) {
 				amount := data[4]
 				addr := address + "/set_buy_trigger"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol},
-					"amount": {amount}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -462,8 +492,9 @@ func concurrencyLogic(address string, lines []string, username string) {
 				symbol := data[3]
 				addr := address + "/cancel_set_buy"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -473,7 +504,8 @@ func concurrencyLogic(address string, lines []string, username string) {
 			case "DISPLAY_SUMMARY":
 				addr := address + "/display_summary"
 				resp, err := http.PostForm(addr, url.Values{
-					"user": {username}})
+					"transNum": {transNum_str},
+					"user":     {username}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -485,9 +517,10 @@ func concurrencyLogic(address string, lines []string, username string) {
 				amount := data[4]
 				addr := address + "/set_sell_amount"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol},
-					"amount": {amount}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -499,9 +532,10 @@ func concurrencyLogic(address string, lines []string, username string) {
 				amount := data[4]
 				addr := address + "/set_sell_trigger"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol},
-					"amount": {amount}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
@@ -512,8 +546,9 @@ func concurrencyLogic(address string, lines []string, username string) {
 				symbol := data[3]
 				addr := address + "/cancel_set_sell"
 				resp, err := http.PostForm(addr, url.Values{
-					"user":   {username},
-					"symbol": {symbol}})
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol}})
 				if err != nil {
 					fmt.Println(err)
 					//os.Exit(1)
