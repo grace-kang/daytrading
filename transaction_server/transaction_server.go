@@ -93,8 +93,6 @@ func quote(transNum int, username string, stock string) {
 		message := bytes.NewBuffer(respBuf).String()
 		message = strings.TrimSpace(message)
 
-		fmt.Println(string(message))
-
 		split := strings.Split(message, ",")
 		priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
 		price, _ := strconv.ParseFloat(priceStr, 64)
@@ -160,6 +158,17 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 	if display == false {
 		redisADD(client, user, amount)
 	} else {
@@ -184,6 +193,18 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 
 	LogUserCommand(server, transNum, "BUY", user, r.Form.Get("amount"), symbol, nil)
 	checkUserExists(transNum, user, "BUY")
@@ -210,6 +231,18 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
+
 	LogUserCommand(server, transNum, "SELL", user, r.Form.Get("amount"), symbol, nil)
 	/*check if user exists or not*/
 	checkUserExists(transNum, user, "SELL")
@@ -235,6 +268,18 @@ func quoteHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
+
 	quote(transNum, user, symbol)
 	if display == true {
 		displayQUOTE(client, user, symbol)
@@ -253,6 +298,18 @@ func commitBuyHandler(w http.ResponseWriter, r *http.Request) {
 	defer db.Put(client)
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
+
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 
 	LogUserCommand(server, transNum, "COMMIT_BUY", user, nil, nil, nil)
 	checkUserExists(transNum, user, "COMMIT_BUY")
@@ -277,6 +334,18 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
+
 	LogUserCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil)
 
 	if display == false {
@@ -299,6 +368,18 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
+
 	LogUserCommand(server, transNum, "CANCEL_BUY", user, nil, nil, nil)
 
 	if display == false {
@@ -320,6 +401,18 @@ func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
 	defer db.Put(client)
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
+
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 
 	LogUserCommand(server, transNum, "CANCEL_SELL", user, nil, nil, nil)
 
@@ -345,6 +438,18 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
+
 	LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
@@ -369,6 +474,18 @@ func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
+
 	LogUserCommand(server, transNum, "SET_BUY_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
@@ -391,6 +508,18 @@ func cancelSetBuyHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
+
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(r.Form.Get(transNumStr + "\n")); err != nil {
+		panic(err)
+	}
+
 
 	LogUserCommand(server, transNum, "CANCEL_SET_BUY", user, nil, symbol, nil)
 
@@ -416,6 +545,17 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+		// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 	LogUserCommand(server, transNum, "SET_SELL_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
@@ -440,6 +580,17 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 	LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 
 	if display == false {
@@ -463,6 +614,17 @@ func cancelSetSellHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 	LogUserCommand(server, transNum, "CANCEL_SET_SELL", user, nil, symbol, nil)
 
 	if display == false {
@@ -483,6 +645,18 @@ func displaySummaryHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	LogUserCommand(server, transNum, "DISPLAY_SUMMARY", user, nil, nil, nil)
+
+	// print transNum into transNums.txt
+	transNumStr := strconv.Itoa(transNum)
+	f, err := os.OpenFile("transNum.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	if _, err = f.WriteString(transNumStr + "\n"); err != nil {
+		panic(err)
+	}
+
 
 	if display == true {
 		client, _ := db.Get()

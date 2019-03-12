@@ -17,6 +17,8 @@ services:
 
   transaction:
     build: transaction_server/
+    volumes:
+      - .:/go/src/transaction_server
     ports:
       - 1300:1300
     links:
