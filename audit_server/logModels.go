@@ -63,9 +63,9 @@ type SystemEventType struct {
 	Server            string          `xml:"server"`
 	TransactionNumber int             `xml:"transactionNum"`
 	Command           Command         `xml:"command"`
-	Username          string          `xml:"username"`
-	StockSymbol       stockSymbolType `xml:"stockSymbol"`
-	Funds             string          `xml:"funds"`
+	Username          string          `xml:"username,omitempty"`
+	StockSymbol       stockSymbolType `xml:"stockSymbol,omitempty"`
+	Funds             string          `xml:"funds,omitempty"`
 	Filename          string          `xml:"filename,omitempty"`
 }
 
