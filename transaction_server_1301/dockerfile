@@ -1,11 +1,11 @@
 FROM golang:alpine
 RUN apk add git
 
-COPY . /go/src/transaction_server_1301/
+COPY . /go/src/transaction_server/
 RUN go get -u github.com/mediocregopher/radix.v2/redis
 RUN go get -u github.com/mediocregopher/radix.v2/pool
-RUN go get /go/src/transaction_server_1301
-RUN go install /go/src/transaction_server_1301
-RUN echo "Installed transaction 1301"
+RUN go get /go/src/transaction_server
+RUN go install /go/src/transaction_server
+RUN echo "Installed transaction"
 
-ENTRYPOINT /go/bin/transaction_server_1301
+ENTRYPOINT /go/bin/transaction_server
