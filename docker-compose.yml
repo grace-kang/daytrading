@@ -8,6 +8,12 @@ services:
     build: quote_server/
     ports:
       - 1200:1200
+  audit:
+    build: audit_server/
+    ports:
+      - 1400:1400
+    volumes:
+      - .:/go/src/audit_server
 
   transaction:
     build: transaction_server/
@@ -18,9 +24,11 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction2:
     build: transaction_server_1301/
@@ -31,9 +39,11 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction3:
     build: transaction_server_1302/
@@ -44,9 +54,11 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction4:
     build: transaction_server_1303/
@@ -57,9 +69,11 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   transaction5:
     build: transaction_server_1304/
@@ -70,9 +84,11 @@ services:
     depends_on:
       - redis
       - quote
+      - audit
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
 
   workload:
     image: golang:alpine
@@ -88,6 +104,7 @@ services:
       - transaction5
       - redis
       - quote
+      - audit
     working_dir: /go/src/daytrading
     command: go build -o daytrading
     command: go run daytrading workload5
@@ -106,4 +123,3 @@ services:
       - "8080:8080" # The Web UI (enabled by --api)
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
-
