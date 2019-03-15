@@ -233,7 +233,7 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 	var logS = Header
 	logS += string(out)
 
-	fmt.Println("log is " + string(logS))
+	// fmt.Println("log is " + string(logS))
 	deleteFile(filePath)
 
 	f, err := os.OpenFile(filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
