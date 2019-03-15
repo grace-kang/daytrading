@@ -60,3 +60,23 @@ func TestStockOwned(t *testing.T) {
 		t.Errorf("stockOwned was incorrect, got %d, want %d.", result, amount)
 	}
 }
+
+func TestsExists(t *testing.T) {
+	client := dialRedis()
+	flushRedis(client)
+
+	username := "user"
+
+	result := exists(client, username)
+	if result != false {
+		t.Errorf("exists was incorrect, got %t, want %t.", result, false)
+	}
+
+	client.Cmd("HMSET", username, "Balance", 0.00)
+
+	result = exists(client, username)
+	if result != true {
+		t.Errorf("exists was incorrect, got %t, want %t.", result, true)
+	}
+}
+
