@@ -44,6 +44,8 @@ func getTransactionCount(file string) int {
 		count = 10000
 	} else if file == "workload5" {
 		count = 100000
+	} else if file == "workload6" {
+		count = 1000000
 	} else if file == "2018" {
 		count = 1200000
 	} else {
@@ -65,6 +67,8 @@ func getNumUsers(file string) int {
 		count = 45
 	} else if file == "workload5" {
 		count = 100
+	} else if file == "workload6" {
+		count = 1000
 	} else if file == "2018" {
 		count = 10000
 	} else {
@@ -127,7 +131,7 @@ func main() {
 	// go linearLogic2(lines)
 	// go linearLogic3(lines)
 	p := 0
-	userS := make([]string, numUsers+100)
+	userS := make([]string, numUsers+10)
 	for key, value := range User {
 		if value == 1 {
 			userS[p] = key
@@ -141,23 +145,31 @@ func main() {
 
 		if userS[u] != "./testLOG" && userS[u] != "" {
 			//fmt.Println(u, ":", userS[u])
-			time.Sleep(50 * time.Millisecond)
-			if u%5 == 0 {
+			time.Sleep(130 * time.Millisecond)
+			//go concurrencyLogic("http://transaction:1300", lines, userS[u])
+			threads := 7
+			if u%threads == 0 {
+				go concurrencyLogic("http://transaction2:1300", lines, userS[u])
+			} else if u%threads == 1 {
+				go concurrencyLogic("http://transaction3:1300", lines, userS[u])
+			} else if u%threads == 2 {
+				go concurrencyLogic("http://transaction4:1300", lines, userS[u])
+			} else if u%threads == 3 {
+				go concurrencyLogic("http://transaction5:1300", lines, userS[u])
+			} else if u%threads == 4 {
 				go concurrencyLogic("http://transaction:1300", lines, userS[u])
-			} else if u%5 == 1 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
-			} else if u%5 == 2 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
-			} else if u%5 == 3 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
-			} else if u%5 == 4 {
-				go concurrencyLogic("http://transaction:1300", lines, userS[u])
+			} else if u%threads == 5 {
+				go concurrencyLogic("http://transaction6:1300", lines, userS[u])
+			} else if u%threads == 6 {
+				go concurrencyLogic("http://transaction7:1300", lines, userS[u])
 			}
+
 		}
 	}
 	wg.Wait()
-
-	dumpLogFile("http://transaction:1300", "100000", nil, "./testLOG")
+	//wg.Add(1)
+	//dumpLogFile("http://transaction2:1301", "120000", nil, "./testLOG")
+	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
 	fmt.Println("-----STATISTICS-----")
@@ -167,6 +179,7 @@ func main() {
 	fmt.Println("Total time: ", difference)
 	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
 	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)
+
 }
 
 // func linearLogic(lines []string) {

@@ -27,7 +27,7 @@ func init() {
 	var err error
 	// Establish a pool of 10 connections to the Redis server listening on
 	// port 6379 of the local machine.
-	db, err = pool.New("tcp", "redis:6379", 10)
+	db, err = pool.New("tcp", "redis:6379", 20)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -78,42 +78,51 @@ func quote(transNum int, username string, stock string) {
 	stringQ := stock + ":QUOTE"
 	client, _ := db.Get()
 	defer db.Put(client)
-	ex := exists(client, stringQ)
+	ex := qExists(client, stringQ)
 	if ex == false {
-		conn, _ := net.Dial("tcp", "quote:1200")
-		conn.Write([]byte((stock + "," + username + "\n")))
-		respBuf := make([]byte, 2048)
-		_, err := conn.Read(respBuf)
-		conn.Close()
-
-		if err != nil {
-			fmt.Printf("Error reading body: %s", err.Error())
-		}
-		respBuf = bytes.Trim(respBuf, "\x00")
-		message := bytes.NewBuffer(respBuf).String()
-		message = strings.TrimSpace(message)
-
-		fmt.Println(string(message))
-
-		split := strings.Split(message, ",")
-		priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
-		price, _ := strconv.ParseFloat(priceStr, 64)
-		if err != nil {
-			return
-		}
-		quoteTimestamp := strings.TrimSpace(split[3])
-		crytpoKey := split[4]
-
-		quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
-		LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
-
-		stringQ := stock + ":QUOTE"
-		client.Cmd("HSET", stringQ, stringQ, price)
+		go goQuote(transNum, username, stock)
 	} else {
 		stringQ := stock + ":QUOTE"
-		currentprice, _ := client.Cmd("HGET", stringQ, stringQ).Float64()
+		currentprice, _ := client.Cmd("GET", stringQ).Float64()
 		LogSystemEventCommand(server, transNum, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
 	}
+}
+
+func goQuote(transNum int, username string, stock string) {
+	stringQ := stock + ":QUOTE"
+	fmt.Println("goQUOTE!!!!!")
+	client, _ := db.Get()
+	defer db.Put(client)
+
+	conn, _ := net.Dial("tcp", "quote:1200")
+	conn.Write([]byte((stock + "," + username + "\n")))
+	respBuf := make([]byte, 2048)
+	_, err := conn.Read(respBuf)
+	conn.Close()
+
+	if err != nil {
+		fmt.Printf("Error reading body: %s", err.Error())
+	}
+	respBuf = bytes.Trim(respBuf, "\x00")
+	message := bytes.NewBuffer(respBuf).String()
+	message = strings.TrimSpace(message)
+
+	fmt.Println(string(message))
+
+	split := strings.Split(message, ",")
+	priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
+	price, _ := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		return
+	}
+	quoteTimestamp := strings.TrimSpace(split[3])
+	crytpoKey := split[4]
+
+	quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
+
+	LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
+	client.Cmd("SET", stringQ, price)
+	client.Cmd("EXPIRE", stringQ, 60)
 }
 
 func checkUserExists(transNum int, username string, command string) {

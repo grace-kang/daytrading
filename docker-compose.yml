@@ -8,12 +8,20 @@ services:
     build: quote_server/
     ports:
       - 1200:1200
+  
   audit:
     build: audit_server/
     ports:
       - 1400:1400
     volumes:
       - .:/go/src/audit_server
+
+  audit2:
+    build: audit_server2/
+    ports:
+      - 1401:1401
+    volumes:
+      - .:/go/src/audit_server2
 
   transaction:
     build: transaction_server/
@@ -25,66 +33,103 @@ services:
       - redis
       - quote
       - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
   transaction2:
-    build: transaction_server_1301/
+    build: transaction_server/
     ports:
-      - 1301:1301
+      - 1301:1300
     links:
       - redis
     depends_on:
       - redis
       - quote
       - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
   transaction3:
-    build: transaction_server_1302/
+    build: transaction_server/
     ports:
-      - 1302:1302
+      - 1302:1300
     links:
       - redis
     depends_on:
       - redis
       - quote
       - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
   transaction4:
-    build: transaction_server_1303/
+    build: transaction_server/
     ports:
-      - 1303:1303
+      - 1303:1300
     links:
       - redis
     depends_on:
       - redis
       - quote
       - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
   transaction5:
-    build: transaction_server_1304/
+    build: transaction_server/
     ports:
-      - 1304:1304
+      - 1304:1300
     links:
       - redis
     depends_on:
       - redis
       - quote
       - audit
+      - audit2
+    environment:
+      REDIS_URL: redis:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction6:
+    build: transaction_server/
+    ports:
+      - 1305:1300
+    links:
+      - redis
+    depends_on:
+      - redis
+      - quote
+      - audit
+      - audit2
+    environment:
+      REDIS_URL: redis:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction7:
+    build: transaction_server/
+    ports:
+      - 1306:1300
+    links:
+      - redis
+    depends_on:
+      - redis
+      - quote
+      - audit
+      - audit2
     environment:
       REDIS_URL: redis:6379
       QUOTE_URL: quote:1200
@@ -107,7 +152,7 @@ services:
       - audit
     working_dir: /go/src/daytrading
     command: go build -o daytrading
-    command: go run daytrading workload5
+    command: go run daytrading workload4
     environment:
       TRANSACTION_URL: transaction:1300
       TRANSACTION2_URL: transaction2:1301
