@@ -80,3 +80,21 @@ func TestsExists(t *testing.T) {
 	}
 }
 
+func TestQExists(t *testing.T) {
+	client := dialRedis()
+	flushRedis(client)
+
+	stock := "ABC"
+
+	result := qExists(client, stock)
+	if result != false {
+		t.Errorf("qExists was incorrect, got %t, want %t.", result, false)
+	}
+
+	client.Cmd("SET", stock, 123.00)
+
+	result = qExists(client, stock)
+	if result != true {
+		t.Errorf("qExists was incorrect, got %t, want %t.", result, true)
+	}
+}
