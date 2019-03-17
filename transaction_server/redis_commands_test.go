@@ -10,8 +10,7 @@ import (
 / working properly. If they are not,
 / no tests in this test suite will
 / pass.
-*/
-
+*/ 
 func TestGetBalance(t *testing.T) {
 	client := dialRedis()
 	flushRedis(client)
@@ -96,5 +95,30 @@ func TestQExists(t *testing.T) {
 	result = qExists(client, stock)
 	if result != true {
 		t.Errorf("qExists was incorrect, got %t, want %t.", result, true)
+	}
+}
+
+func TestSaveTransaction(t *testing.T) {
+	client := dialRedis()
+	flushRedis(client)
+
+	username := "user"
+
+	result, _ := client.Cmd("ZCOUNT", "HISTORY:"+username, "-inf", "+inf").Int()
+
+	if result != 0 {
+		t.Errorf("saveTransaction was incorrect, got %d, want %d.", result, 0)
+	}
+
+	command := "ADD"
+	amount := "300.00"
+	newBalance := "300.00"
+
+	saveTransaction(client, username, command, amount, newBalance)
+
+	result, _ = client.Cmd("ZCOUNT", "HISTORY:"+username, "-inf", "+inf").Int()
+
+	if result != 1 {
+		t.Errorf("saveTransaction was incorrect, got %d, want %d.", result, 1)
 	}
 }
