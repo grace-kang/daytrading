@@ -50,7 +50,6 @@ func exists(client *redis.Client, username string) bool {
 func qExists(client *redis.Client, stock string) bool {
 	//client := dialRedis()
 	exists, _ := client.Cmd("EXISTS", stock).Int()
-	fmt.Println("Exists: ", exists, " Stock:", stock)
 	if exists == 0 {
 		return false
 	} else {
