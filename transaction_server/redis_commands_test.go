@@ -122,3 +122,30 @@ func TestSaveTransaction(t *testing.T) {
 		t.Errorf("saveTransaction was incorrect, got %d, want %d.", result, 1)
 	}
 }
+
+func TestRedisADD(t *testing.T) {
+	client := dialRedis()
+	flushRedis(client)
+
+	username := "user"
+	amount := 123.00
+
+	redisADD(client, username, amount)
+
+	result := exists(client, username)
+	if result != true{
+		t.Errorf("redisADD was incorrect, got %t, want %t.", result, true)
+	}
+
+	newBalance := getBalance(client, username)
+	if newBalance != amount {
+		t.Errorf("redisADD was incorrect, got %f, want %f.", newBalance, amount)
+	}
+
+	// check that the transaction was saved in HISTORY:username
+	count, _ := client.Cmd("ZCOUNT", "HISTORY:"+username, "-inf", "+inf").Int()
+
+	if count != 1 {
+		t.Errorf("saveTransaction was incorrect, got %d, want %d.", count, 1)
+	}
+}
