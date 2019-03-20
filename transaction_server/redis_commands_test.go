@@ -2,18 +2,21 @@ package main
 
 import (
 	"testing"
+
+	"github.com/mediocregopher/radix.v2/redis"
 )
 
-/*
-/ These tests assume that the functions
-/ dialRedis() and flushRedis() are
-/ working properly. If they are not,
-/ no tests in this test suite will
-/ pass.
-*/ 
+func dialTestRedis() *redis.Client {
+	cli, err := redis.Dial("tcp", "redis:6380")
+	if err != nil {
+		panic(err)
+	}
+	cli.Cmd("FLUSHALL")
+	return cli
+}
+
 func TestGetBalance(t *testing.T) {
-	client := dialRedis()
-	flushRedis(client)
+	client := dialTestRedis()
 
 	username := "user"
 	balance := 1200.00
@@ -26,8 +29,7 @@ func TestGetBalance(t *testing.T) {
 }
 
 func TestAddBalance(t *testing.T) {
-	client := dialRedis()
-	flushRedis(client)
+	client := dialTestRedis()
 
 	username := "user"
 	add := 300.00
@@ -40,8 +42,7 @@ func TestAddBalance(t *testing.T) {
 }
 
 func TestStockOwned(t *testing.T) {
-	client := dialRedis()
-	flushRedis(client)
+	client := dialTestRedis()
 
 	username := "user"
 	stock := "ABC"
@@ -61,8 +62,7 @@ func TestStockOwned(t *testing.T) {
 }
 
 func TestsExists(t *testing.T) {
-	client := dialRedis()
-	flushRedis(client)
+	client := dialTestRedis()
 
 	username := "user"
 
@@ -80,8 +80,7 @@ func TestsExists(t *testing.T) {
 }
 
 func TestQExists(t *testing.T) {
-	client := dialRedis()
-	flushRedis(client)
+	client := dialTestRedis()
 
 	stock := "ABC"
 
@@ -99,8 +98,7 @@ func TestQExists(t *testing.T) {
 }
 
 func TestSaveTransaction(t *testing.T) {
-	client := dialRedis()
-	flushRedis(client)
+	client := dialTestRedis()
 
 	username := "user"
 
@@ -124,8 +122,7 @@ func TestSaveTransaction(t *testing.T) {
 }
 
 func TestRedisADD(t *testing.T) {
-	client := dialRedis()
-	flushRedis(client)
+	client := dialTestRedis()
 
 	username := "user"
 	amount := 123.00
@@ -149,3 +146,26 @@ func TestRedisADD(t *testing.T) {
 		t.Errorf("saveTransaction was incorrect, got %d, want %d.", count, 1)
 	}
 }
+
+func TestRedisBUY(t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 123.00
+	cache := "userBUY:" + username
+
+	redisBUY(client, username, stock, amount)
+
+	count, _ := client.Cmd("LLEN", cache).Int()
+
+	if count != 2 {
+		t.Errorf("redisBUY is incorrect, got %d, want %d.", count, 2)
+	}
+
+	pop1, _ := client.Cmd("LPOP", cache).Str()
+	if pop1 != stock {
+		t.Errorf("redisBUY is incorrect, got %s, want %s.", pop1, stock)
+	}
+}
+
