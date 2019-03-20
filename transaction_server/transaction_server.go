@@ -1,14 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"log"
-	"net"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/mediocregopher/radix.v2/pool"
 )
@@ -72,60 +69,6 @@ func main() {
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
-}
-
-func quote(transNum int, username string, stock string) {
-	stringQ := stock + ":QUOTE"
-	client, _ := db.Get()
-	defer db.Put(client)
-	ex := qExists(client, stringQ)
-	if ex == false {
-		go goQuote(transNum, username, stock)
-	} else {
-		stringQ := stock + ":QUOTE"
-		currentprice, _ := client.Cmd("GET", stringQ).Float64()
-		LogSystemEventCommand(server, transNum, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
-	}
-}
-
-func goQuote(transNum int, username string, stock string) {
-	stringQ := stock + ":QUOTE"
-	fmt.Println("goQUOTE!!!!!")
-	client, _ := db.Get()
-	defer db.Put(client)
-
-	QUOTE_URL := os.Getenv("QUOTE_URL")
-	fmt.Println("quoye url is " + QUOTE_URL)
-	conn, _ := net.Dial("tcp", QUOTE_URL)
-
-	conn.Write([]byte((stock + "," + username + "\n")))
-	respBuf := make([]byte, 2048)
-	_, err := conn.Read(respBuf)
-	conn.Close()
-
-	if err != nil {
-		fmt.Printf("Error reading body: %s", err.Error())
-	}
-	respBuf = bytes.Trim(respBuf, "\x00")
-	message := bytes.NewBuffer(respBuf).String()
-	message = strings.TrimSpace(message)
-
-	fmt.Println(string(message))
-
-	split := strings.Split(message, ",")
-	priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
-	price, _ := strconv.ParseFloat(priceStr, 64)
-	if err != nil {
-		return
-	}
-	quoteTimestamp := strings.TrimSpace(split[3])
-	crytpoKey := split[4]
-
-	quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
-
-	LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
-	client.Cmd("SET", stringQ, price)
-	client.Cmd("EXPIRE", stringQ, 60)
 }
 
 func checkUserExists(transNum int, username string, command string) {
@@ -247,12 +190,11 @@ func quoteHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 
-	quote(transNum, user, symbol)
-	if display == true {
-		displayQUOTE(client, user, symbol)
+  if display == false {
+    redisQUOTE(client, transNum, user, symbol)
+	} else if display == true {
+		displayQUOTE(client, transNum, user, symbol)
 	}
-
-	//w.Write([]byte("QUOTE complete"))
 }
 
 func commitBuyHandler(w http.ResponseWriter, r *http.Request) {
