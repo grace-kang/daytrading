@@ -167,5 +167,37 @@ func TestRedisBUY(t *testing.T) {
 	if pop1 != stock {
 		t.Errorf("redisBUY is incorrect, got %s, want %s.", pop1, stock)
 	}
+
+	pop2, _ := client.Cmd("LPOP", cache).Float64()
+	if pop2 != amount {
+		t.Errorf("redisBUY is incorrect, got %f, want %f.", pop2, amount)
+	}
+}
+
+func TestRedisSELL(t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 123.00
+	cache := "userSELL:" + username
+
+	redisSELL(client, username, stock, amount)
+
+	count, _ := client.Cmd("LLEN", cache).Int()
+
+	if count != 2 {
+		t.Errorf("redisSELL is incorrect, got %d, want %d.", count, 2)
+	}
+
+	pop1, _ := client.Cmd("LPOP", cache).Str()
+	if pop1 != stock {
+		t.Errorf("redisSELL is incorrect, got %s, want %s.", pop1, stock)
+	}
+
+	pop2, _ := client.Cmd("LPOP", cache).Float64()
+	if pop2 != amount {
+		t.Errorf("redisSELL is incorrect, got %f, want %f.", pop2, amount)
+	}
 }
 
