@@ -94,7 +94,10 @@ func goQuote(transNum int, username string, stock string) {
 	client, _ := db.Get()
 	defer db.Put(client)
 
-	conn, _ := net.Dial("tcp", "quote:1200")
+	QUOTE_URL := os.Getenv("QUOTE_URL")
+	fmt.Println("quoye url is " + QUOTE_URL)
+	conn, _ := net.Dial("tcp", QUOTE_URL)
+
 	conn.Write([]byte((stock + "," + username + "\n")))
 	respBuf := make([]byte, 2048)
 	_, err := conn.Read(respBuf)
