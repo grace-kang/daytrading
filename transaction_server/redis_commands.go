@@ -132,7 +132,7 @@ func redisQUOTE(client *redis.Client, transNum int, username string, stock strin
   stringQ := stock + ":QUOTE"
   ex := qExists(client, stringQ)
   if ex == false {
-    go goQuote(client, transNum, username, stock)
+    goQuote(client, transNum, username, stock)
   } else {
     stringQ := stock + ":QUOTE"
     currentprice, _ := client.Cmd("GET", stringQ).Float64()
@@ -142,10 +142,8 @@ func redisQUOTE(client *redis.Client, transNum int, username string, stock strin
 
 func goQuote(client *redis.Client, transNum int, username string, stock string) {
   stringQ := stock + ":QUOTE"
-  // fmt.Println("goQUOTE!!!!!")
 
   QUOTE_URL := os.Getenv("QUOTE_URL")
-  // fmt.Println("quoye url is " + QUOTE_URL)
   conn, _ := net.Dial("tcp", QUOTE_URL)
 
   conn.Write([]byte((stock + "," + username + "\n")))
@@ -160,11 +158,8 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
   message := bytes.NewBuffer(respBuf).String()
   message = strings.TrimSpace(message)
 
-  fmt.Println(string(message))
-
   split := strings.Split(message, ",")
-  priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
-  price, _ := strconv.ParseFloat(priceStr, 64)
+  price, _ := strconv.ParseFloat(split[0], 64)
   if err != nil {
     return
   }
@@ -182,7 +177,7 @@ func displayQUOTE(client *redis.Client, transNum int, username string, symbol st
 	redisQUOTE(client, transNum, username, symbol)
   stringQ := symbol + ":QUOTE"
   stockPrice, _ := client.Cmd("GET", stringQ).Float64()
-  fmt.Println("QUOTE:", stockPrice, "\n")
+  fmt.Println("QUOTE:", stockPrice)
 }
 
 func redisBUY(client *redis.Client, username string, symbol string, amount float64) {
@@ -239,7 +234,7 @@ func redisCOMMIT_BUY(client *redis.Client, username string) {
 
   /* 4 */
   stockQ := stock + ":QUOTE"
-  stockPrice, _ := client.Cmd("HGET", stockQ, stockQ).Float64()
+  stockPrice, _ := client.Cmd("GET", stockQ).Float64()
   stock2BUY := int(math.Floor(amount / stockPrice))
   totalCOST := stockPrice * float64(stock2BUY)
 

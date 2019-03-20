@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+  "os"
 )
 
-var address = "http://audit:1400"
+var address = "http://" + os.Getenv("AUDIT_URL")
 
 func convertStringToDecimal(value string) string {
 	amount, err := strconv.ParseFloat(value, 64)
@@ -67,6 +68,7 @@ func LogAccountTransactionCommand(server string, transNum int, action string, us
 
 func LogSystemEventCommand(server string, transNum int, command string, username interface{}, funds interface{}, stockSymbol interface{}, filename interface{}) {
 
+  address = "http://" + os.Getenv("AUDIT_URL")
 	addr := address + "/systemEventCommand"
 	v := url.Values{
 		"server":         {server},
@@ -95,6 +97,7 @@ func LogSystemEventCommand(server string, transNum int, command string, username
 
 func LogQuoteServerCommand(server string, transNum int, price string, stock string, username string, quoteServerTime uint64, cryptoKey string) {
 
+  address = "http://" + os.Getenv("AUDIT_URL")
 	addr := address + "/quoteServerCommand"
 	v := url.Values{
 		"server":          {server},
