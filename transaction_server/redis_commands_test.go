@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 	"math"
+	"strconv"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
@@ -204,6 +205,35 @@ func TestRedisSELL(t *testing.T) {
 	}
 }
 
+func TestRedisQUOTE(t *testing.T) {
+	os.Setenv("QUOTE_URL", ":1200")
+	os.Setenv("AUDIT_URL", "localhost:1400")
+
+	client := dialTestRedis()
+
+	stock := "ABC"
+	username := "user"
+	transNum := 0 //no transaction number
+
+	redisQUOTE(client, transNum, username, stock)
+
+	quote_key := stock + ":QUOTE"
+	price, _ := client.Cmd("GET", quote_key).Float64()
+
+	if price <= 0 {
+		t.Errorf("redisQUOTE is incorrect, got %f for price.", price)
+	}
+
+	// QUOTE again to see if we get the existing price
+	redisQUOTE(client, transNum, username, stock)
+
+	new_price, _ := client.Cmd("GET", quote_key).Float64()
+
+	if new_price != price {
+		t.Errorf("redisQUOTE is incorrect, got %f, want %f for quote price", new_price, price)
+	}
+}
+
 func TestRedisCOMMIT_BUY(t *testing.T) {
 	os.Setenv("QUOTE_URL", ":1200")
 	os.Setenv("AUDIT_URL", "localhost:1400")
@@ -231,8 +261,12 @@ func TestRedisCOMMIT_BUY(t *testing.T) {
 	quote_price, _ := client.Cmd("GET", stock + ":QUOTE").Float64()
 	stock2buy := int(math.Floor(amount / quote_price))
 	total_cost := quote_price * float64(stock2buy)
+	expected_balance := float64(balance - total_cost)
 
-	if new_balance != (balance - total_cost) {
-		t.Errorf("redisCOMMIT_BUY is incorrect, got %f, want %f balance.", new_balance, balance - total_cost)
+	formated_new_bal := strconv.FormatFloat(new_balance, 'f', 2, 64)
+	formated_expected_bal := strconv.FormatFloat(expected_balance, 'f', 2, 64)
+
+	if formated_new_bal != formated_expected_bal {
+		t.Errorf("redisCOMMIT_BUY is incorrect, got %s, want %s balance.", formated_new_bal, formated_expected_bal)
 	}
 }

@@ -14,7 +14,6 @@ func convertStringToDecimal(value string) string {
 	amount, err := strconv.ParseFloat(value, 64)
 	if err == nil {
 		/** displaying the string variable into the console */
-		fmt.Println("Value:", amount)
 	}
 	amount2f := fmt.Sprintf("%.2f", amount)
 	return amount2f
