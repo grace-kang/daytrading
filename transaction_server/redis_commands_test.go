@@ -328,3 +328,21 @@ func TestRedisCANCEL_BUY (t *testing.T) {
 		t.Errorf("redisCANCEL_BUY didn't cancel the BUY")
 	}
 }
+
+func TestRedisCANCEL_SELL (t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	amount := 123.00
+	stock := "ABC"
+	stack_name := "userSELL:" + username
+
+	redisSELL(client, username, stock, amount)
+	redisCANCEL_SELL(client, username)
+
+	stack_len, _ := client.Cmd("LLEN", stack_name).Int()
+
+	if stack_len != 0 {
+		t.Errorf("redisCANCEL_SELL didn't cancel the SELL")
+	}
+}
