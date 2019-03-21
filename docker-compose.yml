@@ -3,6 +3,11 @@ version: "2"
 services:
   redis:
     image: redis
+    ports:
+      - "6379:6379"
+
+  redis2:
+    image: redis
 
   quote:
     build: quote_server/
@@ -22,12 +27,15 @@ services:
       - 1300:1300
     links:
       - redis
+      - redis2
     depends_on:
       - redis
+      - redis2
       - quote
       - audit
     environment:
       REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
@@ -37,12 +45,15 @@ services:
       - 1301:1300
     links:
       - redis
+      - redis2
     depends_on:
       - redis
+      - redis2
       - quote
       - audit
     environment:
       REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
@@ -52,12 +63,15 @@ services:
       - 1302:1300
     links:
       - redis
+      - redis2
     depends_on:
       - redis
+      - redis2
       - quote
       - audit
     environment:
       REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
@@ -67,12 +81,15 @@ services:
       - 1303:1300
     links:
       - redis
+      - redis2
     depends_on:
       - redis
+      - redis2
       - quote
       - audit
     environment:
       REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
@@ -82,12 +99,15 @@ services:
       - 1304:1300
     links:
       - redis
+      - redis2
     depends_on:
       - redis
+      - redis2
       - quote
       - audit
     environment:
       REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
@@ -97,12 +117,15 @@ services:
       - 1305:1300
     links:
       - redis
+      - redis2
     depends_on:
       - redis
+      - redis2
       - quote
       - audit
     environment:
       REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
@@ -112,12 +135,15 @@ services:
       - 1306:1300
     links:
       - redis
+      - redis2
     depends_on:
       - redis
+      - redis2
       - quote
       - audit
     environment:
       REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
@@ -127,6 +153,7 @@ services:
       - .:/go/src/daytrading
     links:
       - redis
+      - redis2
     depends_on:
       - transaction
       - transaction2
@@ -136,11 +163,12 @@ services:
       - transaction6
       - transaction7
       - redis
+      - redis2
       - quote
       - audit
     working_dir: /go/src/daytrading
     command: go build -o daytrading
-    command: go run daytrading 2018
+    command: go run daytrading workload6
     environment:
       TRANSACTION_URL: transaction:1300
       TRANSACTION2_URL: transaction2:1301

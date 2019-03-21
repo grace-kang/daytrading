@@ -18,6 +18,10 @@ const (
 
 var display bool
 var db *pool.Pool
+
+var db2 *pool.Pool
+
+//var db2 *pool.Pool
 var server = "server1"
 
 func init() {
@@ -28,6 +32,12 @@ func init() {
 	if err != nil {
 		log.Panic(err)
 	}
+
+	db2, err = pool.New("tcp", "redis2:6379", 20)
+	if err != nil {
+		log.Panic(err)
+	}
+
 }
 
 func main() {
@@ -45,8 +55,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	client := dialRedis()
-	flushRedis(client)
+	//client := dialRedis()
+	//flushRedis(client)
 
 	http.HandleFunc("/add", addHandler)
 	http.HandleFunc("/buy", buyHandler)
@@ -184,14 +194,14 @@ func quoteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, _ := db.Get()
-	defer db.Put(client)
+	client, _ := db2.Get()
+	defer db2.Put(client)
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	user := r.Form.Get("user")
 	symbol := r.Form.Get("symbol")
 
-  if display == false {
-    redisQUOTE(client, transNum, user, symbol)
+	if display == false {
+		redisQUOTE(client, transNum, user, symbol)
 	} else if display == true {
 		displayQUOTE(client, transNum, user, symbol)
 	}
