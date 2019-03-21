@@ -290,7 +290,7 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 
   /* 4 */
   stockQ := stock + ":QUOTE"
-  stockPrice, _ := client.Cmd("HGET", stockQ, stockQ).Float64()
+  stockPrice, _ := client.Cmd("GET", stockQ).Float64()
   stock2SELL := int(math.Floor(amount / stockPrice))
   totalCOST := stockPrice * float64(stock2SELL)
   id := stock + ":OWNED"

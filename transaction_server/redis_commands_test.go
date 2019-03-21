@@ -270,3 +270,43 @@ func TestRedisCOMMIT_BUY(t *testing.T) {
 		t.Errorf("redisCOMMIT_BUY is incorrect, got %s, want %s balance.", formated_new_bal, formated_expected_bal)
 	}
 }
+
+func TestRedisCOMMIT_SELL(t *testing.T) {
+	os.Setenv("QUOTE_URL", ":1200")
+	os.Setenv("AUDIT_URL", "localhost:1400")
+
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 1000.00
+	balance := 5000.00
+	stack_name := "userSELL:" + username
+
+	// let user own 5000 of that stock
+	client.Cmd("HSET", username, stock + ":OWNED", 5000)
+
+	redisADD(client, username, balance)
+	redisQUOTE(client, 0, username, stock)
+	redisSELL(client, username, stock, amount)
+	redisCOMMIT_SELL(client, username)
+
+	stack_len, _ := client.Cmd("LLEN", stack_name).Int()
+
+	if stack_len != 0 {
+		t.Errorf("redisCOMMIT_SELL is incorrect, got %d, want %d.", stack_len, 0)
+	}
+
+	new_balance := getBalance(client, username)
+	quote_price, _ := client.Cmd("GET", stock + ":QUOTE").Float64()
+	stock2sell := int(math.Floor(amount / quote_price))
+	total_cost := quote_price * float64(stock2sell)
+	expected_balance := float64(balance + total_cost)
+
+	formated_new_bal := strconv.FormatFloat(new_balance, 'f', 2, 64)
+	formated_expected_bal := strconv.FormatFloat(expected_balance, 'f', 2, 64)
+
+	if formated_new_bal != formated_expected_bal {
+		t.Errorf("redisCOMMIT_BUY is incorrect, got %s, want %s balance.", formated_new_bal, formated_expected_bal)
+	}
+}
