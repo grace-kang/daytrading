@@ -310,3 +310,21 @@ func TestRedisCOMMIT_SELL(t *testing.T) {
 		t.Errorf("redisCOMMIT_BUY is incorrect, got %s, want %s balance.", formated_new_bal, formated_expected_bal)
 	}
 }
+
+func TestRedisCANCEL_BUY (t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	amount := 123.00
+	stock := "ABC"
+	stack_name := "userBUY:" + username
+
+	redisBUY(client, username, stock, amount)
+	redisCANCEL_BUY(client, username)
+
+	stack_len, _ := client.Cmd("LLEN", stack_name).Int()
+
+	if stack_len != 0 {
+		t.Errorf("redisCANCEL_BUY didn't cancel the BUY")
+	}
+}
