@@ -363,3 +363,50 @@ func TestRedisSET_BUY_AMOUNT(t *testing.T) {
 		t.Errorf("redisSET_BUY_AMOUNT is incorrect, got %d, want %d.", set_buy_len, 1)
 	}
 }
+
+func TestRedisSET_BUY_TRIGGER(t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 123.00
+	key_name := stock + ":BUYTRIG"
+	hash_name := "BUYTRIGGERS:" + username
+
+	redisSET_BUY_TRIGGER(client, username, stock, amount)
+
+	result, _ := client.Cmd("HGET", username, key_name).Float64()
+	if result != amount {
+		t.Errorf("redisSET_BUY_TRIGGER is incorrect, got %f, want %f.", result, amount)
+	}
+
+	result, _ = client.Cmd("HGET", hash_name, stock).Float64()
+
+	if result != amount {
+		t.Errorf("redisSET_BUY_TRIGGER is incorrect, got %f, want %f.", result, amount)
+	}
+}
+
+func TestRedisSET_SELL_TRIGGER(t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 123.00
+	key_name := stock + ":SELLTRIG"
+	hash_name := "SELLTRIGGERS:" + username
+
+	redisSET_SELL_TRIGGER(client, username, stock, amount)
+
+	result, _ := client.Cmd("HGET", username, key_name).Float64()
+	if result != amount {
+		t.Errorf("redisSET_SELL_TRIGGER is incorrect, got %f, want %f.", result, amount)
+	}
+
+	result, _ = client.Cmd("HGET", hash_name, stock).Float64()
+
+	if result != amount {
+		t.Errorf("redisSET_SELL_TRIGGER is incorrect, got %f, want %f.", result, amount)
+	}
+}
+
