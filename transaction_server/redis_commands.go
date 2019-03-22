@@ -181,7 +181,7 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
 	split := strings.Split(message, ",")
 	price, error := strconv.ParseFloat(strings.TrimSpace(split[0]), 64)
 	if error != nil {
-		LogErrorEventCommand(server, transNum, "QUOTE", username, price, stock, nil, "failed in parsing quote stock price into float number")
+		LogErrorEventCommand(server, transNum, "QUOTE", username, strconv.FormatFloat(price, 'f', 2, 64), stock, nil, "failed in parsing quote stock price into float number")
 	}
 	quoteTimestamp := strings.TrimSpace(split[3])
 	crytpoKey := split[4]
@@ -252,14 +252,14 @@ func redisCOMMIT_BUY(client *redis.Client, username string, transNum int) {
 	*/
 
 	string3 := "userBUY:" + username
-	stockSell, _ := client.Cmd("LPOP", string3).Int()
+	stockBuy, _ := client.Cmd("LPOP", string3).Int()
 	totalCost, _ := client.Cmd("LPOP", string3).Float64()
 	stock, _ := client.Cmd("LPOP", string3).Str()
 
 	getBAL := getBalance(client, username)
 
 	if getBAL < totalCost {
-		LogErrorEventCommand(server, transNum, "COMMIT_BUY", username, totalCost, nil, nil, "user "+username+" doesn't have enough balance to buy stock "+stock)
+		LogErrorEventCommand(server, transNum, "COMMIT_BUY", username, strconv.FormatFloat(totalCost, 'f', 2, 64), nil, nil, "user "+username+" doesn't have enough balance to buy stock "+stock)
 		return
 	}
 
@@ -270,15 +270,15 @@ func redisCOMMIT_BUY(client *redis.Client, username string, transNum int) {
 	/* 6 */
 	id := stock + ":OWNED"
 
-	if stockSell > 0 {
-		client.Cmd("HINCRBY", username, id, stockSell)
+	if stockBuy > 0 {
+		client.Cmd("HINCRBY", username, id, stockBuy)
 		// add stock to OWNED:[username] for ease of access in display summary
-		client.Cmd("HINCRBY", "OWNED:"+username, id, stockSell)
+		client.Cmd("HINCRBY", "OWNED:"+username, id, stockBuy)
 	}
 
 	getBAL2 := getBalance(client, username)
-	stockUnitPrice := totalCost / float64(stockSell)
-	saveTransaction(client, username, "COMMIT_BUY", stock, string(stockSell), strconv.FormatFloat(stockUnitPrice, 'f', 2, 64), strconv.FormatFloat(totalCost, 'f', 2, 64), strconv.FormatFloat(getBAL2, 'f', 2, 64))
+	stockUnitPrice := totalCost / float64(stockBuy)
+	saveTransaction(client, username, "COMMIT_BUY", stock, string(stockBuy), strconv.FormatFloat(stockUnitPrice, 'f', 2, 64), strconv.FormatFloat(totalCost, 'f', 2, 64), strconv.FormatFloat(getBAL2, 'f', 2, 64))
 }
 
 func displayCOMMIT_BUY(client *redis.Client, username string, transNum int) {
@@ -323,7 +323,7 @@ func redisCOMMIT_SELL(client *redis.Client, username string, transNum int) {
 	/* 5 */
 
 	if stocksOwned < stockNeeded {
-		LogErrorEventCommand(server, transNum, "COMMIT_SELL", username, totalEarned, nil, nil, "user "+username+" doesn't have enough stock "+stock+" to sell ")
+		LogErrorEventCommand(server, transNum, "COMMIT_SELL", username, strconv.FormatFloat(totalEarned, 'f', 2, 64), nil, nil, "user "+username+" doesn't have enough stock "+stock+" to sell ")
 		return
 	}
 

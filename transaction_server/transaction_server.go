@@ -164,7 +164,7 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	getBAL := getBalance(client, user)
 
 	if getBAL < amount {
-		LogErrorEventCommand(server, transNum, "BUY", user, amount, nil, nil, "user "+user+" doesn't have enough balance to buy stock "+symbol)
+		LogErrorEventCommand(server, transNum, "BUY", user, strconv.FormatFloat(amount, 'f', 2, 64), nil, nil, "user "+user+" doesn't have enough balance to buy stock "+symbol)
 		return
 	}
 
@@ -204,7 +204,7 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	stockNeeded := int(amount / getPrice)
 	newBenefit := getPrice * float64(stockNeeded)
 	if stockOwned < stockNeeded {
-		LogErrorEventCommand(server, transNum, "SELL", user, amount, symbol, nil, "user "+user+" doesn't have enough stock "+symbol+" to sell")
+		LogErrorEventCommand(server, transNum, "SELL", user, strconv.FormatFloat(amount, 'f', 2, 64), symbol, nil, "user "+user+" doesn't have enough stock "+symbol+" to sell")
 		return
 	}
 
