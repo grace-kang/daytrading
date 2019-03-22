@@ -144,27 +144,27 @@ func main() {
 
 		if userS[u] != "./testLOG" && userS[u] != "" {
 			//fmt.Println(u, ":", userS[u])
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(130 * time.Millisecond)
 			//go concurrencyLogic("http://transaction:1300", lines, userS[u])
-
-			threads := 7
-			if u%threads == 0 {
-				go concurrencyLogic("http://localhost:1301", lines, userS[u])
-			} else if u%threads == 1 {
-				go concurrencyLogic("http://localhost:1302", lines, userS[u])
-			} else if u%threads == 2 {
-				go concurrencyLogic("http://localhost:1303", lines, userS[u])
-			} else if u%threads == 3 {
-				go concurrencyLogic("http://localhost:1304", lines, userS[u])
-			} else if u%threads == 4 {
-				go concurrencyLogic("http://localhost:1305", lines, userS[u])
-			} else if u%threads == 5 {
-				go concurrencyLogic("http://localhost:1306", lines, userS[u])
-			} else if u%threads == 6 {
-				go concurrencyLogic("http://localhost:1300", lines, userS[u])
-			}
-
-			//go concurrencyLogic("http://localhost:1300", lines, userS[u])
+			/*
+				threads := 7
+				if u%threads == 0 {
+					go concurrencyLogic("http://localhost:1301", lines, userS[u])
+				} else if u%threads == 1 {
+					go concurrencyLogic("http://localhost:1302", lines, userS[u])
+				} else if u%threads == 2 {
+					go concurrencyLogic("http://localhost:1303", lines, userS[u])
+				} else if u%threads == 3 {
+					go concurrencyLogic("http://localhost:1304", lines, userS[u])
+				} else if u%threads == 4 {
+					go concurrencyLogic("http://localhost:1305", lines, userS[u])
+				} else if u%threads == 5 {
+					go concurrencyLogic("http://localhost:1306", lines, userS[u])
+				} else if u%threads == 6 {
+					go concurrencyLogic("http://localhost:1300", lines, userS[u])
+				}
+			*/
+			go concurrencyLogic("http://localhost:80", lines, userS[u])
 			userly += 1
 			fmt.Println("numUsers: ", userly)
 
@@ -172,7 +172,7 @@ func main() {
 	}
 	wg.Wait()
 	//wg.Add(1)
-	dumpLogFile("http://localhost:1300", "120000", nil, "./testLOG")
+	dumpLogFile("http://localhost:80", "120000", nil, "./testLOG")
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
@@ -205,7 +205,7 @@ func concurrencyLogic(address string, lines []string, username string) {
 		data = append(data, s[1:]...)
 
 		if username == data[2] {
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(70 * time.Millisecond)
 
 			transNum := i + 1
 			transNum_str := strconv.Itoa(transNum)
@@ -413,4 +413,5 @@ func concurrencyLogic(address string, lines []string, username string) {
 			}
 		}
 	}
+	fmt.Println("User done:", username)
 }

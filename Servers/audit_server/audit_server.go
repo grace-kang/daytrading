@@ -261,9 +261,9 @@ func main() {
 	mux.HandleFunc("/errorEventCommand", errorEventHandler)
 	mux.HandleFunc("/debugEventCommand", debugEventHandler)
 	mux.HandleFunc("/dumpLog", dumpLogHandler)
-	fmt.Printf("Audit server listening on %s:%s\n", "http://audit", "1400")
+	//fmt.Printf("Audit server listening on %s:%s\n", "http://audit", "1400")
 	go worker()
-	if err := http.ListenAndServe(":1400", mux); err != nil {
+	if err := http.ListenAndServe(":80", mux); err != nil {
 		panic(err)
 	}
 }
