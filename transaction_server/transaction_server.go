@@ -162,16 +162,20 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	checkUserExists(transNum, user, "BUY")
 
 	getBAL := getBalance(client, user)
-	getPrice := getQUOTE(client, transNum, user, symbol)
-	if getBAL < getPrice*amount {
-		LogErrorEventCommand(server, transNum, "buy", user, amount*getPrice, nil, nil, "user "+user+" doesn't have enough balance to buy stock "+symbol)
+
+	if getBAL < amount {
+		LogErrorEventCommand(server, transNum, "BUY", user, amount, nil, nil, "user "+user+" doesn't have enough balance to buy stock "+symbol)
 		return
 	}
 
+	getPrice := getQUOTE(client, transNum, user, symbol)
+	stockSell := int(amount / getPrice)
+	exactTotalPrice := float64(stockSell) * getPrice
+
 	if display == false {
-		redisBUY(client, user, symbol, amount)
+		redisBUY(client, user, symbol, exactTotalPrice, stockSell)
 	} else {
-		displayBUY(client, user, symbol, amount)
+		displayBUY(client, user, symbol, exactTotalPrice, stockSell)
 	}
 
 	//w.Write([]byte("BUY complete"))
@@ -198,15 +202,16 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	stockOwned := stockOwned(client, user, id)
 	getPrice := getQUOTE(client, transNum, user, symbol)
 	stockNeeded := int(amount / getPrice)
+	newBenefit := getPrice * float64(stockNeeded)
 	if stockOwned < stockNeeded {
-		LogErrorEventCommand(server, transNum, "buy", user, amount, symbol, nil, "user "+user+" doesn't have enough stock "+symbol+" to sell")
+		LogErrorEventCommand(server, transNum, "SELL", user, amount, symbol, nil, "user "+user+" doesn't have enough stock "+symbol+" to sell")
 		return
 	}
 
 	if display == false {
-		redisSELL(client, user, symbol, amount)
+		redisSELL(client, user, symbol, newBenefit, stockNeeded)
 	} else {
-		displaySELL(client, user, symbol, amount)
+		displaySELL(client, user, symbol, newBenefit, stockNeeded)
 	}
 
 	//w.Write([]byte("SELL complete"))
@@ -245,10 +250,17 @@ func commitBuyHandler(w http.ResponseWriter, r *http.Request) {
 	LogUserCommand(server, transNum, "COMMIT_BUY", user, nil, nil, nil)
 	checkUserExists(transNum, user, "COMMIT_BUY")
 
+	string3 := "userBUY:" + user
+
+	if listHasLength(client, string3) == false {
+		LogErrorEventCommand(server, transNum, "COMMIT_BUY", user, nil, nil, nil, "user "+user+" doesn't have any buy to commit")
+		return
+	}
+
 	if display == false {
-		redisCOMMIT_BUY(client, user)
+		redisCOMMIT_BUY(client, user, transNum)
 	} else {
-		displayCOMMIT_BUY(client, user)
+		displayCOMMIT_BUY(client, user, transNum)
 	}
 
 	//w.Write([]byte("COMMIT BUY complete"))
@@ -268,9 +280,9 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 	LogUserCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil)
 
 	if display == false {
-		redisCOMMIT_SELL(client, user)
+		redisCOMMIT_SELL(client, user, transNum)
 	} else {
-		displayCOMMIT_SELL(client, user)
+		displayCOMMIT_SELL(client, user, transNum)
 	}
 
 	//w.Write([]byte("COMMIT SELL complete"))
@@ -288,6 +300,13 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
 	LogUserCommand(server, transNum, "CANCEL_BUY", user, nil, nil, nil)
+
+	string3 := "userBUY:" + user
+
+	if listHasLength(client, string3) == false {
+		LogErrorEventCommand(server, transNum, "CANCEL_BUY", user, nil, nil, nil, "user "+user+" doesn't have any buy to cancel")
+		return
+	}
 
 	if display == false {
 		redisCANCEL_BUY(client, user)
@@ -310,6 +329,13 @@ func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 
 	LogUserCommand(server, transNum, "CANCEL_SELL", user, nil, nil, nil)
+
+	string3 := "userSELL:" + user
+
+	if listHasLength(client, string3) == false {
+		LogErrorEventCommand(server, transNum, "CANCEL_SELL", user, nil, nil, nil, "user "+user+" doesn't have any sell to cancel")
+		return
+	}
 
 	if display == false {
 		redisCANCEL_SELL(client, user)
