@@ -128,6 +128,9 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+	LogUserCommand(server, transNum, "ADD", user, r.Form.Get("amount"), nil, nil)
+
+	// log error message and return if amount is negative
 	if amount < 0 {
 		LogErrorEventCommand(server, transNum, "add", user, r.Form.Get("amount"), nil, nil, "cannot add negative amount into account")
 		return
@@ -138,8 +141,6 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		displayADD(client, user, amount)
 	}
-
-	LogUserCommand(server, transNum, "ADD", user, r.Form.Get("amount"), nil, nil)
 	LogAccountTransactionCommand(server, transNum, "add", user, r.Form.Get("amount"))
 	//w.Write([]byte("ADD complete"))
 }
