@@ -361,6 +361,16 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 
 	LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
+	balance := getBalance(client, user)
+	if balance < amount {
+		LogErrorEventCommand(server, transNum, "SET_BUY_AMOUNT", user, nil, nil, nil, "user "+user+" doesn't have any enough balance to set buy amount")
+		return
+	}
+
+	addBalance(client, user, -amount)
+	LogAccountTransactionCommand(server, transNum, "SET_BUY_AMOUNT", user, strconv.FormatFloat(amount, 'f', 2, 64))
+
+	// add new trigger
 	if display == false {
 		redisSET_BUY_AMOUNT(client, user, symbol, amount)
 	} else {

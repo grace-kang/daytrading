@@ -405,13 +405,6 @@ func redisSET_BUY_AMOUNT(client *redis.Client, username string, symbol string, a
 	  push amount then trigger price in SET_BUY_TRIGGER
 	  these two operate in pairs
 	*/
-
-	/*
-	  decrease balance put in reserve
-	*/
-
-	client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
-
 }
 
 func displaySET_BUY_AMOUNT(client *redis.Client, username string, symbol string, amount float64) {
