@@ -33,7 +33,7 @@ func init() {
 		log.Panic(err)
 	}
 
-	db2, err = pool.New("tcp", "redis2:6379", 20)
+	db2, err = pool.New("tcp", "redis:6379", 20)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -86,9 +86,12 @@ func checkUserExists(transNum int, username string, command string) {
 	defer db.Put(client)
 	exists := exists(client, username)
 	if exists == false {
-		message := "Account" + username + " does not exist"
-		LogErrorEventCommand(server, transNum, command, username, nil, nil, nil, message)
+		// message := "Account" + username + " does not exist"
+		// LogErrorEventCommand(server, transNum, command, username, nil, nil, nil, message)
+		// return false
+		client.Cmd("HMSET", username, "User", username, "Balance", 0)
 	}
+	// return true
 }
 
 func ParseUint(s string, base int, bitSize int) uint64 {
@@ -125,6 +128,11 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "add", user, r.Form.Get("amount"), nil, nil, "cannot add negative amount into account")
+		return
+	}
+
 	if display == false {
 		redisADD(client, user, amount)
 	} else {
@@ -132,7 +140,6 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogUserCommand(server, transNum, "ADD", user, r.Form.Get("amount"), nil, nil)
-	checkUserExists(transNum, user, "ADD")
 	LogAccountTransactionCommand(server, transNum, "add", user, r.Form.Get("amount"))
 	//w.Write([]byte("ADD complete"))
 }
@@ -151,7 +158,15 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
 
 	LogUserCommand(server, transNum, "BUY", user, r.Form.Get("amount"), symbol, nil)
+
 	checkUserExists(transNum, user, "BUY")
+
+	getBAL := getBalance(client, user)
+	getPrice := getQUOTE(client, transNum, user, symbol)
+	if getBAL < getPrice*amount {
+		LogErrorEventCommand(server, transNum, "buy", user, amount*getPrice, nil, nil, "user "+user+" doesn't have enough balance to buy stock "+symbol)
+		return
+	}
 
 	if display == false {
 		redisBUY(client, user, symbol, amount)
@@ -178,6 +193,15 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	LogUserCommand(server, transNum, "SELL", user, r.Form.Get("amount"), symbol, nil)
 	/*check if user exists or not*/
 	checkUserExists(transNum, user, "SELL")
+
+	id := symbol + ":OWNED"
+	stockOwned := stockOwned(client, user, id)
+	getPrice := getQUOTE(client, transNum, user, symbol)
+	stockNeeded := int(amount / getPrice)
+	if stockOwned < stockNeeded {
+		LogErrorEventCommand(server, transNum, "buy", user, amount, symbol, nil, "user "+user+" doesn't have enough stock "+symbol+" to sell")
+		return
+	}
 
 	if display == false {
 		redisSELL(client, user, symbol, amount)
