@@ -1,6 +1,7 @@
 package main
 
 import (
+	// "fmt"
 	"os"
 	"testing"
 	"math"
@@ -16,6 +17,7 @@ func dialTestRedis() *redis.Client {
 		panic(err)
 	}
 	cli.Cmd("FLUSHALL")
+
 	return cli
 }
 
@@ -364,6 +366,23 @@ func TestRedisSET_BUY_AMOUNT(t *testing.T) {
 	}
 }
 
+func TestRedisSET_SELL_AMOUNT(t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 123.00
+	stack_name := stock + ":SELL:" + username
+
+	redisSET_SELL_AMOUNT(client, username, stock, amount)
+
+	set_sell_len, _ := client.Cmd("LLEN", stack_name).Int()
+
+	if set_sell_len != 1 {
+		t.Errorf("redisSET_SELL_AMOUNT is incorrect, got %d, want %d.", set_sell_len, 1)
+	}
+}
+
 func TestRedisSET_BUY_TRIGGER(t *testing.T) {
 	client := dialTestRedis()
 
@@ -407,6 +426,72 @@ func TestRedisSET_SELL_TRIGGER(t *testing.T) {
 
 	if result != amount {
 		t.Errorf("redisSET_SELL_TRIGGER is incorrect, got %f, want %f.", result, amount)
+	}
+}
+
+func TestRedisCANCEL_SET_BUY(t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 123.00
+	set_buy_name := stock + ":BUY:" + username
+	key_name := stock + ":BUYTRIG"
+	hash_name := "BUYTRIGGERS:" + username
+
+	redisSET_BUY_AMOUNT(client, username, stock, amount)
+	redisSET_BUY_AMOUNT(client, username, stock, amount)
+	redisSET_BUY_TRIGGER(client, username, stock, amount)
+	redisCANCEL_SET_BUY(client, username, stock)
+
+	result, _ := client.Cmd("HGET", username, key_name).Str()
+	if result != "" {
+		t.Errorf("redisCANCEL_SET_BUY is incorrect, didn't delete trigger.")
+	}
+
+	result, _ = client.Cmd("HGET", hash_name, stock).Str()
+
+	if result != "" {
+		t.Errorf("redisCANCEL_SET_BUY is incorrect, didn't delete trigger.")
+	}
+
+	set_buy_len, _ := client.Cmd("LLEN", set_buy_name).Int()
+	if set_buy_len != 0 {
+		t.Errorf("redisCANCEL_SET_BUY is incorrect, didn't delete set buys.")
+
+	}
+}
+
+func TestRedisCANCEL_SET_SELL(t *testing.T) {
+	client := dialTestRedis()
+
+	username := "user"
+	stock := "ABC"
+	amount := 123.00
+	set_sell_name := stock + ":SELL:" + username
+	key_name := stock + ":SELLTRIG"
+	hash_name := "SELLTRIGGERS:" + username
+
+	redisSET_SELL_AMOUNT(client, username, stock, amount)
+	redisSET_SELL_AMOUNT(client, username, stock, amount)
+	redisSET_SELL_TRIGGER(client, username, stock, amount)
+	redisCANCEL_SET_SELL(client, username, stock)
+
+	result, _ := client.Cmd("HGET", username, key_name).Str()
+	if result != "" {
+		t.Errorf("redisCANCEL_SET_SELL is incorrect, didn't delete trigger.")
+	}
+
+	result, _ = client.Cmd("HGET", hash_name, stock).Str()
+
+	if result != "" {
+		t.Errorf("redisCANCEL_SET_SELL is incorrect, didn't delete trigger.")
+	}
+
+	set_sell_len, _ := client.Cmd("LLEN", set_sell_name).Int()
+	if set_sell_len != 0 {
+		t.Errorf("redisCANCEL_SET_SELL is incorrect, didn't delete set buys.")
+
 	}
 }
 

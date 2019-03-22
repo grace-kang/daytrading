@@ -428,9 +428,9 @@ func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
   }
 
   string4 := symbol + ":BUYTRIG"
-  client.Cmd("HSET", username, string4, 0.00)
+  client.Cmd("HDEL", username, string4)
   string5 := "BUYTRIGGERS:" + username
-  client.Cmd("HSET", string5, symbol, 0.00)
+  client.Cmd("HDEL", string5, symbol)
 }
 
 func displayCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
@@ -500,7 +500,8 @@ func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string) 
     client.Cmd("LPOP", string3).Float64()
   }
   string4 := symbol + ":SELLTRIG"
-  client.Cmd("HSET", username, string4, 0.00)
+  client.Cmd("HDEL", username, string4)
+  client.Cmd("HDEL", "SELLTRIGGERS:"+username, symbol)
 }
 
 func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string) {
