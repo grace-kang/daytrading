@@ -1,0 +1,11 @@
+FROM golang:1.8
+
+RUN mkdir -p /go/src/audit_server
+WORKDIR /go/src/audit_server/
+
+COPY . /go/src/audit_server/
+
+RUN go-wrapper download
+RUN go-wrapper install
+
+CMD ["go-wrapper", "run"]

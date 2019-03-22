@@ -1,9 +1,0 @@
-FROM golang:alpine
-RUN apk add git
-
-COPY . /go/src/quote_server/
-RUN go get /go/src/quote_server 
-RUN go install /go/src/quote_server
-RUN echo "Installed quote"
-
-ENTRYPOINT /go/bin/quote_server
