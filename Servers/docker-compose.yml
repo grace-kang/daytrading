@@ -66,6 +66,21 @@ services:
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
+  machine:
+    build: app/
+    ports:
+      - 2001:80
+    depends_on:
+      - quote
+    labels:
+      - "traefik.backend=machine-echo"
+      - "traefik.frontend.rule=Host:machine-echo.example.com"
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+      
   echo:
     image: katacoda/docker-http-server:v2
     labels:
