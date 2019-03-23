@@ -1,8 +1,5 @@
 $(document).ready(function() {
   $("#myButtons :input").change(function() {
-    console.log("button clicked");
-    console.log(this.id); // points to the clicked input button
-
     switch (this.id) {
       case "ADD":
         $("#fieldOne").show();

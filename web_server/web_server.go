@@ -60,7 +60,6 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// tmpl.Execute(w, struct{ Success bool }{true})
-	fmt.Println("in loginhandler")
 	tpl, _ := ioutil.ReadFile("tmp/userCommands.html")
 	tplParsed, _ := template.New("test").Parse(string(tpl))
 	tplParsed.Execute(w, nil)
