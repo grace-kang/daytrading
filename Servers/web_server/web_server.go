@@ -58,21 +58,18 @@ func outputHTML(w http.ResponseWriter, filename string, data interface{}) {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	// p := "test"
-	// t := template.Must(template.ParseFiles("tmp/home.html"))
-	// t.Execute(w, p)
-
-	// quotey := getQuote("abc", "123")
-	// fmt.Println(string(quotey))
-	// myvar := map[string]interface{}{"Quote": quotey}
-	// outputHTML(w, "tmp/home.html", myvar)
 
 	quotey := getQuote("abc", "123")
 	fmt.Println(string(quotey))
-	tpl, _ := ioutil.ReadFile("tmp/home.html")
-	tplParsed, _ := template.New("test").Parse(string(tpl))
-	templateData := map[string]interface{}{"Quote": quotey}
-	tplParsed.Execute(w, templateData)
+	myvar := map[string]interface{}{"Quote": quotey}
+	outputHTML(w, "tmp/home.html", myvar)
+
+	// quotey := getQuote("abc", "123")
+	// fmt.Println(string(quotey))
+	// tpl, _ := ioutil.ReadFile("tmp/home.html")
+	// tplParsed, _ := template.New("test").Parse(string(tpl))
+	// templateData := map[string]interface{}{"Quote": quotey}
+	// tplParsed.Execute(w, templateData)
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
