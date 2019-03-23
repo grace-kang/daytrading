@@ -1,8 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"net"
 	"net/http"
+	"os"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -77,28 +81,27 @@ func main() {
 }
 
 func getQuote(stock string, username string) string {
-	/*
 
-		//stringQ := stock + ":QUOTE"
-		// fmt.Println("goQUOTE!!!!!")
+	//stringQ := stock + ":QUOTE"
+	// fmt.Println("goQUOTE!!!!!")
 
-		QUOTE_URL := os.Getenv("QUOTE_URL")
-		// fmt.Println("quoye url is " + QUOTE_URL)
-		conn, _ := net.Dial("tcp", QUOTE_URL)
+	QUOTE_URL := os.Getenv("QUOTE_URL")
+	// fmt.Println("quoye url is " + QUOTE_URL)
+	conn, _ := net.Dial("tcp", QUOTE_URL)
 
-		conn.Write([]byte((stock + "," + username + "\n")))
-		respBuf := make([]byte, 2048)
-		_, err := conn.Read(respBuf)
-		conn.Close()
+	conn.Write([]byte((stock + "," + username + "\n")))
+	respBuf := make([]byte, 2048)
+	_, err := conn.Read(respBuf)
+	conn.Close()
 
-		if err != nil {
-			return "error"
-		}
-		respBuf = bytes.Trim(respBuf, "\x00")
-		message := bytes.NewBuffer(respBuf).String()
-		message = strings.TrimSpace(message)
-		return string(message)
-		//fmt.Println(string(message))
-	*/
-	return "hello"
+	if err != nil {
+		return "error"
+	}
+	respBuf = bytes.Trim(respBuf, "\x00")
+	message := bytes.NewBuffer(respBuf).String()
+	message = strings.TrimSpace(message)
+	return string(message)
+	//fmt.Println(string(message))
+
+	//return "hello"
 }
