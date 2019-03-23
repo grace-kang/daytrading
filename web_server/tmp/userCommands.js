@@ -1,6 +1,9 @@
+var currentCommand;
+
 $(document).ready(function() {
   $("#myButtons :input").change(function() {
-    switch (this.id) {
+    currentCommand = this.id;
+    switch (currentCommand) {
       case "ADD":
         $("#fieldOne").show();
         $("#fieldTwo").hide();
@@ -84,4 +87,11 @@ $(document).ready(function() {
         break;
     }
   });
+
+  $("#submitBtn").on("click", submitRequest);
 });
+
+function submitRequest() {
+  console.log("id is " + currentCommand);
+  //check format next
+}
