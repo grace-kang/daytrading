@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+
+
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/stylesheets/homepage.css">
+
+    <!-- The welcome struct (shown in the main.go code) is received within the HTML and we just need to use the . operator and retrieve the information we want -->
+    <title>Welcome {{.Name}}</title>
+</head>
+<body>
+
+<h3>Query Stock Price</h3>
+
+<div>
+  <form action="/action_page.php">
+
+    <p>The date today is {{.Date}}</p>
+    <p>And the time is {{.Time}}</p>
+   
+    <label for="user">User Name</label>
+    <input type="text" id="user" name="username" placeholder="User Name..">
+
+    <label for="symbol">Stock Symbol</label>
+    <input type="text" id="symbol" name="stocksymbol" placeholder="Stock symbol..">
+
+    
+
+    <label for="country">Country</label>
+    <select id="country" name="country">
+      <option value="australia">Australia</option>
+      <option value="canada">Canada</option>
+      <option value="usa">USA</option>
+    </select>
+  
+    <input type="submit" value="Submit">
+  </form>
+</div>
+<!-- <div class="welcome center">Welcome {{.Name}}, it is {{.Time}}</div> -->
+</body>
+</html>

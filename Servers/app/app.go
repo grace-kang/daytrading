@@ -9,14 +9,15 @@ import (
 
 //Create a struct that holds information to be displayed in our HTML file
 type Welcome struct {
-	Name string
-	Time string
+	Name  string
+	Time  string
+	Date  string
+	Time2 string
 }
 
 /*
 func handler(w http.ResponseWriter, r *http.Request) {
 	var name, _ = os.Hostname()
-
 	fmt.Fprintf(w, "<h1>This request was processed by host: %s</h1>\n", name)
 }
 */
@@ -31,12 +32,13 @@ func main() {
 func main() {
 	//Instantiate a Welcome struct object and pass in some random information.
 	//We shall get the name of the user as a query parameter from the URL
-	welcome := Welcome{"Anonymous", time.Now().Format(time.Stamp)}
+	welcome := Welcome{"Anonymous", time.Now().Format(time.Stamp),
+		time.Now().Format("02-01-2006"), time.Now().Format("15:04:05")}
 
 	//We tell Go exactly where we can find our html file. We ask Go to parse the html file (Notice
 	// the relative path). We wrap it in a call to template.Must() which handles any errors and halts if there are fatal errors
 
-	templates := template.Must(template.ParseFiles("templates/welcome-template.html"))
+	templates := template.Must(template.ParseFiles("templates/homepage.html"))
 
 	//Our HTML comes with CSS that go needs to provide when we run the app. Here we tell go to create
 	// a handle that looks in the static directory, go then uses the "/static/" as a url that our
@@ -59,7 +61,7 @@ func main() {
 		//If errors show an internal server error message
 		//I also pass the welcome struct to the welcome-template.html file.
 
-		if err := templates.ExecuteTemplate(w, "welcome-template.html", welcome); err != nil {
+		if err := templates.ExecuteTemplate(w, "homepage.html", welcome); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	})
