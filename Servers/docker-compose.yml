@@ -15,7 +15,7 @@ services:
     build: quote_server/
     ports:
       - 1200:1200
-  
+
   audit:
     build: audit_server/
     volumes:
@@ -31,7 +31,7 @@ services:
       - redis2
       - quote
       - audit
-      - machine
+      - web
     labels:
       - traefik.enable=true
       - "traefik.frontend.rule=Host:trans.docker.localhost"
@@ -51,15 +51,15 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
-  machine:
-    build: app/
+  web:
+    build: web_server/
     ports:
-      - 2001:80
+      - 1600:1600
     depends_on:
       - quote
     labels:
-      - "traefik.backend=machine-echo"
-      - "traefik.frontend.rule=Host:machine-echo.example.com"
+      - "traefik.backend=web-echo"
+      - "traefik.frontend.rule=Host:web-echo.example.com"
     environment:
       REDIS_URL: redis:6379
       REDIS2_URL: redis2:6379

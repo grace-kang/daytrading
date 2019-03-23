@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+  <h1>Day Trading</h1>
+
+  <h2>Home</h2>
+  <body>
+    <h1>Day Trading</h1>
+    <input type="text" id="userName" value="Enter username" /><br /><br />
+    <button onclick="loginRequest()">Login</button>
+    <div>{{ .MyVar }}</div>
+
+    <script language="javascript">
+      function loginRequest() {
+        /*function to check userid & password*/
+        /*the following code checkes whether the entered userid and password are matching*/
+        if (document.getElementById("userName").value == "admin") {
+          window.open(
+            "admin.html" //admin page to see all the system logs
+          ); /*opens the target page while user is admin*/
+        } else {
+          // window.open(
+          //   "userCommands.html" //admin page to see all the system logs
+          // ); /*opens the target page while user is admin*/
+          location.href = "http://localhost:1600/login";
+          // window.location.replace("http://localhost:1600/login");
+          // window.location.replace("localhost:1600/tmpfiles/userCommands.html");
+        }
+      }
+    </script>
+  </body>
+</html>
