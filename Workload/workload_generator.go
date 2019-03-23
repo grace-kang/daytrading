@@ -15,9 +15,6 @@ import (
 
 var wg sync.WaitGroup
 
-// var stockPrices = map[string]float64{}
-// var stocksAmount = map[string]int{}
-
 /* readLines reads a whole file into memory
 and returns a slice of its lines. */
 func readLines(path string) ([]string, error) {
