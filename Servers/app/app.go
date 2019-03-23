@@ -78,8 +78,7 @@ func main() {
 
 func getQuote(stock string, username string) string {
 	/*
-		//stock := "abc"
-		//username := "bob123"
+
 		//stringQ := stock + ":QUOTE"
 		// fmt.Println("goQUOTE!!!!!")
 
