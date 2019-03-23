@@ -31,6 +31,7 @@ services:
       - redis2
       - quote
       - audit
+      - machine
     labels:
       - traefik.enable=true
       - "traefik.frontend.rule=Host:trans.docker.localhost"
@@ -54,6 +55,8 @@ services:
     build: app/
     ports:
       - 2001:80
+    depends_on:
+      - quote
     labels:
       - "traefik.backend=machine-echo"
       - "traefik.frontend.rule=Host:machine-echo.example.com"

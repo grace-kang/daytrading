@@ -13,6 +13,7 @@ type Welcome struct {
 	Time  string
 	Date  string
 	Time2 string
+	Quote string
 }
 
 /*
@@ -32,8 +33,11 @@ func main() {
 func main() {
 	//Instantiate a Welcome struct object and pass in some random information.
 	//We shall get the name of the user as a query parameter from the URL
+	quotey := getQuote("abc", "123")
 	welcome := Welcome{"Anonymous", time.Now().Format(time.Stamp),
-		time.Now().Format("02-01-2006"), time.Now().Format("15:04:05")}
+		time.Now().Format("02-01-2006"), time.Now().Format("15:04:05"),
+		quotey,
+	}
 
 	//We tell Go exactly where we can find our html file. We ask Go to parse the html file (Notice
 	// the relative path). We wrap it in a call to template.Must() which handles any errors and halts if there are fatal errors
@@ -70,4 +74,32 @@ func main() {
 	//Print any errors from starting the webserver using fmt
 	fmt.Println("Listening")
 	fmt.Println(http.ListenAndServe(":80", nil))
+}
+
+func getQuote(stock string, username string) string {
+	/*
+		//stock := "abc"
+		//username := "bob123"
+		//stringQ := stock + ":QUOTE"
+		// fmt.Println("goQUOTE!!!!!")
+
+		QUOTE_URL := os.Getenv("QUOTE_URL")
+		// fmt.Println("quoye url is " + QUOTE_URL)
+		conn, _ := net.Dial("tcp", QUOTE_URL)
+
+		conn.Write([]byte((stock + "," + username + "\n")))
+		respBuf := make([]byte, 2048)
+		_, err := conn.Read(respBuf)
+		conn.Close()
+
+		if err != nil {
+			return "error"
+		}
+		respBuf = bytes.Trim(respBuf, "\x00")
+		message := bytes.NewBuffer(respBuf).String()
+		message = strings.TrimSpace(message)
+		return string(message)
+		//fmt.Println(string(message))
+	*/
+	return "hello"
 }
