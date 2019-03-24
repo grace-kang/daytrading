@@ -26,6 +26,7 @@ func main() {
 
 	r.HandleFunc("/", homeHandler)
 	r.HandleFunc("/login", loginHandler)
+	r.HandleFunc("/sendCommand", sendCommandHandle)
 
 	err := http.ListenAndServe(":"+connPort, r)
 	if err != nil {
@@ -34,6 +35,11 @@ func main() {
 	}
 
 	fmt.Println("Web server is listening on port " + connPort)
+}
+
+func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("in sendhandler")
+
 }
 
 func SendJqueryJs(w http.ResponseWriter, r *http.Request) {
