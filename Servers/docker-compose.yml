@@ -4,10 +4,12 @@ services:
   redis:
     image: redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
   redis2:
     image: redis
+    ports:
+      - "6381:6379"
 
   quote:
     build: quote_server/
@@ -24,7 +26,7 @@ services:
   transaction:
     build: transaction_server/
     ports:
-      - 1300:1300
+      - 1330:1300
     links:
       - redis
       - redis2
@@ -147,36 +149,78 @@ services:
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
 
-  workload:
-    image: golang:alpine
-    volumes: 
-      - .:/go/src/daytrading
+  transaction8:
+    build: transaction_server2/
+    ports:
+      - 1307:1301
     links:
       - redis
       - redis2
     depends_on:
-      - transaction
-      - transaction2
-      - transaction3
-      - transaction4
-      - transaction5
-      - transaction6
-      - transaction7
       - redis
       - redis2
       - quote
       - audit
-    working_dir: /go/src/daytrading
-    command: go build -o daytrading
-    command: go run daytrading workload3
     environment:
-      TRANSACTION_URL: transaction:1300
-      TRANSACTION2_URL: transaction2:1301
-      TRANSACTION3_URL: transaction3:1302
-      TRANSACTION4_URL: transaction4:1303
-      TRANSACTION5_URL: transaction5:1304
-      TRANSACTION6_URL: transaction6:1305
-      TRANSACTION7_URL: transaction7:1306
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction9:
+    build: transaction_server2/
+    ports:
+      - 1308:1301
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction10:
+    build: transaction_server2/
+    ports:
+      - 1310:1301
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction11:
+    build: transaction_server2/
+    ports:
+      - 1311:1301
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
 
   reverse-proxy:
     image: traefik # The official Traefik docker image

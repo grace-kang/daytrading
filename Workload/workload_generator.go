@@ -144,10 +144,10 @@ func main() {
 
 		if userS[u] != "./testLOG" && userS[u] != "" {
 			//fmt.Println(u, ":", userS[u])
-			time.Sleep(200 * time.Millisecond)
+			time.Sleep(150 * time.Millisecond)
 			//go concurrencyLogic("http://transaction:1300", lines, userS[u])
-
-			threads := 7
+/*
+			threads := 11
 			if u%threads == 0 {
 				go concurrencyLogic("http://localhost:1301", lines, userS[u])
 			} else if u%threads == 1 {
@@ -162,9 +162,17 @@ func main() {
 				go concurrencyLogic("http://localhost:1306", lines, userS[u])
 			} else if u%threads == 6 {
 				go concurrencyLogic("http://localhost:1300", lines, userS[u])
+			} else if u%threads == 7 {
+				go concurrencyLogic("http://localhost:1307", lines, userS[u])
+			} else if u%threads == 8 {
+				go concurrencyLogic("http://localhost:1308", lines, userS[u])
+			} else if u%threads == 9 {
+				go concurrencyLogic("http://localhost:1310", lines, userS[u])
+			} else if u%threads == 10 {
+				go concurrencyLogic("http://localhost:1311", lines, userS[u])
 			}
-
-			//go concurrencyLogic("http://localhost:1300", lines, userS[u])
+*/
+			go concurrencyLogic("http://localhost:1330", lines, userS[u])
 			userly += 1
 			fmt.Println("numUsers: ", userly)
 
@@ -172,7 +180,7 @@ func main() {
 	}
 	wg.Wait()
 	//wg.Add(1)
-	dumpLogFile("http://localhost:1300", "120000", nil, "./testLOG")
+	dumpLogFile("http://localhost:1330", "120000", nil, "./testLOG")
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
@@ -205,12 +213,12 @@ func concurrencyLogic(address string, lines []string, username string) {
 		data = append(data, s[1:]...)
 
 		if username == data[2] {
-			time.Sleep(200 * time.Millisecond)
+			//time.Sleep(10 * time.Millisecond)
 
 			transNum := i + 1
 			transNum_str := strconv.Itoa(transNum)
 			fmt.Println(transNum)
-			//time.Sleep(5 * time.Millisecond)
+			time.Sleep(5 * time.Millisecond)
 			switch command {
 
 			case "ADD":
@@ -413,4 +421,5 @@ func concurrencyLogic(address string, lines []string, username string) {
 			}
 		}
 	}
+	fmt.Println("user fin:", username)
 }
