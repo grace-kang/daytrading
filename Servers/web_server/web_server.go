@@ -121,8 +121,8 @@ func getQuote(stock string, username string) string {
 
 func add(username string) string {
 	amount := "10000"
-	TRANSACTION_URL := os.Getenv("TRANSACTION_URL")
-	address := TRANSACTION_URL
+	//TRANSACTION_URL := os.Getenv("TRANSACTION_URL")
+	address := "http://transaction:1300"
 	addr := address + "/add"
 	transNum_str := "1"
 	resp, err := http.PostForm(addr, url.Values{
