@@ -120,6 +120,7 @@ function submitRequest() {
     url: "sendCommand",
     data: {
       command: currentCommand,
+      username: username,
       amount: numberInput,
       string: stringInput
     },

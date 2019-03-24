@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -16,7 +17,11 @@ const (
 	connHost = "localhost"
 	connPort = "1600"
 	connType = "http"
+	address  = "http://transaction:1300"
+	server   = "webserver"
 )
+
+var transNum = 0
 
 func main() {
 
@@ -39,6 +44,66 @@ func main() {
 
 func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("in sendhandler")
+	transNum = transNum + 1
+
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
+	}
+	command := r.Form.Get("command")
+	amountInput := r.Form.Get("amount")
+	stringInput := r.Form.Get("string")
+	fmt.Println("zmount is ", amountInput, "string is ", stringInput)
+	v := url.Values{
+		"server":         {server},
+		"command":        {command},
+		"transactionNum": {strconv.Itoa(transNum)},
+	}
+
+	switch command {
+	case "ADD":
+
+		resp, err := http.PostForm(address+"/add", v)
+		if err != nil {
+			//send error message back
+			// myvar := map[string]interface{}{"Quote": quotey, "Add": addy}
+			// outputHTML(w, "tmp/home.html", myvar)
+		}
+		fmt.Println("resp:", resp)
+		resp.Body.Close()
+
+	case "QUOTE":
+		getQuote(stringInput, "user")
+
+	case "BUY":
+
+	case "COMMIT_BUY":
+
+	case "CANCEL_BUY":
+
+	case "SELL":
+
+	case "COMMIT_SELL":
+
+	case "CANCEL_SELL":
+
+	case "SET_BUY_AMOUNT":
+
+	case "CANCEL_SET_BUY":
+
+	case "SET_BUY_TRIGGER":
+
+	case "SET_SELL_AMOUNT":
+
+	case "SET_SELL_TRIGGER":
+
+	case "CANCEL_SET_SELL":
+
+	case "DUMPLOG":
+
+	case "DISPLAY_SUMMARY":
+
+	}
 
 }
 
@@ -122,7 +187,6 @@ func getQuote(stock string, username string) string {
 func add(username string) string {
 	amount := "10000"
 	//TRANSACTION_URL := os.Getenv("TRANSACTION_URL")
-	address := "http://transaction:1300"
 	addr := address + "/add"
 	transNum_str := "1"
 	resp, err := http.PostForm(addr, url.Values{
