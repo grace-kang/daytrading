@@ -1,98 +1,88 @@
 <?xml version="1.0"?>
 <log>
+   <userCommand>
+      <timestamp>1553486731099</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <command>ADD</command>
+      <funds>0.00</funds>
+   </userCommand>
+   <accountTransaction>
+      <timestamp>1553486731458</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <action>add</action>
+      <username></username>
+      <funds>0.00</funds>
+   </accountTransaction>
+   <userCommand>
+      <timestamp>1553486733426</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <command>ADD</command>
+      <funds>0.00</funds>
+   </userCommand>
+   <accountTransaction>
+      <timestamp>1553486733427</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <action>add</action>
+      <username></username>
+      <funds>0.00</funds>
+   </accountTransaction>
+   <userCommand>
+      <timestamp>1553486745266</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <command>ADD</command>
+      <funds>0.00</funds>
+   </userCommand>
+   <accountTransaction>
+      <timestamp>1553486745267</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <action>add</action>
+      <username></username>
+      <funds>0.00</funds>
+   </accountTransaction>
+   <userCommand>
+      <timestamp>1553486765694</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <command>ADD</command>
+      <funds>0.00</funds>
+   </userCommand>
+   <accountTransaction>
+      <timestamp>1553486765694</timestamp>
+      <server>server1</server>
+      <transactionNum>0</transactionNum>
+      <action>add</action>
+      <username></username>
+      <funds>0.00</funds>
+   </accountTransaction>
    <systemEvent>
-      <timestamp>1553484221791</timestamp>
+      <timestamp>1553533437832</timestamp>
       <server>server1</server>
       <transactionNum>120000</transactionNum>
       <command>DUMPLOG</command>
       <filename>./testLOG</filename>
    </systemEvent>
    <systemEvent>
-      <timestamp>1553484275489</timestamp>
+      <timestamp>1553533472524</timestamp>
       <server>server1</server>
       <transactionNum>120000</transactionNum>
       <command>DUMPLOG</command>
       <filename>./testLOG</filename>
    </systemEvent>
    <systemEvent>
-      <timestamp>1553484309135</timestamp>
+      <timestamp>1553533538123</timestamp>
       <server>server1</server>
       <transactionNum>120000</transactionNum>
       <command>DUMPLOG</command>
       <filename>./testLOG</filename>
    </systemEvent>
    <systemEvent>
-      <timestamp>1553484315713</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553484461942</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553484676582</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553484881339</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553485443643</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553485609393</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553485675195</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553485763138</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553485768807</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553485907295</timestamp>
-      <server>server1</server>
-      <transactionNum>120000</transactionNum>
-      <command>DUMPLOG</command>
-      <filename>./testLOG</filename>
-   </systemEvent>
-   <systemEvent>
-      <timestamp>1553485949600</timestamp>
+      <timestamp>1553533546072</timestamp>
       <server>server1</server>
       <transactionNum>120000</transactionNum>
       <command>DUMPLOG</command>

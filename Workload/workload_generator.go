@@ -180,7 +180,7 @@ func main() {
 	}
 	wg.Wait()
 	//wg.Add(1)
-	dumpLogFile("http://localhost:1330", "120000", nil, "./testLOG")
+	dumpLogFile("http://localhost:80", strconv.Itoa(count), nil, "./testLOG")
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
@@ -231,6 +231,7 @@ func concurrencyLogic(address string, lines []string, username string) {
 			if err != nil {
 				fmt.Println(err)
 			}
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
 			req.Host = "web"
 			resp, err := client.Do(req)
 

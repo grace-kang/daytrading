@@ -12,7 +12,7 @@ import (
 
 const (
 	connHost = "localhost"
-	connPort = "1300"
+	connPort = "80"
 	connType = "http"
 )
 
@@ -75,7 +75,7 @@ func main() {
 	http.HandleFunc("/display_summary", displaySummaryHandler)
 	http.HandleFunc("/dumpLog", dumpLogHandler)
 
-	err := http.ListenAndServe(":1300", nil)
+	err := http.ListenAndServe(connHost + ":" + connPort, nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
@@ -113,7 +113,14 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func printHost() {
+  hostname, _ := os.Hostname()
+  fmt.Println("Hostname: " + hostname)
+}
+
 func addHandler(w http.ResponseWriter, r *http.Request) {
+  fmt.Println("ADD handler")
+  printHost()
 	if err := r.ParseForm(); err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
@@ -124,6 +131,9 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+  fmt.Println(user)
+  fmt.Println(transNum)
+  fmt.Println(amount)
 
 	if display == false {
 		redisADD(client, user, amount)
@@ -138,6 +148,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func buyHandler(w http.ResponseWriter, r *http.Request) {
+  printHost()
 	if err := r.ParseForm(); err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
