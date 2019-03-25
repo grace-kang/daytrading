@@ -251,7 +251,7 @@ services:
   web:
     build: web_server/
     ports:
-      - 1600:1600
+      - 1600-1604:80
     depends_on:
       - quote
     labels:
