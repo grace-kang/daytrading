@@ -141,10 +141,10 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 
 	// quotey := getQuote("abc", "123")
 	// fmt.Println(string(quotey))
-	// tpl, _ := ioutil.ReadFile("tmp/home.html")
-	// tplParsed, _ := template.New("test").Parse(string(tpl))
+	tpl, _ := ioutil.ReadFile("tmp/home.html")
+	tplParsed, _ := template.New("test").Parse(string(tpl))
 	// templateData := map[string]interface{}{"Quote": quotey}
-	// tplParsed.Execute(w, templateData)
+	tplParsed.Execute(w, nil)
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {

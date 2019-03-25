@@ -4,5 +4,3 @@ ADD . /web_server/
 WORKDIR /web_server 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 CMD ["/web_server/main"]
-
-EXPOSE 1600
