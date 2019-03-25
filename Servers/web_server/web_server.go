@@ -45,6 +45,7 @@ func main() {
 
 func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("in sendhandler")
+
 	transNum = transNum + 1
 
 	if err := r.ParseForm(); err != nil {
@@ -131,7 +132,6 @@ func outputHTML(w http.ResponseWriter, filename string, data interface{}) {
 }
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-
 	quotey := getQuote("abc", "123")
 	fmt.Println(string(quotey))
 	addy := add("abc")
@@ -204,6 +204,9 @@ func add(username string) string {
 }
 
 func workloadTransaction(w http.ResponseWriter, r *http.Request) {
+	hostname, _ := os.Hostname()
+	fmt.Println("Hostname: " + hostname)
+
 	if err := r.ParseForm(); err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return

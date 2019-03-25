@@ -255,8 +255,8 @@ services:
     depends_on:
       - quote
     labels:
-      - "traefik.backend=web-echo"
-      - "traefik.frontend.rule=Host:web-echo.example.com"
+      - "traefik.backend=web"
+      - "traefik.frontend.rule=Host:web"
     environment:
       REDIS_URL: redis:6379
       REDIS2_URL: redis2:6379
