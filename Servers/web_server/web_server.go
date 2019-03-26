@@ -233,7 +233,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -257,7 +257,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -280,7 +280,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -302,7 +302,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -321,7 +321,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -340,7 +340,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -359,7 +359,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -378,7 +378,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -401,7 +401,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -424,7 +424,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -445,7 +445,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -464,7 +464,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -487,7 +487,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -510,7 +510,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
@@ -531,7 +531,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 		}
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "web"
+		req.Host = "transaction"
 		resp, err := client.Do(req)
 		if err != nil {
 			fmt.Println(err)
