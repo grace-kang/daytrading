@@ -23,10 +23,42 @@ services:
     volumes:
       - .:/go/src/audit_server
 
+  workload:
+    image: golang:alpine
+    volumes: 
+      - .:/go/src/daytrading
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - transaction
+      - transaction2
+      - transaction3
+      - transaction4
+      - transaction5
+      - transaction6
+      - transaction7
+      - redis
+      - redis2
+      - quote
+      - audit
+    working_dir: /go/src/daytrading
+    command: go build -o daytrading
+    command: go run daytrading workload3
+    environment:
+      WEB_URL: web:80
+      TRANSACTION_URL: transaction:1300
+      TRANSACTION2_URL: transaction2:1301
+      TRANSACTION3_URL: transaction3:1302
+      TRANSACTION4_URL: transaction4:1303
+      TRANSACTION5_URL: transaction5:1304
+      TRANSACTION6_URL: transaction6:1305
+      TRANSACTION7_URL: transaction7:1306
+
   transaction:
     build: transaction_server/
     ports:
-      - 1330:1300
+      - 1300:1300
     links:
       - redis
       - redis2
