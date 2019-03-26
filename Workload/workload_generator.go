@@ -172,7 +172,7 @@ func main() {
 				go concurrencyLogic("http://localhost:1311", lines, userS[u])
 			}
 */
-			go concurrencyLogic("http://localhost:80", lines, userS[u])
+			go concurrencyLogic("http://localhost:1600", lines, userS[u])
 			userly += 1
 			fmt.Println("numUsers: ", userly)
 
@@ -180,7 +180,7 @@ func main() {
 	}
 	wg.Wait()
 	//wg.Add(1)
-	dumpLogFile("http://localhost:80", strconv.Itoa(count), nil, "./testLOG")
+	dumpLogFile("http://localhost:1330", "120000", nil, "./testLOG")
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
@@ -222,18 +222,10 @@ func concurrencyLogic(address string, lines []string, username string) {
 			fmt.Println(transNum)
 			time.Sleep(5 * time.Millisecond)
 
-			client := &http.Client{}
-			form := url.Values{
+			resp, err := http.PostForm(address + "/workloadTransaction", url.Values{
 				"transNum": {transNum_str},
 				"command": {command},
-				"params": {params}}
-			req, err := http.NewRequest("POST", address + "/workloadTransaction", strings.NewReader(form.Encode()))
-			if err != nil {
-				fmt.Println(err)
-			}
-			req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-			req.Host = "web"
-			resp, err := client.Do(req)
+				"params": {params}})
 
 			if err != nil {
 				fmt.Println(err)

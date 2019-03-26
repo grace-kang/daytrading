@@ -26,7 +26,7 @@ services:
   transaction:
     build: transaction_server/
     ports:
-      - 1300-1310:80
+      - 1330:1300
     links:
       - redis
       - redis2
@@ -40,191 +40,188 @@ services:
       REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
-    labels:
-      - "traefik.backend=transaction"
-      - "traefik.frontend.rule=Host:transaction"
- 
-  # transaction2:
-  #   build: transaction_server/
-  #   ports:
-  #     - 1301:1300
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction3:
-  #   build: transaction_server/
-  #   ports:
-  #     - 1302:1300
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction4:
-  #   build: transaction_server/
-  #   ports:
-  #     - 1303:1300
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction5:
-  #   build: transaction_server/
-  #   ports:
-  #     - 1304:1300
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction6:
-  #   build: transaction_server/
-  #   ports:
-  #     - 1305:1300
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction7:
-  #   build: transaction_server/
-  #   ports:
-  #     - 1306:1300
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction8:
-  #   build: transaction_server2/
-  #   ports:
-  #     - 1307:1301
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction9:
-  #   build: transaction_server2/
-  #   ports:
-  #     - 1308:1301
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction10:
-  #   build: transaction_server2/
-  #   ports:
-  #     - 1310:1301
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  # transaction11:
-  #   build: transaction_server2/
-  #   ports:
-  #     - 1311:1301
-  #   links:
-  #     - redis
-  #     - redis2
-  #   depends_on:
-  #     - redis
-  #     - redis2
-  #     - quote
-  #     - audit
-  #   environment:
-  #     REDIS_URL: redis:6379
-  #     REDIS2_URL: redis2:6379
-  #     QUOTE_URL: quote:1200
-  #     AUDIT_URL: audit:1400
-  #
-  #
+
+  transaction2:
+    build: transaction_server/
+    ports:
+      - 1301:1300
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction3:
+    build: transaction_server/
+    ports:
+      - 1302:1300
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction4:
+    build: transaction_server/
+    ports:
+      - 1303:1300
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction5:
+    build: transaction_server/
+    ports:
+      - 1304:1300
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction6:
+    build: transaction_server/
+    ports:
+      - 1305:1300
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction7:
+    build: transaction_server/
+    ports:
+      - 1306:1300
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction8:
+    build: transaction_server2/
+    ports:
+      - 1307:1301
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction9:
+    build: transaction_server2/
+    ports:
+      - 1308:1301
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction10:
+    build: transaction_server2/
+    ports:
+      - 1310:1301
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+  transaction11:
+    build: transaction_server2/
+    ports:
+      - 1311:1301
+    links:
+      - redis
+      - redis2
+    depends_on:
+      - redis
+      - redis2
+      - quote
+      - audit
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+
+
   reverse-proxy:
     image: traefik # The official Traefik docker image
     command: --api --docker # Enables the web UI and tells Traefik to listen to docker
@@ -258,8 +255,8 @@ services:
     depends_on:
       - quote
     labels:
-      - "traefik.backend=web"
-      - "traefik.frontend.rule=Host:web"
+      - "traefik.backend=web-echo"
+      - "traefik.frontend.rule=Host:web-echo.example.com"
     environment:
       REDIS_URL: redis:6379
       REDIS2_URL: redis2:6379
