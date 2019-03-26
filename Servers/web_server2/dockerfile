@@ -1,0 +1,8 @@
+FROM golang:1.6-alpine
+RUN mkdir /wev_server2 
+ADD . /web_server2/ 
+WORKDIR /web_server2 
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
+CMD ["/web_server2/main"]
+
+EXPOSE 1601
