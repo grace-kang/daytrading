@@ -1,8 +1,10 @@
-FROM golang:1.6-alpine
-RUN mkdir /wev_server2 
-ADD . /web_server2/ 
-WORKDIR /web_server2 
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
-CMD ["/web_server2/main"]
+FROM golang:alpine
+RUN apk add git
 
-EXPOSE 1601
+COPY . /go/src/web_server2/
+RUN go get -u github.com/gorilla/mux
+RUN go get /go/src/web_server2
+RUN echo "installed web2"
+WORKDIR /go/src/web_server2
+
+ENTRYPOINT /go/bin/web_server2

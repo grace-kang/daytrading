@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 const (
@@ -29,17 +31,14 @@ var wg sync.WaitGroup
 var transNum = 0
 
 func main() {
-	time.Sleep(10000 * time.Millisecond)
-	runWorkload()
-
-	r := http.NewServeMux()
+	r := mux.NewRouter()
 
 	r.HandleFunc("/userCommands.js", SendJqueryJs)
 
 	r.HandleFunc("/", homeHandler)
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/sendCommand", sendCommandHandle)
-	r.HandleFunc("/workloadTransaction", workloadTransaction)
+	r.HandleFunc("/runWorkload/{file}", runWorkload)
 
 	err := http.ListenAndServe(":"+connPort, r)
 	if err != nil {
@@ -139,13 +138,13 @@ func outputHTML(w http.ResponseWriter, filename string, data interface{}) {
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
 
-	quotey := getQuote("abc", "123")
-	fmt.Println(string(quotey))
-	addy := add("abc")
-	fmt.Println(string(addy))
-	myvar := map[string]interface{}{"Quote": quotey, "Add": addy}
-	outputHTML(w, "tmp/home.html", myvar)
-
+	// quotey := getQuote("abc", "123")
+	// fmt.Println(string(quotey))
+	// addy := add("abc")
+	// fmt.Println(string(addy))
+	// myvar := map[string]interface{}{"Quote": quotey, "Add": addy}
+	// outputHTML(w, "tmp/home.html", myvar)
+  //
 	// quotey := getQuote("abc", "123")
 	// fmt.Println(string(quotey))
 	// tpl, _ := ioutil.ReadFile("tmp/home.html")
@@ -210,23 +209,34 @@ func add(username string) string {
 	return "response"
 }
 
-func workloadTransaction(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		fmt.Fprintf(w, "ParseForm() err: %v", err)
-		return
-	}
-	transNum_str := r.Form.Get("transNum")
-	command := r.Form.Get("command")
-	params_str := string(r.Form.Get("params"))
-	params := strings.Split(params_str, ",")
+func concurrencyLogic(address string, lines []string, username string) {
+	defer wg.Done()
+	// httpclient := http.Client{}
+	// client := dialRedis()
+	for i, line := range lines {
+		s := strings.Split(line, ",")
+		x := strings.Split(s[0], " ")
+		command := x[1]
 
-	client := &http.Client{}
+		for ij := 0; ij < len(s); ij++ {
+			s[ij] = strings.TrimSpace(s[ij])
+		}
 
-	switch command {
+		data := make([]string, 2)
+
+		data[1] = strings.TrimSpace(x[1])
+		data = append(data, s[1:]...)
+
+		if username == data[2] {
+			transNum := i + 1
+			transNum_str := strconv.Itoa(transNum)
+			fmt.Println(transNum)
+			//time.Sleep(5 * time.Millisecond)
+			client := &http.Client{}
+			switch command {
 
 	case "ADD":
-		username := params[0]
-		amount := params[1]
+		amount := data[3]
 		fmt.Println(amount)
 		addr := address + "/add"
 		form := url.Values{
@@ -247,9 +257,8 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "BUY":
-		username := params[0]
-		symbol := params[1]
-		amount := params[2]
+		symbol := data[3]
+		amount := data[4]
 		addr := address + "/buy"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -270,9 +279,8 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "SELL":
-		username := params[0]
-		symbol := params[1]
-		amount := params[2]
+		symbol := data[3]
+		amount := data[4]
 		addr := address + "/sell"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -293,8 +301,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "QUOTE":
-		username := params[0]
-		symbol := params[1]
+		symbol := data[3]
 		addr := address + "/quote"
 		transNum_str := strconv.Itoa(transNum)
 		form := url.Values{
@@ -315,7 +322,6 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "COMMIT_BUY":
-		username := params[0]
 		addr := address + "/commit_buy"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -334,7 +340,6 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "COMMIT_SELL":
-		username := params[0]
 		addr := address + "/commit_sell"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -353,7 +358,6 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "CANCEL_BUY":
-		username := params[0]
 		addr := address + "/cancel_buy"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -372,7 +376,6 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "CANCEL_SELL":
-		username := params[0]
 		addr := address + "/cancel_sell"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -391,9 +394,8 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "SET_BUY_AMOUNT":
-		username := params[0]
-		symbol := params[1]
-		amount := params[2]
+		symbol := data[3]
+		amount := data[4]
 		addr := address + "/set_buy_amount"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -414,9 +416,8 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "SET_BUY_TRIGGER":
-		username := params[0]
-		symbol := params[1]
-		amount := params[2]
+		symbol := data[3]
+		amount := data[4]
 		addr := address + "/set_buy_trigger"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -437,8 +438,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "CANCEL_SET_BUY":
-		username := params[0]
-		symbol := params[1]
+		symbol := data[3]
 		addr := address + "/cancel_set_buy"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -458,7 +458,6 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "DISPLAY_SUMMARY":
-		username := params[0]
 		addr := address + "/display_summary"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -477,9 +476,8 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "SET_SELL_AMOUNT":
-		username := params[0]
-		symbol := params[1]
-		amount := params[2]
+		symbol := data[3]
+		amount := data[4]
 		addr := address + "/set_sell_amount"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -500,9 +498,8 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "SET_SELL_TRIGGER":
-		username := params[0]
-		symbol := params[1]
-		amount := params[2]
+		symbol := data[3]
+		amount := data[4]
 		addr := address + "/set_sell_trigger"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -523,8 +520,7 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 		resp.Body.Close()
 
 	case "CANCEL_SET_SELL":
-		username := params[0]
-		symbol := params[1]
+		symbol := data[3]
 		addr := address + "/cancel_set_sell"
 		form := url.Values{
 			"transNum": {transNum_str},
@@ -542,6 +538,8 @@ func workloadTransaction(w http.ResponseWriter, r *http.Request) {
 			os.Exit(1)
 		}
 		resp.Body.Close()
+	}
+	}
 	}
 }
 
@@ -622,13 +620,9 @@ func dumpLogFile(address string, transNum string, username interface{}, filename
 	resp.Body.Close()
 }
 
-func runWorkload() {
+func runWorkload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("runWorkload:hello")
-	/*if len(os.Args) != 2 {
-		fmt.Println("Error please specify the workload file (eg. workload2)")
-		os.Exit(1)
-	}*/
-	file := "workload3"
+	file := r.URL.Path[len("/runWorkload/"):]
 	count := getTransactionCount(file)
 	numUsers := getNumUsers(file)
 	file = "workload_files/" + file + ".txt"
@@ -655,9 +649,7 @@ func runWorkload() {
 		data = append(data, s[1:]...)
 		User[data[2]] = 1
 	}
-	// go linearLogic(lines)
-	// go linearLogic2(lines)
-	// go linearLogic3(lines)
+
 	p := 0
 	userS := make([]string, numUsers+10)
 	for key, value := range User {
@@ -696,14 +688,14 @@ func runWorkload() {
 			webServeNum := 2
 			if u%webServeNum == 0 {
 				wg.Add(1)
-				go concurrencyLogic("http://transaction:80", lines, userS[u])
+				go concurrencyLogic(address, lines, userS[u])
 			}
 
 		}
 	}
 	wg.Wait()
 	//wg.Add(1)
-	//dumpLogFile("http://transaction2:1301", "120000", nil, "./testLOG")
+	dumpLogFile("http://transaction:80", strconv.Itoa(count), nil, "./testLOG")
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
@@ -714,231 +706,6 @@ func runWorkload() {
 	fmt.Println("Total time: ", difference)
 	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
 	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)
-
 }
-func concurrencyLogic(address string, lines []string, username string) {
-	defer wg.Done()
-	// httpclient := http.Client{}
-	// client := dialRedis()
-	for i, line := range lines {
-		s := strings.Split(line, ",")
-		x := strings.Split(s[0], " ")
-		command := x[1]
 
-		for ij := 0; ij < len(s); ij++ {
-			s[ij] = strings.TrimSpace(s[ij])
-		}
 
-		data := make([]string, 2)
-
-		data[1] = strings.TrimSpace(x[1])
-		data = append(data, s[1:]...)
-
-		if username == data[2] {
-			transNum := i + 1
-			transNum_str := strconv.Itoa(transNum)
-			fmt.Println(transNum)
-			//time.Sleep(5 * time.Millisecond)
-			switch command {
-
-			case "ADD":
-				amount := data[3]
-				addr := address + "/add"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"amount":   {amount}})
-				if err != nil {
-					fmt.Println(err)
-				}
-				resp.Body.Close()
-
-			case "BUY":
-				symbol := data[3]
-				amount := data[4]
-				addr := address + "/buy"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol},
-					"amount":   {amount}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "SELL":
-				symbol := data[3]
-				amount := data[4]
-				addr := address + "/sell"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol},
-					"amount":   {amount}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "QUOTE":
-				symbol := data[3]
-				addr := address + "/quote"
-				transNum_str := strconv.Itoa(transNum)
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "COMMIT_BUY":
-				addr := address + "/commit_buy"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "COMMIT_SELL":
-				addr := address + "/commit_sell"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "CANCEL_BUY":
-				addr := address + "/cancel_buy"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "CANCEL_SELL":
-				addr := address + "/cancel_sell"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "SET_BUY_AMOUNT":
-				symbol := data[3]
-				amount := data[4]
-				addr := address + "/set_buy_amount"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol},
-					"amount":   {amount}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "SET_BUY_TRIGGER":
-				symbol := data[3]
-				amount := data[4]
-				addr := address + "/set_buy_trigger"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol},
-					"amount":   {amount}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "CANCEL_SET_BUY":
-				symbol := data[3]
-				addr := address + "/cancel_set_buy"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "DISPLAY_SUMMARY":
-				addr := address + "/display_summary"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "SET_SELL_AMOUNT":
-				symbol := data[3]
-				amount := data[4]
-				addr := address + "/set_sell_amount"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol},
-					"amount":   {amount}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "SET_SELL_TRIGGER":
-				symbol := data[3]
-				amount := data[4]
-				addr := address + "/set_sell_trigger"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol},
-					"amount":   {amount}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			case "CANCEL_SET_SELL":
-				symbol := data[3]
-				addr := address + "/cancel_set_sell"
-				resp, err := http.PostForm(addr, url.Values{
-					"transNum": {transNum_str},
-					"user":     {username},
-					"symbol":   {symbol}})
-				if err != nil {
-					fmt.Println(err)
-					//os.Exit(1)
-				}
-				resp.Body.Close()
-
-			}
-		}
-	}
-}

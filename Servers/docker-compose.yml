@@ -85,6 +85,8 @@ services:
       REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
+    volumes:
+      - .:/go/src/web_server
 
   web2:
     build: web_server2/
@@ -98,3 +100,6 @@ services:
       REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
+    volumes:
+      - .:/go/src/web_server2
+
