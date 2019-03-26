@@ -147,30 +147,30 @@ func main() {
 			time.Sleep(150 * time.Millisecond)
 			//go concurrencyLogic("http://transaction:1300", lines, userS[u])
 			/*
-			threads := 11
-			if u%threads == 0 {
-				go concurrencyLogic("http://localhost:1301", lines, userS[u])
-			} else if u%threads == 1 {
-				go concurrencyLogic("http://localhost:1302", lines, userS[u])
-			} else if u%threads == 2 {
-				go concurrencyLogic("http://localhost:1303", lines, userS[u])
-			} else if u%threads == 3 {
-				go concurrencyLogic("http://localhost:1304", lines, userS[u])
-			} else if u%threads == 4 {
-				go concurrencyLogic("http://localhost:1305", lines, userS[u])
-			} else if u%threads == 5 {
-				go concurrencyLogic("http://localhost:1306", lines, userS[u])
-			} else if u%threads == 6 {
-				go concurrencyLogic("http://localhost:1300", lines, userS[u])
-			} else if u%threads == 7 {
-				go concurrencyLogic("http://localhost:1307", lines, userS[u])
-			} else if u%threads == 8 {
-				go concurrencyLogic("http://localhost:1308", lines, userS[u])
-			} else if u%threads == 9 {
-				go concurrencyLogic("http://localhost:1310", lines, userS[u])
-			} else if u%threads == 10 {
-				go concurrencyLogic("http://localhost:1311", lines, userS[u])
-			}
+				threads := 11
+				if u%threads == 0 {
+					go concurrencyLogic("http://localhost:1301", lines, userS[u])
+				} else if u%threads == 1 {
+					go concurrencyLogic("http://localhost:1302", lines, userS[u])
+				} else if u%threads == 2 {
+					go concurrencyLogic("http://localhost:1303", lines, userS[u])
+				} else if u%threads == 3 {
+					go concurrencyLogic("http://localhost:1304", lines, userS[u])
+				} else if u%threads == 4 {
+					go concurrencyLogic("http://localhost:1305", lines, userS[u])
+				} else if u%threads == 5 {
+					go concurrencyLogic("http://localhost:1306", lines, userS[u])
+				} else if u%threads == 6 {
+					go concurrencyLogic("http://localhost:1300", lines, userS[u])
+				} else if u%threads == 7 {
+					go concurrencyLogic("http://localhost:1307", lines, userS[u])
+				} else if u%threads == 8 {
+					go concurrencyLogic("http://localhost:1308", lines, userS[u])
+				} else if u%threads == 9 {
+					go concurrencyLogic("http://localhost:1310", lines, userS[u])
+				} else if u%threads == 10 {
+					go concurrencyLogic("http://localhost:1311", lines, userS[u])
+				}
 			*/
 			go concurrencyLogic("http://localhost:1600", lines, userS[u])
 			userly += 1
@@ -180,7 +180,7 @@ func main() {
 	}
 	wg.Wait()
 	//wg.Add(1)
-	dumpLogFile("http://localhost:80", strconv.Itoa(count), nil, "./testLOG")
+	dumpLogFile("http://localhost:1300", strconv.Itoa(count), nil, "./testLOG")
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
@@ -203,7 +203,7 @@ func concurrencyLogic(address string, lines []string, username string) {
 		x := strings.Split(s[0], " ")
 		command := x[1]
 
-		p := strings.Split(line, command+",")[1]
+		params := strings.Split(line, command+",")[1]
 
 		for ij := 0; ij < len(s); ij++ {
 			s[ij] = strings.TrimSpace(s[ij])
@@ -225,21 +225,21 @@ func concurrencyLogic(address string, lines []string, username string) {
 			client := &http.Client{}
 			form := url.Values{
 				"transNum": {transNum_str},
-				"command": {command},
-				"params": {params}}
-				req, err := http.NewRequest("POST", address + "/workloadTransaction", strings.NewReader(form.Encode()))
-				if err != nil {
-					fmt.Println(err)
-				}
-				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-				resp, err := client.Do(req)
-
-				if err != nil {
-					fmt.Println(err)
-					os.Exit(1)
-				}
-				resp.Body.Close()
+				"command":  {command},
+				"params":   {params}}
+			req, err := http.NewRequest("POST", address+"/workloadTransaction", strings.NewReader(form.Encode()))
+			if err != nil {
+				fmt.Println(err)
 			}
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+			resp, err := client.Do(req)
+
+			if err != nil {
+				fmt.Println(err)
+				os.Exit(1)
+			}
+			resp.Body.Close()
 		}
-		fmt.Println("user fin:", username)
 	}
+	fmt.Println("user fin:", username)
+}

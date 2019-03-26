@@ -172,7 +172,7 @@ func main() {
 					go concurrencyLogic("http://localhost:1311", lines, userS[u])
 				}
 			*/
-			go concurrencyLogic("http://web:80", lines, userS[u])
+			go concurrencyLogic("http://web:1600", lines, userS[u])
 			userly += 1
 			fmt.Println("numUsers: ", userly)
 
@@ -180,7 +180,7 @@ func main() {
 	}
 	wg.Wait()
 	//wg.Add(1)
-	dumpLogFile("http://transaction:1300", "120000", nil, "./testLOG")
+	dumpLogFile("http://transaction:80", "120000", nil, "./testLOG")
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")
