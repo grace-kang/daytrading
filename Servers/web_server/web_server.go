@@ -620,6 +620,22 @@ func dumpLogFile(address string, transNum string, username interface{}, filename
 	resp.Body.Close()
 }
 
+func clearSystemLogs() {
+	client := &http.Client{}
+	addr := "http://transaction:80" + "/clearSystemLogs"
+	req, err := http.NewRequest("POST", addr, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	req.Host = "transaction"
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	resp.Body.Close()
+}
+
 func runWorkload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("runWorkload:hello")
 	file := r.URL.Path[len("/runWorkload/"):]
@@ -696,6 +712,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	wg.Wait()
 	//wg.Add(1)
 	dumpLogFile("http://transaction:80", strconv.Itoa(count), nil, "./testLOG")
+	clearSystemLogs()
 	//wg.Wait()
 	//print stats for the workload file
 	fmt.Println("\n\n")

@@ -75,12 +75,18 @@ func main() {
 	http.HandleFunc("/cancel_set_sell", cancelSetSellHandler)
 	http.HandleFunc("/display_summary", displaySummaryHandler)
 	http.HandleFunc("/dumpLog", dumpLogHandler)
+	http.HandleFunc("/clearSystemLogs", clearSystemLogHandler)
 
-	err := http.ListenAndServe(":" + connPort, nil)
+	err := http.ListenAndServe(":"+connPort, nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
-  fmt.Println("Transaction server listening on " + connHost + ":" + connPort)
+	fmt.Println("Transaction server listening on " + connHost + ":" + connPort)
+}
+
+func clearSystemLogHandler(w http.ResponseWriter, r *http.Request) {
+	// fmt.Println("in clearSystemLogHandler")
+	clearSystemLogs()
 }
 
 func checkUserExists(transNum int, username string, command string) {

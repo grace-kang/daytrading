@@ -144,6 +144,16 @@ func LogErrorEventCommand(server string, transNum int, command string, username 
 	resp.Body.Close()
 }
 
+func clearSystemLogs() {
+	// fmt.Println("in loggingservice, clear system logs")
+	addr := address + "/clearSystemLogs"
+	resp, err := http.PostForm(addr, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	resp.Body.Close()
+}
+
 func LogDebugEventCommand(server string, transNum int, command string, username interface{}, funds interface{}, stockSymbol interface{}, filename interface{}, debugMessage interface{}) {
 
 	addr := address + "/debugEventCommand"
