@@ -154,10 +154,16 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 
 		// write the response
-		w.Write([]byte("added balance " + amount + " successfully\n"))
+		// w.Write([]byte("added balance " + amount + " successfully\n"))
+		w.Write([]byte(string(responseData)))
 
 	case "QUOTE":
 
@@ -191,9 +197,16 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// write the response
-		w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
+		// w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
+		w.Write([]byte(string(responseData)))
 
 	case "COMMIT_BUY":
 
@@ -209,9 +222,15 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 		// write the response
-		w.Write([]byte("commit buy successfully\n"))
+		// w.Write([]byte("commit buy successfully\n"))
+		w.Write([]byte(string(responseData)))
 
 	case "CANCEL_BUY":
 
@@ -227,9 +246,15 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 		// write the response
-		w.Write([]byte("cancel buy successfully\n"))
+		// w.Write([]byte("cancel buy successfully\n"))
+		w.Write([]byte(string(responseData)))
 
 	case "SELL":
 
@@ -249,9 +274,15 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 		// write the response
-		w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
+		// w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
+		w.Write([]byte(string(responseData)))
 
 	case "COMMIT_SELL":
 
@@ -267,9 +298,15 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 		// write the response
-		w.Write([]byte("commit buy successfully\n"))
+		// w.Write([]byte("commit buy successfully\n"))
+		w.Write([]byte(string(responseData)))
 
 	case "CANCEL_SELL":
 
@@ -285,9 +322,15 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 		// write the response
-		w.Write([]byte("cancel buy successfully\n"))
+		// w.Write([]byte("cancel buy successfully\n"))
+		w.Write([]byte(string(responseData)))
 
 	case "SET_BUY_AMOUNT":
 
@@ -315,9 +358,15 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			fmt.Println(err)
 			os.Exit(1)
 		}
-		resp.Body.Close()
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
 		// write the response
-		w.Write([]byte("dumplog successfully. \n"))
+		// w.Write([]byte("dumplog successfully. \n"))
+		w.Write([]byte(string(responseData)))
 
 	case "DISPLAY_SUMMARY":
 

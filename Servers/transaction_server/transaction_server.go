@@ -95,8 +95,7 @@ func checkUserExists(transNum int, username string, command string) {
 	defer db.Put(client)
 	exists := exists(client, username)
 	if exists == false {
-		message := "Account" + username + " does not exist"
-		LogErrorEventCommand(server, transNum, command, username, nil, nil, nil, message)
+		client.Cmd("HMSET", username, "User", username, "Balance", 0)
 	}
 }
 
@@ -120,6 +119,7 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 		LogSystemEventCommand(server, transNum, "DUMPLOG", nil, nil, nil, filename)
 		DumpLog(filename, nil)
 	}
+	w.Write([]byte("dumplog successfully. \n"))
 }
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
@@ -137,16 +137,24 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(err)
 	}
 
+	LogUserCommand(server, transNum, "ADD", user, r.Form.Get("amount"), nil, nil)
+
+	// log error message and return if amount is negative
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "add", user, r.Form.Get("amount"), nil, nil, "cannot add negative amount into account")
+		w.Write([]byte("cannot add negative balance"))
+		return
+	}
+
 	if display == false {
 		redisADD(client, user, amount)
 	} else {
 		displayADD(client, user, amount)
 	}
 
-	LogUserCommand(server, transNum, "ADD", user, r.Form.Get("amount"), nil, nil)
-	checkUserExists(transNum, user, "ADD")
 	LogAccountTransactionCommand(server, transNum, "add", user, r.Form.Get("amount"))
 	//w.Write([]byte("ADD complete"))
+	w.Write([]byte("added balance " + r.Form.Get("amount") + " successfully\n"))
 }
 
 func buyHandler(w http.ResponseWriter, r *http.Request) {
@@ -162,19 +170,37 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
 	}
 
 	LogUserCommand(server, transNum, "BUY", user, r.Form.Get("amount"), symbol, nil)
 	checkUserExists(transNum, user, "BUY")
 
-	if display == false {
-		redisBUY(client, user, symbol, amount)
-	} else {
-		displayBUY(client, user, symbol, amount)
+	getBAL := getBalance(client, user)
+
+	if getBAL < amount {
+		w.Write([]byte("balance is not enough to buy"))
+		LogErrorEventCommand(server, transNum, "BUY", user, strconv.FormatFloat(amount, 'f', 2, 64), nil, nil, "user "+user+" does not have enough balance to buy stock "+symbol)
+		return
 	}
 
-	//w.Write([]byte("BUY complete"))
+	getPrice := getQUOTE(client, transNum, user, symbol, true)
+	fmt.Println("amount is ", amount, "price is ", getPrice)
+	stockSell := int(amount / getPrice)
+	exactTotalPrice := float64(stockSell) * getPrice
+	fmt.Println("exactTotalPrice is ", exactTotalPrice)
+	if stockSell <= 0 {
+		w.Write([]byte("amount is too low to buy any of the stock"))
+		return
+	}
+
+	if display == false {
+		redisBUY(client, user, symbol, exactTotalPrice, stockSell)
+	} else {
+		displayBUY(client, user, symbol, exactTotalPrice, stockSell)
+	}
+
+	w.Write([]byte("buy amount " + strings.TrimSpace(r.Form.Get("amount")+" of stock "+symbol+" successfully\n")))
 }
 
 func sellHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,13 +223,29 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	/*check if user exists or not*/
 	checkUserExists(transNum, user, "SELL")
 
-	if display == false {
-		redisSELL(client, user, symbol, amount)
-	} else {
-		displaySELL(client, user, symbol, amount)
+	id := symbol + ":OWNED"
+	stockOwned := stockOwned(client, user, id)
+	getPrice := getQUOTE(client, transNum, user, symbol, true)
+	stockNeeded := int(amount / getPrice)
+	newBenefit := getPrice * float64(stockNeeded)
+	if stockOwned < stockNeeded {
+		LogErrorEventCommand(server, transNum, "SELL", user, strconv.FormatFloat(amount, 'f', 2, 64), symbol, nil, "user "+user+" does not have enough stock "+symbol+" to sell")
+		w.Write([]byte("stack owned is not enough to sell"))
+		return
 	}
 
-	//w.Write([]byte("SELL complete"))
+	if stockNeeded <= 0 {
+		w.Write([]byte("amount is too low to sell any of the stock"))
+		return
+	}
+
+	if display == false {
+		redisSELL(client, user, symbol, newBenefit, stockNeeded)
+	} else {
+		displaySELL(client, user, symbol, newBenefit, stockNeeded)
+	}
+
+	w.Write([]byte("buy amount " + r.Form.Get("amount") + " of stock " + symbol + " successfully\n"))
 }
 
 func quoteHandler(w http.ResponseWriter, r *http.Request) {
@@ -239,13 +281,25 @@ func commitBuyHandler(w http.ResponseWriter, r *http.Request) {
 	LogUserCommand(server, transNum, "COMMIT_BUY", user, nil, nil, nil)
 	checkUserExists(transNum, user, "COMMIT_BUY")
 
+	string3 := "userBUY:" + user
+
+	if listNotEmpty(client, string3) == false {
+		LogErrorEventCommand(server, transNum, "COMMIT_BUY", user, nil, nil, nil, "user "+user+" does not have any buy to commit")
+		w.Write([]byte("there is no buy to commit"))
+		return
+	}
+	var message string
 	if display == false {
-		redisCOMMIT_BUY(client, user)
+		message = redisCOMMIT_BUY(client, user, transNum)
 	} else {
-		displayCOMMIT_BUY(client, user)
+		message = displayCOMMIT_BUY(client, user, transNum)
+	}
+	if message == "" {
+		w.Write([]byte("commit buy successfully\n"))
+	} else {
+		w.Write([]byte(message))
 	}
 
-	//w.Write([]byte("COMMIT BUY complete"))
 }
 
 func commitSellHandler(w http.ResponseWriter, r *http.Request) {
@@ -261,13 +315,21 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 
 	LogUserCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil)
 
-	if display == false {
-		redisCOMMIT_SELL(client, user)
-	} else {
-		displayCOMMIT_SELL(client, user)
+	string3 := "userSELL:" + user
+
+	if listNotEmpty(client, string3) == false {
+		LogErrorEventCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil, "user "+user+" does not have any buy to cancel")
+		w.Write([]byte("there is no sell to commit"))
+		return
 	}
 
-	//w.Write([]byte("COMMIT SELL complete"))
+	if display == false {
+		redisCOMMIT_SELL(client, user, transNum)
+	} else {
+		displayCOMMIT_SELL(client, user, transNum)
+	}
+
+	w.Write([]byte("commit buy successfully\n"))
 }
 
 func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
@@ -283,13 +345,21 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 
 	LogUserCommand(server, transNum, "CANCEL_BUY", user, nil, nil, nil)
 
+	string3 := "userBUY:" + user
+
+	if listNotEmpty(client, string3) == false {
+		LogErrorEventCommand(server, transNum, "CANCEL_BUY", user, nil, nil, nil, "user "+user+" does not have any buy to cancel")
+		w.Write([]byte("there is no buy to cancel"))
+		return
+	}
+
 	if display == false {
 		redisCANCEL_BUY(client, user)
 	} else {
 		displayCANCEL_BUY(client, user)
 	}
 
-	//w.Write([]byte("CANCEL BUY complete"))
+	w.Write([]byte("cancel buy successfully\n"))
 }
 
 func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
@@ -305,13 +375,21 @@ func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
 
 	LogUserCommand(server, transNum, "CANCEL_SELL", user, nil, nil, nil)
 
+	string3 := "userSELL:" + user
+
+	if listNotEmpty(client, string3) == false {
+		LogErrorEventCommand(server, transNum, "CANCEL_SELL", user, nil, nil, nil, "user "+user+" does not have any sell to cancel")
+		w.Write([]byte("there is no sell to cancel"))
+		return
+	}
+
 	if display == false {
 		redisCANCEL_SELL(client, user)
 	} else {
 		displayCANCEL_SELL(client, user)
 	}
 
-	//w.Write([]byte("CANCEL SELL complete"))
+	w.Write([]byte("cancel buy successfully\n"))
 }
 
 func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
@@ -331,6 +409,15 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
+
+	balance := getBalance(client, user)
+	if balance < amount {
+		LogErrorEventCommand(server, transNum, "SET_BUY_AMOUNT", user, nil, nil, nil, "user "+user+" does not have any enough balance to set buy amount")
+		return
+	}
+
+	addBalance(client, user, -amount)
+	LogAccountTransactionCommand(server, transNum, "SET_BUY_AMOUNT", user, strconv.FormatFloat(amount, 'f', 2, 64))
 
 	if display == false {
 		redisSET_BUY_AMOUNT(client, user, symbol, amount)
