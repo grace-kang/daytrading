@@ -149,7 +149,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	// fmt.Println(string(quotey))
 	tpl, _ := ioutil.ReadFile("tmp/home.html")
 	tplParsed, _ := template.New("test").Parse(string(tpl))
-	fmt.Println("tlpparsed is ", tplParsed)
 	// templateData := map[string]interface{}{"Quote": quotey}
 	tplParsed.Execute(w, nil)
 }
