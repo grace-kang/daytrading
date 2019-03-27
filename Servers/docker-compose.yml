@@ -86,7 +86,7 @@ services:
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
     volumes:
-      - .:/go/src/web_server
+      - .:/go/src/servers/web_server
 
   web2:
     build: web_server2/
@@ -101,5 +101,4 @@ services:
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
     volumes:
-      - .:/go/src/web_server2
-
+      - .:/go/src/servers/web_server2
