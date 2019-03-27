@@ -178,51 +178,7 @@
       </form>
     </div>
 
-    <div id="displayDiv"></div>
-    <div id="errorDiv">{Error}</div>
-    <!-- <div id="inputField">
-      <div id="fieldTwo" style="display:none;;">
-        <p id="fieldTwoLabel">Label2:</p>
-        <input type="text" id="stringInput" value="" />
-      </div>
-      <div id="fieldOne">
-        <p id="fieldOneLabel">Amount:</p>
-        <input type="number" id="numberInput" value="" />
-      </div>
-      <button id="submitBtn">Submit</button>
-    </div>
-
-    <div id="displayDiv"></div> -->
-
-    <!-- <script>
-      $("#commandForm").submit(function(event) {
-        console.log("Handler for .submit() called.");
-        submitRequest();
-      });
-    </script> -->
-
-    <!-- <script>
-      // Attach a submit handler to the form
-      $("#commandForm").submit(function(event) {
-        // Stop form from submitting normally
-        event.preventDefault();
-
-        // Get some values from elements on the page:
-        var $form = $(this),
-          numberInput = $form.find("input[name='numberInput']").val(),
-          url = $form.attr("action");
-
-        // Send the data using post
-        var posting = $.post(url, { number: numberInput, string: stringInput });
-
-        // Put the results in a div
-        // posting.done(function(data) {
-        //   var content = $(data).find("#content");
-        //   $("#displayDiv")
-        //     .empty()
-        //     .append(content);
-        // });
-      });
-    </script> -->
+    <div id="displayDiv"><p></p></div>
+    <div id="errorDiv"><p></p></div>
   </body>
 </html>

@@ -124,111 +124,30 @@ function submitRequest() {
       amount: numberInput,
       string: stringInput
     },
-    cache: false
+    cache: false,
+    success: function(results) {
+      console.log(results);
+      $('#displayDiv p').text("result: "+results);
+      $('#errorDiv p').text("error: none");
+    },
+    error: function(jqXHR, textStatus, errorThrown) {
+      $('#result').html('<p>status code: '+jqXHR.status+'</p><p>errorThrown: ' + errorThrown + '</p><p>jqXHR.responseText:</p><div>'+jqXHR.responseText + '</div>');
+      console.log('jqXHR:');
+      console.log(jqXHR);
+      console.log('textStatus:');
+      console.log(textStatus);
+      console.log('errorThrown:');
+      console.log(errorThrown);
+
+      $('#displayDiv p').text("result: None");
+      $('#errorDiv').html('<p>status code: '+jqXHR.status+'</p><p>errorThrown: ' + errorThrown + '</p><p>jqXHR.responseText:</p><div>'+jqXHR.responseText + '</div>');
+      
+  },
   })
-    .done(function() {
-      alert("success");
-    })
-    .fail(function() {
-      alert("error");
-    });
-
-  // var request = $.ajax({
-  //   url: "/sendCommand",
-  //   type: "POST",
-  //   data: {
-  //     command,
-  //     currentCommand,
-  //     amount: numberInput,
-  //     string: stringInput
-  //   }
-  // });
-
-  // request.done(function(msg) {
-  //   $("#log").html(msg);
-  // });
-
-  // request.fail(function(jqXHR, textStatus) {
-  //   alert("Request failed: " + textStatus);
-  // });
-
-  // switch (currentCommand) {
-  //   case "ADD":
-  //     break;
-
-  //   case "QUOTE":
-  //     break;
-  //   case "BUY":
-  //     $("#fieldOne").show();
-  //     $("#fieldTwo").show();
-  //     $("#fieldOneLabel").text("Amount");
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "COMMIT_BUY":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").hide();
-  //     break;
-  //   case "CANCEL_BUY":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").hide();
-  //     break;
-  //   case "SELL":
-  //     $("#fieldOne").show();
-  //     $("#fieldTwo").show();
-  //     $("#fieldOneLabel").text("Amount");
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "COMMIT_SELL":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").hide();
-  //     break;
-  //   case "CANCEL_SELL":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").hide();
-  //     break;
-  //   case "SET_BUY_AMOUNT":
-  //     $("#fieldOne").show();
-  //     $("#fieldTwo").show();
-  //     $("#fieldOneLabel").text("Amount");
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "CANCEL_SET_BUY":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").show();
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "SET_BUY_TRIGGER":
-  //     $("#fieldOne").show();
-  //     $("#fieldTwo").show();
-  //     $("#fieldOneLabel").text("Amount");
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "SET_SELL_AMOUNT":
-  //     $("#fieldOne").show();
-  //     $("#fieldTwo").show();
-  //     $("#fieldOneLabel").text("Amount");
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "SET_SELL_TRIGGER":
-  //     $("#fieldOne").show();
-  //     $("#fieldTwo").show();
-  //     $("#fieldOneLabel").text("Amount");
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "CANCEL_SET_SELL":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").show();
-  //     $("#fieldTwoLabel").text("Stock Symbol");
-  //     break;
-  //   case "DUMPLOG":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").show();
-  //     $("#fieldTwoLabel").text("Filename");
-  //     break;
-  //   case "DISPLAY_SUMMARY":
-  //     $("#fieldOne").hide();
-  //     $("#fieldTwo").hide();
-  //     break;
-  // }
-  //check format next
+    // .done(function() {
+    //   alert("success");
+    // })
+    // .fail(function() {
+    //   alert("error");
+    // });
 }

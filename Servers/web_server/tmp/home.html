@@ -14,7 +14,9 @@
       function loginRequest() {
         /*function to check userid & password*/
         /*the following code checkes whether the entered userid and password are matching*/
-        if (document.getElementById("userName").value == "admin") {
+        username = document.getElementById("userName").value;
+        document.cookie = "username=" + username;
+        if (username == "admin") {
           window.open(
             "admin.html" //admin page to see all the system logs
           ); /*opens the target page while user is admin*/

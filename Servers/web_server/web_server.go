@@ -11,12 +11,11 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -29,12 +28,46 @@ const (
 
 var wg sync.WaitGroup
 var transNum = 0
+var currentUser User
+
+type Stock struct {
+	Symbol string `json:"symbol"`
+	Num    int64  `json:"num"`
+}
+
+type User struct {
+	Username string  `json:"username"` // username
+	Balance  float64 `json:"balance"`  // balance
+	Stocks   []Stock `json:"stocks"`   // stocks owned
+}
+
+func set(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("in set fun")
+	fm := []byte("This is a flashed message!")
+	SetFlash(w, "message", fm)
+}
+
+func get(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("in get fun")
+	fm, err := GetFlash(w, r, "message")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if fm == nil {
+		fmt.Fprint(w, "No flash messages")
+		return
+	}
+	fmt.Fprintf(w, "%s", fm)
+}
 
 func main() {
-	r := mux.NewRouter()
-
+	r := http.NewServeMux()
+	fs := http.FileServer(http.Dir("tmp"))
+	r.Handle("/tmp/", http.StripPrefix("/tmp/", fs))
+	r.HandleFunc("/tmp", serveTemplate)
+	// r.PathPrefix("/tmp/").Handler(http.StripPrefix("/tmp/", http.FileServer(http.Dir("./tmp"))))
 	r.HandleFunc("/userCommands.js", SendJqueryJs)
-
 	r.HandleFunc("/", homeHandler)
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/sendCommand", sendCommandHandle)
@@ -49,9 +82,44 @@ func main() {
 	fmt.Println("Web server is listening on port " + connPort)
 }
 
+func serveTemplate(w http.ResponseWriter, r *http.Request) {
+	lp := filepath.Join("tmp", "layout.html")
+	fp := filepath.Join("tmp", filepath.Clean(r.URL.Path))
+
+	// Return a 404 if the template doesn't exist
+	info, err := os.Stat(fp)
+	if err != nil {
+		if os.IsNotExist(err) {
+			http.NotFound(w, r)
+			return
+		}
+	}
+
+	// Return a 404 if the request is for a directory
+	if info.IsDir() {
+		http.NotFound(w, r)
+		return
+	}
+
+	tmpl, err := template.ParseFiles(lp, fp)
+	if err != nil {
+		// Log the detailed error
+		log.Println(err.Error())
+		// Return a generic "Internal Server Error" message
+		http.Error(w, http.StatusText(500), 500)
+		return
+	}
+
+	if err := tmpl.ExecuteTemplate(w, "layout", nil); err != nil {
+		log.Println(err.Error())
+		http.Error(w, http.StatusText(500), 500)
+	}
+}
+
 func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("in sendhandler")
 	transNum = transNum + 1
+	username := currentUser.Username
 
 	if err := r.ParseForm(); err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
@@ -60,27 +128,51 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 	command := r.Form.Get("command")
 	amountInput := r.Form.Get("amount")
 	stringInput := r.Form.Get("string")
+	client := &http.Client{}
 	fmt.Println("zmount is ", amountInput, "string is ", stringInput)
 	v := url.Values{
 		"server":         {server},
 		"command":        {command},
+		"username":       {username},
 		"transactionNum": {strconv.Itoa(transNum)},
 	}
 
 	switch command {
 	case "ADD":
-
-		resp, err := http.PostForm(address+"/add", v)
+		amount := amountInput
+		fmt.Println(amount)
+		addr := address + "/add"
+		v.Add("amount", amount)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
 		if err != nil {
-			//send error message back
-			// myvar := map[string]interface{}{"Quote": quotey, "Add": addy}
-			// outputHTML(w, "tmp/home.html", myvar)
+			fmt.Println(err)
 		}
-		fmt.Println("resp:", resp)
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 		resp.Body.Close()
 
+		// write the response
+		w.Write([]byte("added balance " + amount + " successfully\n"))
+
 	case "QUOTE":
-		getQuote(stringInput, "user")
+
+		// var cookie, err = r.Cookie("Symbol")
+		// fmt.Println("coolie is ", cookie)
+
+		response := getQuote(strings.ToLower(stringInput), username)
+		fmt.Println("response is ", response)
+		split := strings.Split(response, ",")
+		expire := time.Now().Add(1 * time.Minute)
+		stockCookie := http.Cookie{Name: "Symbol:" + stringInput, Value: split[0], Path: "/login", Expires: expire, MaxAge: 90000}
+		http.SetCookie(w, &stockCookie)
+		stockCookie = http.Cookie{Name: "successMessage", Value: "quote price is " + split[0]}
+		http.SetCookie(w, &stockCookie)
+		w.Write([]byte("get quote price of stock " + stringInput + " : " + split[0] + " \n"))
 
 	case "BUY":
 
@@ -161,6 +253,28 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// tmpl.Execute(w, struct{ Success bool }{true})
+	c, err := r.Cookie("username")
+	if err != nil {
+		switch err {
+		case http.ErrNoCookie:
+			fmt.Println("ttp.ErrNoCookie")
+			// return nil, nil
+		default:
+			fmt.Println("default error")
+			// return nil, err
+		}
+	}
+
+	value := c.Value
+	if err != nil {
+		// return nil, err
+		fmt.Println("derror in decoding")
+	}
+	fmt.Println("cookir username is ", value, "c.value is ", c.Value)
+
+	currentUser = User{Username: value}
+	// fmt.Println("current user is ", currentUser)
+
 	tpl, _ := ioutil.ReadFile("tmp/userCommands.html")
 	tplParsed, _ := template.New("test").Parse(string(tpl))
 	tplParsed.Execute(w, nil)
