@@ -56,6 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	display = true
 	//client := dialRedis()
 	//flushRedis(client)
 
