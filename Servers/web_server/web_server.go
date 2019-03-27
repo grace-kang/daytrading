@@ -302,6 +302,22 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 	case "CANCEL_SET_SELL":
 
 	case "DUMPLOG":
+		addr := address + "/dumpLog"
+		v.Add("filename", stringInput)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+		// write the response
+		w.Write([]byte("dumplog successfully. \n"))
 
 	case "DISPLAY_SUMMARY":
 
