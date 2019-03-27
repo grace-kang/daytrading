@@ -4,6 +4,8 @@ $(document).ready(function() {
   $("#myButtons :input").change(function() {
     console.log("id is " + this.id);
     currentCommand = this.id;
+    $('#displayDiv p').text("result: None");
+    $('#errorDiv p').text("error: none");
     switch (currentCommand) {
       case "ADD":
         $("#fieldOne").show();
@@ -129,6 +131,8 @@ function submitRequest() {
       console.log(results);
       $('#displayDiv p').text("result: "+results);
       $('#errorDiv p').text("error: none");
+      $("input[name=stringInput]").val("")
+      $("input[name=numberInput]").val("")
     },
     error: function(jqXHR, textStatus, errorThrown) {
       $('#result').html('<p>status code: '+jqXHR.status+'</p><p>errorThrown: ' + errorThrown + '</p><p>jqXHR.responseText:</p><div>'+jqXHR.responseText + '</div>');
@@ -138,9 +142,11 @@ function submitRequest() {
       console.log(textStatus);
       console.log('errorThrown:');
       console.log(errorThrown);
+      $("input[name=stringInput]").val("")
+      $("input[name=numberInput]").val("")
 
       $('#displayDiv p').text("result: None");
-      $('#errorDiv').html('<p>status code: '+jqXHR.status+'</p><p>errorThrown: ' + errorThrown + '</p><p>jqXHR.responseText:</p><div>'+jqXHR.responseText + '</div>');
+      $('#errorDiv p').html('<p>status code: '+jqXHR.status+'</p><p>errorThrown: ' + errorThrown + '</p><p>jqXHR.responseText:</p><div>'+jqXHR.responseText + '</div>');
       
   },
   })

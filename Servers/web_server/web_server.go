@@ -133,7 +133,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 	v := url.Values{
 		"server":         {server},
 		"command":        {command},
-		"username":       {username},
+		"user":           {username},
 		"transactionNum": {strconv.Itoa(transNum)},
 	}
 
@@ -175,16 +175,119 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("get quote price of stock " + stringInput + " : " + split[0] + " \n"))
 
 	case "BUY":
+		amount := amountInput
+		symbol := stringInput
+		addr := address + "/buy"
+		v.Add("symbol", symbol)
+		v.Add("amount", amount)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+		// write the response
+		w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
 
 	case "COMMIT_BUY":
 
+		addr := address + "/commit_buy"
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+		// write the response
+		w.Write([]byte("commit buy successfully\n"))
+
 	case "CANCEL_BUY":
+
+		addr := address + "/cancel_buy"
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+		// write the response
+		w.Write([]byte("cancel buy successfully\n"))
 
 	case "SELL":
 
+		amount := amountInput
+		symbol := stringInput
+		addr := address + "/sell"
+		v.Add("symbol", symbol)
+		v.Add("amount", amount)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+		// write the response
+		w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
+
 	case "COMMIT_SELL":
 
+		addr := address + "/commit_sell"
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+		// write the response
+		w.Write([]byte("commit buy successfully\n"))
+
 	case "CANCEL_SELL":
+
+		addr := address + "/cancel_sell"
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		resp.Body.Close()
+		// write the response
+		w.Write([]byte("cancel buy successfully\n"))
 
 	case "SET_BUY_AMOUNT":
 
@@ -349,311 +452,311 @@ func concurrencyLogic(address string, lines []string, username string) {
 			client := &http.Client{}
 			switch command {
 
-	case "ADD":
-		amount := data[3]
-		fmt.Println(amount)
-		addr := address + "/add"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"amount":   {amount}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "ADD":
+				amount := data[3]
+				fmt.Println(amount)
+				addr := address + "/add"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"amount":   {amount}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "BUY":
-		symbol := data[3]
-		amount := data[4]
-		addr := address + "/buy"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol},
-			"amount":   {amount}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "BUY":
+				symbol := data[3]
+				amount := data[4]
+				addr := address + "/buy"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "SELL":
-		symbol := data[3]
-		amount := data[4]
-		addr := address + "/sell"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol},
-			"amount":   {amount}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "SELL":
+				symbol := data[3]
+				amount := data[4]
+				addr := address + "/sell"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "QUOTE":
-		symbol := data[3]
-		addr := address + "/quote"
-		transNum_str := strconv.Itoa(transNum)
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "QUOTE":
+				symbol := data[3]
+				addr := address + "/quote"
+				transNum_str := strconv.Itoa(transNum)
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "COMMIT_BUY":
-		addr := address + "/commit_buy"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "COMMIT_BUY":
+				addr := address + "/commit_buy"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "COMMIT_SELL":
-		addr := address + "/commit_sell"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "COMMIT_SELL":
+				addr := address + "/commit_sell"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "CANCEL_BUY":
-		addr := address + "/cancel_buy"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "CANCEL_BUY":
+				addr := address + "/cancel_buy"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "CANCEL_SELL":
-		addr := address + "/cancel_sell"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "CANCEL_SELL":
+				addr := address + "/cancel_sell"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "SET_BUY_AMOUNT":
-		symbol := data[3]
-		amount := data[4]
-		addr := address + "/set_buy_amount"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol},
-			"amount":   {amount}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "SET_BUY_AMOUNT":
+				symbol := data[3]
+				amount := data[4]
+				addr := address + "/set_buy_amount"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "SET_BUY_TRIGGER":
-		symbol := data[3]
-		amount := data[4]
-		addr := address + "/set_buy_trigger"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol},
-			"amount":   {amount}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "SET_BUY_TRIGGER":
+				symbol := data[3]
+				amount := data[4]
+				addr := address + "/set_buy_trigger"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "CANCEL_SET_BUY":
-		symbol := data[3]
-		addr := address + "/cancel_set_buy"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "CANCEL_SET_BUY":
+				symbol := data[3]
+				addr := address + "/cancel_set_buy"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "DISPLAY_SUMMARY":
-		addr := address + "/display_summary"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "DISPLAY_SUMMARY":
+				addr := address + "/display_summary"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "SET_SELL_AMOUNT":
-		symbol := data[3]
-		amount := data[4]
-		addr := address + "/set_sell_amount"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol},
-			"amount":   {amount}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "SET_SELL_AMOUNT":
+				symbol := data[3]
+				amount := data[4]
+				addr := address + "/set_sell_amount"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "SET_SELL_TRIGGER":
-		symbol := data[3]
-		amount := data[4]
-		addr := address + "/set_sell_trigger"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol},
-			"amount":   {amount}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
-		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
+			case "SET_SELL_TRIGGER":
+				symbol := data[3]
+				amount := data[4]
+				addr := address + "/set_sell_trigger"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol},
+					"amount":   {amount}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
 
-	case "CANCEL_SET_SELL":
-		symbol := data[3]
-		addr := address + "/cancel_set_sell"
-		form := url.Values{
-			"transNum": {transNum_str},
-			"user":     {username},
-			"symbol":   {symbol}}
-		req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
-		if err != nil {
-			fmt.Println(err)
+			case "CANCEL_SET_SELL":
+				symbol := data[3]
+				addr := address + "/cancel_set_sell"
+				form := url.Values{
+					"transNum": {transNum_str},
+					"user":     {username},
+					"symbol":   {symbol}}
+				req, err := http.NewRequest("POST", addr, strings.NewReader(form.Encode()))
+				if err != nil {
+					fmt.Println(err)
+				}
+				req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+				req.Host = "transaction"
+				resp, err := client.Do(req)
+				if err != nil {
+					fmt.Println(err)
+					os.Exit(1)
+				}
+				resp.Body.Close()
+			}
 		}
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
-		req.Host = "transaction"
-		resp, err := client.Do(req)
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-		resp.Body.Close()
-	}
-	}
 	}
 }
 
@@ -838,5 +941,3 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Average time for each transaction: ", difference_seconds/float64(count))
 	fmt.Println("Transactions per second: ", float64(count)/difference_seconds)
 }
-
-
