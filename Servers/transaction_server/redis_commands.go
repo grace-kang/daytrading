@@ -153,7 +153,7 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
     conn.Close()
   } else {
 
-    _, err := conn.Write([]byte((stock + "," + username + "\n")))
+    _, err := conn.Write([]byte((stock + "," + username + "\r")))
     if err != nil {
       LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "failed to get quote price from quote server.")
       conn.Close()
