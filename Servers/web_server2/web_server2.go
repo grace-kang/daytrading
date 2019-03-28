@@ -640,7 +640,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("runWorkload:hello")
 	file := r.URL.Path[len("/runWorkload/"):]
 	count := getTransactionCount(file)
-	numUsers := getNumUsers(file)
+	//numUsers := getNumUsers(file)
 	file = "workload_files/" + file + ".txt"
 
 	start := time.Now()
@@ -653,67 +653,48 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	User := make(map[string]int)
-
+	webServeNum := 2
 	for i, line := range lines {
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
-		for i = 0; i < len(s); i++ {
-			s[i] = strings.TrimSpace(s[i])
+		for k := 0; k < len(s); k++ {
+			s[k] = strings.TrimSpace(s[k])
 		}
 		data := make([]string, 2)
 		data[1] = strings.TrimSpace(x[1])
 		data = append(data, s[1:]...)
-		User[data[2]] = 1
-	}
-
-	p := 0
-	userS := make([]string, numUsers+10)
-	for key, value := range User {
-		if value == 1 {
-			userS[p] = key
-			//userCount += 1
-			fmt.Println(userS[p])
-			p = p + 1
-			fmt.Println("Key:", key, "Value:", value)
-		}
-	}
-	for u := 0; u < (numUsers + 1); u++ {
-
-		if userS[u] != "./testLOG" && userS[u] != "" {
-			//fmt.Println(u, ":", userS[u])
-			time.Sleep(130 * time.Millisecond)
-			//go concurrencyLogic("http://transaction:1300", lines, userS[u])
-			/*
-				threads := 7
-				if u%threads == 0 {
-					go concurrencyLogic("http://transaction2:1300", lines, userS[u])
-				} else if u%threads == 1 {
-					go concurrencyLogic("http://transaction3:1300", lines, userS[u])
-				} else if u%threads == 2 {
-					go concurrencyLogic("http://transaction4:1300", lines, userS[u])
-				} else if u%threads == 3 {
-					go concurrencyLogic("http://transaction5:1300", lines, userS[u])
-				} else if u%threads == 4 {
-					go concurrencyLogic("http://transaction:1300", lines, userS[u])
-				} else if u%threads == 5 {
-					go concurrencyLogic("http://transaction6:1300", lines, userS[u])
-				} else if u%threads == 6 {
-					go concurrencyLogic("http://transaction7:1300", lines, userS[u])
-				}
-			*/
-			webServeNum := 2
-			if u%webServeNum == 1 {
+		if User[data[2]] == 0 {
+			User[data[2]] = 1
+			if i%webServeNum == 1 {
+				fmt.Println("Num:", i, "User:", data[2])
 				wg.Add(1)
-				go concurrencyLogic(address, lines, userS[u])
+				go concurrencyLogic(address, lines, data[2])
 			}
-
 		}
 	}
+
+	/*
+		threads := 7
+		if u%threads == 0 {
+			go concurrencyLogic("http://transaction2:1300", lines, userS[u])
+		} else if u%threads == 1 {
+			go concurrencyLogic("http://transaction3:1300", lines, userS[u])
+		} else if u%threads == 2 {
+			go concurrencyLogic("http://transaction4:1300", lines, userS[u])
+		} else if u%threads == 3 {
+			go concurrencyLogic("http://transaction5:1300", lines, userS[u])
+		} else if u%threads == 4 {
+			go concurrencyLogic("http://transaction:1300", lines, userS[u])
+		} else if u%threads == 5 {
+			go concurrencyLogic("http://transaction6:1300", lines, userS[u])
+		} else if u%threads == 6 {
+			go concurrencyLogic("http://transaction7:1300", lines, userS[u])
+		}
+	*/
+
 	wg.Wait()
-	//wg.Add(1)
 	dumpLogFile("http://transaction:80", strconv.Itoa(count), nil, "./testLOG")
-	clearSystemLogs()
-	//wg.Wait()
+
 	//print stats for the workload file
 	fmt.Println("\n\n")
 	fmt.Println("-----STATISTICS-----")
