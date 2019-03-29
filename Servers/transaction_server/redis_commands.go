@@ -9,6 +9,7 @@ import (
   "time"
 	"bytes"
 	"net"
+  "sync"
 
   "github.com/mediocregopher/radix.v2/redis"
 )
@@ -147,6 +148,8 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
 
   QUOTE_URL := os.Getenv("QUOTE_URL")
   // fmt.Println("quoye url is " + QUOTE_URL)
+  mutex := &sync.Mutex{}
+  mutex.Lock()
   conn, err := net.Dial("tcp", QUOTE_URL)
   if err != nil {
     LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "failed to get quote price from quote server.")
@@ -187,6 +190,7 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
       }
     }
   }
+  mutex.Unlock()
 }
 
 func displayQUOTE(client *redis.Client, transNum int, username string, symbol string) {
