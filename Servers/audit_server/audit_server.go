@@ -255,22 +255,46 @@ func clearSystemLogsHandler(w http.ResponseWriter, r *http.Request) {
 	localLog = Log{LogData: make([]LogType, 500000)}
 }
 
+// limitNumClients is HTTP handling middleware that ensures no more than
+// maxClients requests are passed concurrently to the given handler f.
+func limitNumClients(f http.HandlerFunc, maxClients int) http.HandlerFunc {
+	// Counting semaphore using a buffered channel
+	sema := make(chan struct{}, maxClients)
+
+	return func(w http.ResponseWriter, req *http.Request) {
+		sema <- struct{}{}
+		defer func() { <-sema }()
+		f(w, req)
+	}
+}
+
 func main() {
-	mux := http.NewServeMux()
+	// mux := http.NewServeMux()
 	initAuditServer()
 
-	mux.HandleFunc("/userCommand", UserCommandHandler)
-	mux.HandleFunc("/quoteServerCommand", quoteServerHandler)
-	mux.HandleFunc("/accountTransactionCommand", accountTransactionHandler)
-	mux.HandleFunc("/systemEventCommand", systemEventHandler)
-	mux.HandleFunc("/errorEventCommand", errorEventHandler)
-	mux.HandleFunc("/debugEventCommand", debugEventHandler)
-	mux.HandleFunc("/dumpLog", dumpLogHandler)
-	mux.HandleFunc("/clearSystemLogs", clearSystemLogsHandler)
+	// mux.HandleFunc("/userCommand", UserCommandHandler)
+	// mux.HandleFunc("/quoteServerCommand", quoteServerHandler)
+	// mux.HandleFunc("/accountTransactionCommand", accountTransactionHandler)
+	// mux.HandleFunc("/systemEventCommand", systemEventHandler)
+	// mux.HandleFunc("/errorEventCommand", errorEventHandler)
+	// mux.HandleFunc("/debugEventCommand", debugEventHandler)
+	// mux.HandleFunc("/dumpLog", dumpLogHandler)
+	// mux.HandleFunc("/clearSystemLogs", clearSystemLogsHandler)
+
+	http.HandleFunc("/userCommand", limitNumClients(UserCommandHandler, 100))
+	http.HandleFunc("/quoteServerCommand", limitNumClients(quoteServerHandler, 100))
+	http.HandleFunc("/accountTransactionCommand", limitNumClients(accountTransactionHandler, 100))
+	http.HandleFunc("/systemEventCommand", limitNumClients(systemEventHandler, 100))
+	http.HandleFunc("/errorEventCommand", limitNumClients(errorEventHandler, 100))
+	http.HandleFunc("/debugEventCommand", limitNumClients(debugEventHandler, 100))
+	http.HandleFunc("/dumpLog", limitNumClients(dumpLogHandler, 100))
+	http.HandleFunc("/clearSystemLogs", limitNumClients(clearSystemLogsHandler, 100))
 
 	fmt.Printf("Audit server listening on %s:%s\n", "http://audit", "1400")
 	go worker()
-	if err := http.ListenAndServe(":1400", mux); err != nil {
+
+	// if err := http.ListenAndServe(":1400", mux); err != nil {
+	if err := http.ListenAndServe(":1400", nil); err != nil {
 		panic(err)
 	}
 }

@@ -41,6 +41,19 @@ func init() {
 
 }
 
+// limitNumClients is HTTP handling middleware that ensures no more than
+// maxClients requests are passed concurrently to the given handler f.
+func limitNumClients(f http.HandlerFunc, maxClients int) http.HandlerFunc {
+	// Counting semaphore using a buffered channel
+	sema := make(chan struct{}, maxClients)
+
+	return func(w http.ResponseWriter, req *http.Request) {
+		sema <- struct{}{}
+		defer func() { <-sema }()
+		f(w, req)
+	}
+}
+
 func main() {
 	if len(os.Args) == 1 {
 		display = false
@@ -59,23 +72,41 @@ func main() {
 	//client := dialRedis()
 	//flushRedis(client)
 
-	http.HandleFunc("/add", addHandler)
-	http.HandleFunc("/buy", buyHandler)
-	http.HandleFunc("/sell", sellHandler)
-	http.HandleFunc("/quote", quoteHandler)
-	http.HandleFunc("/commit_buy", commitBuyHandler)
-	http.HandleFunc("/commit_sell", commitSellHandler)
-	http.HandleFunc("/cancel_buy", cancelBuyHandler)
-	http.HandleFunc("/cancel_sell", cancelSellHandler)
-	http.HandleFunc("/set_buy_amount", setBuyAmountHandler)
-	http.HandleFunc("/set_buy_trigger", setBuyTriggerHandler)
-	http.HandleFunc("/cancel_set_buy", cancelSetBuyHandler)
-	http.HandleFunc("/set_sell_amount", setSellAmountHandler)
-	http.HandleFunc("/set_sell_trigger", setSellTriggerHandler)
-	http.HandleFunc("/cancel_set_sell", cancelSetSellHandler)
-	http.HandleFunc("/display_summary", displaySummaryHandler)
-	http.HandleFunc("/dumpLog", dumpLogHandler)
-	http.HandleFunc("/clearSystemLogs", clearSystemLogHandler)
+	// http.HandleFunc("/add", addHandler)
+	// http.HandleFunc("/buy", buyHandler)
+	// http.HandleFunc("/sell", sellHandler)
+	// http.HandleFunc("/quote", quoteHandler)
+	// http.HandleFunc("/commit_buy", commitBuyHandler)
+	// http.HandleFunc("/commit_sell", commitSellHandler)
+	// http.HandleFunc("/cancel_buy", cancelBuyHandler)
+	// http.HandleFunc("/cancel_sell", cancelSellHandler)
+	// http.HandleFunc("/set_buy_amount", setBuyAmountHandler)
+	// http.HandleFunc("/set_buy_trigger", setBuyTriggerHandler)
+	// http.HandleFunc("/cancel_set_buy", cancelSetBuyHandler)
+	// http.HandleFunc("/set_sell_amount", setSellAmountHandler)
+	// http.HandleFunc("/set_sell_trigger", setSellTriggerHandler)
+	// http.HandleFunc("/cancel_set_sell", cancelSetSellHandler)
+	// http.HandleFunc("/display_summary", displaySummaryHandler)
+	// http.HandleFunc("/dumpLog", dumpLogHandler)
+	// http.HandleFunc("/clearSystemLogs", clearSystemLogHandler)
+
+	http.HandleFunc("/add", limitNumClients(addHandler, 100))
+	http.HandleFunc("/buy", limitNumClients(buyHandler, 100))
+	http.HandleFunc("/sell", limitNumClients(sellHandler, 100))
+	http.HandleFunc("/quote", limitNumClients(quoteHandler, 100))
+	http.HandleFunc("/commit_buy", limitNumClients(commitBuyHandler, 100))
+	http.HandleFunc("/commit_sell", limitNumClients(commitSellHandler, 100))
+	http.HandleFunc("/cancel_buy", limitNumClients(cancelBuyHandler, 100))
+	http.HandleFunc("/cancel_sell", limitNumClients(cancelSellHandler, 100))
+	http.HandleFunc("/set_buy_amount", limitNumClients(setBuyAmountHandler, 100))
+	http.HandleFunc("/set_buy_trigger", limitNumClients(setBuyTriggerHandler, 100))
+	http.HandleFunc("/cancel_set_buy", limitNumClients(cancelSetBuyHandler, 100))
+	http.HandleFunc("/set_sell_amount", limitNumClients(setSellAmountHandler, 100))
+	http.HandleFunc("/set_sell_trigger", limitNumClients(setSellTriggerHandler, 100))
+	http.HandleFunc("/cancel_set_sell", limitNumClients(cancelSetSellHandler, 100))
+	http.HandleFunc("/display_summary", limitNumClients(displaySummaryHandler, 100))
+	http.HandleFunc("/dumpLog", limitNumClients(dumpLogHandler, 100))
+	http.HandleFunc("/clearSystemLogs", limitNumClients(clearSystemLogHandler, 100))
 
 	err := http.ListenAndServe(":"+connPort, nil)
 	if err != nil {
