@@ -177,8 +177,7 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
         fmt.Println(string(message))
 
         split := strings.Split(message, ",")
-        priceStr := strings.Replace(strings.TrimSpace(split[0]), ".", "", 1)
-        price, _ := strconv.ParseFloat(priceStr, 64)
+        price, _ := strconv.ParseFloat(split[0], 64)
         quoteTimestamp := strings.TrimSpace(split[3])
         crytpoKey := split[4]
 
