@@ -147,28 +147,31 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
   QUOTE_URL := os.Getenv("QUOTE_URL")
   conn, err := net.Dial("tcp", QUOTE_URL)
   if err != nil {
-    LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, err)
+    LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "net.Dial: " + err.Error())
     conn.Close()
   } else {
-    err = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
     if err != nil {
-      LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, err)
+      LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "setReadDealine: " + err.Error())
       conn.Close()
       return
     } else {
       _, err = conn.Write([]byte((stock + "," + username + "\r")))
       if err != nil {
-        LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, err)
+        LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Write: " + err.Error())
         conn.Close()
         return
       } else {
         respBuf := make([]byte, 2048)
         for {
+          err = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
           _, err = conn.Read(respBuf)
           if err != nil {
-            LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, err)
+            LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Read: " + err.Error())
             conn.Close()
             return
+          }
+          if err == nil {
+            break
           }
         }
         conn.Close()
