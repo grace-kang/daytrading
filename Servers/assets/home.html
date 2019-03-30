@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<h1>Day Trading</h1>
+
+<h2>Home</h2>
+
+  <form action="/user" method="post">
+    userName:
+    <input type="text" name="username">
+    <br/> balance:
+    <input type="text" name="balance">
+    <br/>
+    <input type="submit" value="Submit">
+  </form>
+
+
+<button>Log In</button>
+<button>Sign Up</button>
+
+
+<script>
+    userTable = document.querySelector("table")
+    fetch("/user")
+      .then(response => response.json())
+      .then(userList => {
+        //Once we fetch the list, we iterate over it
+        userList.forEach(user => {
+          // Create the table row
+          row = document.createElement("tr")
+
+          // Create the table data elements for the species and
+					// description columns
+          username = document.createElement("username")
+          username.innerHTML = user.username
+          balance = document.createElement("td")
+          balance.innerHTML = user.balance
+
+          // Add the data elements to the row
+          row.appendChild(username)
+          row.appendChild(balance)
+          // Finally, add the row element to the table itself
+          userTable.appendChild(row)
+        })
+      })
+  </script>
+</html> 
