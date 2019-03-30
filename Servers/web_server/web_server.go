@@ -13,7 +13,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -27,7 +26,7 @@ const (
 	server   = "webserver"
 )
 
-var wg sync.WaitGroup
+//var wg sync.WaitGroup
 var transNum = 0
 
 func main() {
@@ -210,7 +209,7 @@ func add(username string) string {
 }
 
 func concurrencyLogic(address string, lines []string, username string) {
-	defer wg.Done()
+	//defer wg.Done()
 	// httpclient := http.Client{}
 	// client := dialRedis()
 	for i, line := range lines {
@@ -672,11 +671,11 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("Num:", i, "-----------------------User:", data[2])
 			fmt.Println("------------------counter-----------------", counter)
 
-			time.Sleep(2000 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 
 			if data[2] != "./testLOG" && data[2] != "" {
-				wg.Add(1)
-				go concurrencyLogic(address, lines, data[2])
+				//wg.Add(1)
+				concurrencyLogic(address, lines, data[2])
 			}
 
 		}
@@ -701,11 +700,12 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	wg.Wait()
+	//wg.Wait()
 	dumpLogFile("http://transaction:80", strconv.Itoa(count), nil, "./testLOG")
 
 	//print stats for the workload file
-	fmt.Println("\n\n")
+	fmt.Println("--------------------")
+	fmt.Println("^^^^^^^^^^^^^^^^^^^^")
 	fmt.Println("-----STATISTICS-----")
 	end := time.Now()
 	difference := end.Sub(start)

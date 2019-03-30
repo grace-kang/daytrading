@@ -169,7 +169,7 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
 						//LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Read: "+err.Error())
 						conn.Close()
 						fmt.Println("Hello1")
-						goQuote(client, transNum, username, stock)
+						go goQuote(client, transNum, username, stock)
 						return
 					}
 					if err == nil {
