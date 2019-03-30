@@ -6,13 +6,14 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/mediocregopher/radix.v2/pool"
 )
 
 const (
 	connHost = "localhost"
-	connPort = "1300"
+	connPort = "80"
 	connType = "http"
 )
 
@@ -74,11 +75,18 @@ func main() {
 	http.HandleFunc("/cancel_set_sell", cancelSetSellHandler)
 	http.HandleFunc("/display_summary", displaySummaryHandler)
 	http.HandleFunc("/dumpLog", dumpLogHandler)
+	http.HandleFunc("/clearSystemLogs", clearSystemLogHandler)
 
-	err := http.ListenAndServe(":1300", nil)
+	err := http.ListenAndServe(":"+connPort, nil)
 	if err != nil {
 		panic("ListenAndServe: " + err.Error())
 	}
+	fmt.Println("Transaction server listening on " + connHost + ":" + connPort)
+}
+
+func clearSystemLogHandler(w http.ResponseWriter, r *http.Request) {
+	// fmt.Println("in clearSystemLogHandler")
+	clearSystemLogs()
 }
 
 func checkUserExists(transNum int, username string, command string) {
@@ -123,7 +131,10 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	defer db.Put(client)
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
-	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	if display == false {
 		redisADD(client, user, amount)
@@ -148,7 +159,10 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
-	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	LogUserCommand(server, transNum, "BUY", user, r.Form.Get("amount"), symbol, nil)
 	checkUserExists(transNum, user, "BUY")
@@ -173,7 +187,10 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
-	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	LogUserCommand(server, transNum, "SELL", user, r.Form.Get("amount"), symbol, nil)
 	/*check if user exists or not*/
@@ -307,7 +324,10 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
-	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
@@ -331,7 +351,10 @@ func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
-	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	LogUserCommand(server, transNum, "SET_BUY_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 
@@ -378,7 +401,10 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
-	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	LogUserCommand(server, transNum, "SET_SELL_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
@@ -402,7 +428,10 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	user := r.Form.Get("user")
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
-	amount, _ := strconv.ParseFloat(r.Form.Get("amount"), 64)
+	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 

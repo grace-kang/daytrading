@@ -250,6 +250,11 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 	mutex.Unlock()
 }
 
+func clearSystemLogsHandler(w http.ResponseWriter, r *http.Request) {
+	// fmt.Println("in clearSystemLogsHandler")
+	localLog = Log{LogData: make([]LogType, 500000)}
+}
+
 func main() {
 	mux := http.NewServeMux()
 	initAuditServer()
@@ -261,6 +266,8 @@ func main() {
 	mux.HandleFunc("/errorEventCommand", errorEventHandler)
 	mux.HandleFunc("/debugEventCommand", debugEventHandler)
 	mux.HandleFunc("/dumpLog", dumpLogHandler)
+	mux.HandleFunc("/clearSystemLogs", clearSystemLogsHandler)
+
 	fmt.Printf("Audit server listening on %s:%s\n", "http://audit", "1400")
 	go worker()
 	if err := http.ListenAndServe(":1400", mux); err != nil {

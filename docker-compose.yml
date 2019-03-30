@@ -1,13 +1,24 @@
 version: "2"
 
 services:
+  reverse-proxy:
+    image: traefik # The official Traefik docker image
+    command: --api --docker # Enables the web UI and tells Traefik to listen to docker
+    ports:
+      - "80:80"     # The HTTP port
+      - "8080:8080" # The Web UI (enabled by --api)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
+
   redis:
     image: redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
   redis2:
     image: redis
+    ports:
+      - "6381:6379"
 
   quote:
     build: quote_server/
@@ -21,10 +32,30 @@ services:
     volumes:
       - .:/go/src/audit_server
 
+  # workload:
+  #   image: golang:alpine
+  #   volumes: 
+  #     - .:/go/src/daytrading
+  #   links:
+  #     - redis
+  #     - redis2
+  #   depends_on:
+  #     - transaction
+  #     - redis
+  #     - redis2
+  #     - quote
+  #     - audit
+  #   working_dir: /go/src/daytrading
+  #   command: go build -o daytrading
+  #   command: go run daytrading workload3
+  #   environment:
+  #     WEB_URL: web:1600
+  #     TRANSACTION_URL: transaction:1300
+  
   transaction:
     build: transaction_server/
     ports:
-      - 1300:1300
+      - 1300-1310:80
     links:
       - redis
       - redis2
@@ -38,151 +69,36 @@ services:
       REDIS2_URL: redis2:6379
       QUOTE_URL: quote:1200
       AUDIT_URL: audit:1400
+    labels:
+      - "traefik.backend=transaction"
+      - "traefik.frontend.rule=Host:transaction"
 
-  transaction2:
-    build: transaction_server/
+  web:
+    build: web_server/
     ports:
-      - 1301:1300
-    links:
-      - redis
-      - redis2
-    depends_on:
-      - redis
-      - redis2
-      - quote
-      - audit
-    environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
-
-  transaction3:
-    build: transaction_server/
-    ports:
-      - 1302:1300
-    links:
-      - redis
-      - redis2
-    depends_on:
-      - redis
-      - redis2
-      - quote
-      - audit
-    environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
-
-  transaction4:
-    build: transaction_server/
-    ports:
-      - 1303:1300
-    links:
-      - redis
-      - redis2
-    depends_on:
-      - redis
-      - redis2
-      - quote
-      - audit
-    environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
-
-  transaction5:
-    build: transaction_server/
-    ports:
-      - 1304:1300
-    links:
-      - redis
-      - redis2
-    depends_on:
-      - redis
-      - redis2
-      - quote
-      - audit
-    environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
-
-  transaction6:
-    build: transaction_server/
-    ports:
-      - 1305:1300
-    links:
-      - redis
-      - redis2
-    depends_on:
-      - redis
-      - redis2
-      - quote
-      - audit
-    environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
-
-  transaction7:
-    build: transaction_server/
-    ports:
-      - 1306:1300
-    links:
-      - redis
-      - redis2
-    depends_on:
-      - redis
-      - redis2
-      - quote
-      - audit
-    environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
-
-  workload:
-    image: golang:alpine
-    volumes: 
-      - .:/go/src/daytrading
-    links:
-      - redis
-      - redis2
+      - 1600:1600
     depends_on:
       - transaction
-      - transaction2
-      - transaction3
-      - transaction4
-      - transaction5
-      - transaction6
-      - transaction7
-      - redis
-      - redis2
       - quote
-      - audit
-    working_dir: /go/src/daytrading
-    command: go build -o daytrading
-    command: go run daytrading workload6
     environment:
-      TRANSACTION_URL: transaction:1300
-      TRANSACTION2_URL: transaction2:1301
-      TRANSACTION3_URL: transaction3:1302
-      TRANSACTION4_URL: transaction4:1303
-      TRANSACTION5_URL: transaction5:1304
-      TRANSACTION6_URL: transaction6:1305
-      TRANSACTION7_URL: transaction7:1306
-
-  reverse-proxy:
-    image: traefik # The official Traefik docker image
-    command: --api --docker # Enables the web UI and tells Traefik to listen to docker
-    ports:
-      - "80:80"     # The HTTP port
-      - "8080:8080" # The Web UI (enabled by --api)
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock # So that Traefik can listen to the Docker events
+      - .:/go/src/servers/web_server
+
+  web2:
+    build: web_server2/
+    ports:
+      - 1601:1601
+    depends_on:
+      - transaction
+      - quote
+    environment:
+      REDIS_URL: redis:6379
+      REDIS2_URL: redis2:6379
+      QUOTE_URL: quote:1200
+      AUDIT_URL: audit:1400
+    volumes:
+      - .:/go/src/servers/web_server2
