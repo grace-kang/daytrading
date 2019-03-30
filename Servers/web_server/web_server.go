@@ -571,7 +571,7 @@ func getTransactionCount(file string) int {
 		count = 100000
 	} else if file == "workload6" {
 		count = 1000000
-	} else if file == "2018" {
+	} else if file == "2019" {
 		count = 1200000
 	} else {
 		fmt.Println("invalid workload file. exiting.")
@@ -594,8 +594,8 @@ func getNumUsers(file string) int {
 		count = 100
 	} else if file == "workload6" {
 		count = 1000
-	} else if file == "2018" {
-		count = 10000
+	} else if file == "2019" {
+		count = 1200
 	} else {
 		fmt.Println("invalid workload file. exiting.")
 		os.Exit(1)
@@ -653,7 +653,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	User := make(map[string]int)
-	webServeNum := 2
+	// webServeNum := 2
 	for i, line := range lines {
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
@@ -665,11 +665,11 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 		data = append(data, s[1:]...)
 		if User[data[2]] == 0 {
 			User[data[2]] = 1
-			if i%webServeNum == 0 {
+			// if i%webServeNum == 0 {
 				fmt.Println("Num:", i, "User:", data[2])
 				wg.Add(1)
 				go concurrencyLogic(address, lines, data[2])
-			}
+			// }
 		}
 	}
 

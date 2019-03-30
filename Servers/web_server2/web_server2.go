@@ -571,7 +571,7 @@ func getTransactionCount(file string) int {
 		count = 100000
 	} else if file == "workload6" {
 		count = 1000000
-	} else if file == "2018" {
+	} else if file == "2019" {
 		count = 1200000
 	} else {
 		fmt.Println("invalid workload file. exiting.")
@@ -594,8 +594,8 @@ func getNumUsers(file string) int {
 		count = 100
 	} else if file == "workload6" {
 		count = 1000
-	} else if file == "2018" {
-		count = 10000
+	} else if file == "2019" {
+		count = 1200
 	} else {
 		fmt.Println("invalid workload file. exiting.")
 		os.Exit(1)
