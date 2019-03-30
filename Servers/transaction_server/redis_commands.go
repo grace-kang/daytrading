@@ -9,7 +9,6 @@ import (
   "time"
 	"bytes"
 	"net"
-  "sync"
 
   "github.com/mediocregopher/radix.v2/redis"
 )
@@ -144,52 +143,50 @@ func redisQUOTE(client *redis.Client, transNum int, username string, stock strin
 
 func goQuote(client *redis.Client, transNum int, username string, stock string) {
   stringQ := stock + ":QUOTE"
-  // fmt.Println("goQUOTE!!!!!")
 
   QUOTE_URL := os.Getenv("QUOTE_URL")
-  // fmt.Println("quoye url is " + QUOTE_URL)
-  mutex := &sync.Mutex{}
-  mutex.Lock()
   conn, err := net.Dial("tcp", QUOTE_URL)
   if err != nil {
-    LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "failed to get quote price from quote server.")
+    LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "dial TCP")
     conn.Close()
   } else {
-
-    _, err := conn.Write([]byte((stock + "," + username + "\r")))
+    err = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
     if err != nil {
-      LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "failed to get quote price from quote server.")
+      LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "SetReadDealine")
       conn.Close()
-
+    }
+    _, err = conn.Write([]byte((stock + "," + username + "\r")))
+    if err != nil {
+      LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Write")
+      conn.Close()
     } else {
       respBuf := make([]byte, 2048)
-      _, err = conn.Read(respBuf)
-      if err != nil {
-        LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "failed to get quote price from quote server.")
-        conn.Close()
 
-      } else {
-        conn.Close()
-        respBuf = bytes.Trim(respBuf, "\x00")
-        message := bytes.NewBuffer(respBuf).String()
-        message = strings.TrimSpace(message)
-
-        fmt.Println(string(message))
-
-        split := strings.Split(message, ",")
-        price, _ := strconv.ParseFloat(split[0], 64)
-        quoteTimestamp := strings.TrimSpace(split[3])
-        crytpoKey := split[4]
-
-        quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
-
-        LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
-        client.Cmd("SET", stringQ, price)
-        client.Cmd("EXPIRE", stringQ, 60)
+      for {
+        _, err = conn.Read(respBuf)
+        if err != nil {
+          LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Read")
+          conn.Close()
+          return
+        }
       }
+      conn.Close()
+      respBuf = bytes.Trim(respBuf, "\x00")
+      message := bytes.NewBuffer(respBuf).String()
+      message = strings.TrimSpace(message)
+
+      split := strings.Split(message, ",")
+      price, _ := strconv.ParseFloat(split[0], 64)
+      quoteTimestamp := strings.TrimSpace(split[3])
+      crytpoKey := split[4]
+
+      quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
+
+      LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
+      client.Cmd("SET", stringQ, price)
+      // client.Cmd("EXPIRE", stringQ, 60)
     }
   }
-  mutex.Unlock()
 }
 
 func displayQUOTE(client *redis.Client, transNum int, username string, symbol string) {
