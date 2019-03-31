@@ -145,56 +145,33 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
 	stringQ := stock + ":QUOTE"
 
 	QUOTE_URL := os.Getenv("QUOTE_URL")
-	conn, err := net.Dial("tcp", QUOTE_URL)
+	conn, _ := net.Dial("tcp", QUOTE_URL)
+
+	conn.Write([]byte((stock + "," + username + "\n")))
+	respBuf := make([]byte, 2048)
+	_, err := conn.Read(respBuf)
+	conn.Close()
+
 	if err != nil {
-		LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "net.Dial: "+err.Error())
-		conn.Close()
-	} else {
-		if err != nil {
-			LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "setReadDealine: "+err.Error())
-			conn.Close()
-			return
-		} else {
-			_, err = conn.Write([]byte((stock + "," + username + "\r")))
-			if err != nil {
-				LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Write: "+err.Error())
-				conn.Close()
-				return
-			} else {
-				respBuf := make([]byte, 2048)
-				for {
-					err = conn.SetReadDeadline(time.Now().Add(200 * time.Millisecond))
-					_, err = conn.Read(respBuf)
-					if err != nil {
-						//LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Read: "+err.Error())
-						conn.Close()
-						fmt.Println("Hello1")
-						go goQuote(client, transNum, username, stock)
-						return
-					}
-					if err == nil {
-						break
-					}
-				}
-				conn.Close()
-				fmt.Println("Hello2")
-				respBuf = bytes.Trim(respBuf, "\x00")
-				message := bytes.NewBuffer(respBuf).String()
-				message = strings.TrimSpace(message)
-
-				split := strings.Split(message, ",")
-				price, _ := strconv.ParseFloat(split[0], 64)
-				quoteTimestamp := strings.TrimSpace(split[3])
-				crytpoKey := split[4]
-
-				quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
-
-				LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
-				client.Cmd("SET", stringQ, price)
-				client.Cmd("EXPIRE", stringQ, 120)
-			}
-		}
+		fmt.Printf("Error reading body: %s", err.Error())
 	}
+	respBuf = bytes.Trim(respBuf, "\x00")
+	message := bytes.NewBuffer(respBuf).String()
+	message = strings.TrimSpace(message)
+
+	split := strings.Split(message, ",")
+	price, _ := strconv.ParseFloat(split[0], 64)
+	if err != nil {
+		return
+	}
+	quoteTimestamp := strings.TrimSpace(split[3])
+	crytpoKey := split[4]
+
+	quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
+
+	LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
+	client.Cmd("SET", stringQ, price)
+	client.Cmd("EXPIRE", stringQ, 300)
 }
 
 func displayQUOTE(client *redis.Client, transNum int, username string, symbol string) {

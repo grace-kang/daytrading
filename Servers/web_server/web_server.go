@@ -230,7 +230,7 @@ func concurrencyLogic(address string, lines []string, username string) {
 			transNum := i + 1
 			transNum_str := strconv.Itoa(transNum)
 			fmt.Println(transNum)
-			time.Sleep(1 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			client := &http.Client{}
 			switch command {
 
@@ -652,7 +652,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	User := make(map[string]int)
-	//webServeNum := 2
+	webServeNum := 5
 	counter := 0
 	fmt.Println(counter)
 	for i, line := range lines {
@@ -668,14 +668,15 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 			User[data[2]] = 1
 			counter += 1
 			//if i%webServeNum == 0 {
-			fmt.Println("Num:", i, "-----------------------User:", data[2])
-			fmt.Println("------------------counter-----------------", counter)
+			//fmt.Println("Num:", i, "-----------------------User:", data[2])
+			//fmt.Println("------------------counter-----------------", counter)
 
 			time.Sleep(100 * time.Millisecond)
-
-			if data[2] != "./testLOG" && data[2] != "" {
-				//wg.Add(1)
-				concurrencyLogic(address, lines, data[2])
+			if i%webServeNum == 0 {
+				if data[2] != "./testLOG" && data[2] != "" {
+					//wg.Add(1)
+					concurrencyLogic(address, lines, data[2])
+				}
 			}
 
 		}
