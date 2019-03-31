@@ -230,8 +230,8 @@ func concurrencyLogic(address string, lines []string, username string) {
 		if username == data[2] {
 			transNum := i + 1
 			transNum_str := strconv.Itoa(transNum)
-			fmt.Println(transNum)
-			time.Sleep(1 * time.Millisecond)
+			//fmt.Println(transNum)
+			time.Sleep(15 * time.Millisecond)
 			client := &http.Client{}
 			switch command {
 
@@ -653,7 +653,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	User := make(map[string]int)
-	//webServeNum := 2
+	webServeNum := 4
 	counter := 0
 	fmt.Println(counter)
 	for i, line := range lines {
@@ -669,16 +669,17 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 			User[data[2]] = 1
 			counter += 1
 			//if i%webServeNum == 0 {
-			fmt.Println("Num:", i, "-----------------------User:", data[2])
-			fmt.Println("------------------counter-----------------", counter)
+			//fmt.Println("Num:", i, "-----------------------User:", data[2])
+			//fmt.Println("------------------counter-----------------", counter)
 
-			time.Sleep(2000 * time.Millisecond)
-
-			if data[2] != "./testLOG" && data[2] != "" {
-				wg.Add(1)
-				go concurrencyLogic(address, lines, data[2])
+			if i%webServeNum == 0 {
+				if data[2] != "./testLOG" && data[2] != "" {
+					time.Sleep(6000 * time.Millisecond)
+					wg.Add(1)
+					fmt.Println("USER:", data[2])
+					go concurrencyLogic(address, lines, data[2])
+				}
 			}
-
 		}
 	}
 
@@ -705,7 +706,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	dumpLogFile("http://transaction:80", strconv.Itoa(count), nil, "./testLOG")
 
 	//print stats for the workload file
-	fmt.Println("\n\n")
+	fmt.Println()
 	fmt.Println("-----STATISTICS-----")
 	end := time.Now()
 	difference := end.Sub(start)
