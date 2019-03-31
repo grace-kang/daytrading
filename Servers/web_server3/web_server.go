@@ -672,7 +672,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 			//fmt.Println("Num:", i, "-----------------------User:", data[2])
 			//fmt.Println("------------------counter-----------------", counter)
 
-			if i%webServeNum == 0 {
+			if i%webServeNum == 2 {
 				if data[2] != "./testLOG" && data[2] != "" {
 					time.Sleep(6000 * time.Millisecond)
 					wg.Add(1)
