@@ -25,7 +25,7 @@ const (
 	server   = "webserver"
 )
 
-var	address  = "http://" + os.Getenv("TRANSACTION_URL")
+var address = "http://" + os.Getenv("TRANSACTION_URL")
 
 //var wg sync.WaitGroup
 var transNum = 0
@@ -639,8 +639,8 @@ func clearSystemLogs() {
 func runWorkload(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	file := vars["file"]
-  numWebs, _ := strconv.Atoi(vars["numWebs"])
-  webNum, _ := strconv.Atoi(vars["webNum"])
+	numWebs, _ := strconv.Atoi(vars["numWebs"])
+	webNum, _ := strconv.Atoi(vars["webNum"])
 	count := getTransactionCount(file)
 	//numUsers := getNumUsers(file)
 	file = "workload_files/" + file + ".txt"
@@ -704,7 +704,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	//wg.Wait()
-	dumpLogFile(address, strconv.Itoa(count), nil, "./testLOG")
+	//dumpLogFile(address, strconv.Itoa(count), nil, "./testLOG")
 
 	//print stats for the workload file
 	fmt.Println("--------------------")
