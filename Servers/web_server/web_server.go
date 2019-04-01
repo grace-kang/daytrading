@@ -37,7 +37,7 @@ func main() {
 	r.HandleFunc("/", homeHandler)
 	r.HandleFunc("/login", loginHandler)
 	r.HandleFunc("/sendCommand", sendCommandHandle)
-	r.HandleFunc("/runWorkload/{file}", runWorkload)
+	r.HandleFunc("/runWorkload/{file}/{numWebs}/{webNum}", runWorkload)
 
 	err := http.ListenAndServe(":"+connPort, r)
 	if err != nil {
@@ -636,8 +636,10 @@ func clearSystemLogs() {
 }
 
 func runWorkload(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("runWorkload:hello")
-	file := r.URL.Path[len("/runWorkload/"):]
+	vars := mux.Vars(r)
+	file := vars["file"]
+  numWebs, _ := strconv.Atoi(vars["numWebs"])
+  webNum, _ := strconv.Atoi(vars["webNum"])
 	count := getTransactionCount(file)
 	//numUsers := getNumUsers(file)
 	file = "workload_files/" + file + ".txt"
@@ -652,7 +654,6 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	User := make(map[string]int)
-	webServeNum := 5
 	counter := 0
 	fmt.Println(counter)
 	for i, line := range lines {
@@ -672,7 +673,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 			//fmt.Println("------------------counter-----------------", counter)
 
 			time.Sleep(100 * time.Millisecond)
-			if i%webServeNum == 0 {
+			if i%numWebs == webNum {
 				if data[2] != "./testLOG" && data[2] != "" {
 					//wg.Add(1)
 					concurrencyLogic(address, lines, data[2])
