@@ -200,7 +200,7 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 		displayBUY(client, user, symbol, exactTotalPrice, stockSell)
 	}
 
-	w.Write([]byte("buy amount " + strings.TrimSpace(r.Form.Get("amount")+" of stock "+symbol+" successfully\n")))
+	w.Write([]byte("pushed command: buy amount " + strings.TrimSpace(r.Form.Get("amount")+" of stock "+symbol+" successfully\n")))
 }
 
 func sellHandler(w http.ResponseWriter, r *http.Request) {
@@ -245,7 +245,7 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 		displaySELL(client, user, symbol, newBenefit, stockNeeded)
 	}
 
-	w.Write([]byte("buy amount " + r.Form.Get("amount") + " of stock " + symbol + " successfully\n"))
+	w.Write([]byte("pushed command: sell amount " + r.Form.Get("amount") + " of stock " + symbol + " successfully\n"))
 }
 
 func quoteHandler(w http.ResponseWriter, r *http.Request) {
@@ -318,7 +318,7 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 	string3 := "userSELL:" + user
 
 	if listNotEmpty(client, string3) == false {
-		LogErrorEventCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil, "user "+user+" does not have any buy to cancel")
+		LogErrorEventCommand(server, transNum, "COMMIT_SELL", user, nil, nil, nil, "user "+user+" does not have any sell to commit")
 		w.Write([]byte("there is no sell to commit"))
 		return
 	}
@@ -329,7 +329,7 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 		displayCOMMIT_SELL(client, user, transNum)
 	}
 
-	w.Write([]byte("commit buy successfully\n"))
+	w.Write([]byte("commit sell successfully\n"))
 }
 
 func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
@@ -354,9 +354,9 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	var message string
 	if display == false {
-		message := redisCANCEL_BUY(client, user, transNum)
+		message = redisCANCEL_BUY(client, user, transNum)
 	} else {
-		message := displayCANCEL_BUY(client, user, transNum)
+		message = displayCANCEL_BUY(client, user, transNum)
 	}
 
 	if message == "" {
@@ -386,14 +386,18 @@ func cancelSellHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("there is no sell to cancel"))
 		return
 	}
-
+	var message string
 	if display == false {
-		redisCANCEL_SELL(client, user)
+		message = redisCANCEL_SELL(client, user, transNum)
 	} else {
-		displayCANCEL_SELL(client, user)
+		message = displayCANCEL_SELL(client, user, transNum)
+	}
+	if message == "" {
+		w.Write([]byte("cancel sell successfully\n"))
+	} else {
+		w.Write([]byte(message))
 	}
 
-	w.Write([]byte("cancel buy successfully\n"))
 }
 
 func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {

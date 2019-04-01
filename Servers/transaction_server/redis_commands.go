@@ -240,6 +240,9 @@ func redisSELL(client *redis.Client, username string, symbol string, totalEarned
 	client.Cmd("LPUSH", string3, symbol)
 	client.Cmd("LPUSH", string3, totalEarned)
 	client.Cmd("LPUSH", string3, stockNeeded)
+	t := time.Now().Unix()
+	fmt.Println("t is ", t)
+	client.Cmd("LPUSH", string3, t)
 
 }
 
@@ -337,6 +340,20 @@ func redisCOMMIT_SELL(client *redis.Client, username string, transNum int) strin
 
 	/* 1, 2 */
 	string3 := "userSELL:" + username
+	old_time, _ := client.Cmd("LPOP", string3).Int64()
+	t := time.Now().Unix()
+	diff := t - old_time
+	fmt.Println("in commit_sell, old time is ", old_time, " time now is ", t, " diff is ", diff)
+	if diff > 60 {
+		LogErrorEventCommand(server, transNum, "COMMIT_SELL", username, nil, nil, nil, "there is no sell to commit")
+		clearStack(client, string3)
+		fmt.Println("expiration! Going to clear the stack")
+		stack := listStack(client, string3)
+		fmt.Println("Before clear the stack, User:", username, " BUYStack:", stack, "\n")
+		stack = listStack(client, string3)
+		fmt.Println("After clear the stack, User:", username, " BUYStack:", stack, "\n")
+		return "there is no sell to commit"
+	}
 	stockNeeded, _ := client.Cmd("LPOP", string3).Int()
 	totalEarned, _ := client.Cmd("LPOP", string3).Float64()
 	stock, _ := client.Cmd("LPOP", string3).Str()
@@ -416,23 +433,36 @@ func displayCANCEL_BUY(client *redis.Client, username string, transNum int) stri
 	return message
 }
 
-func redisCANCEL_SELL(client *redis.Client, username string) {
+func redisCANCEL_SELL(client *redis.Client, username string, transNum int) string {
 
 	/* Pop off 2 items from buy stack: stock name, and $ amount */
 	string3 := "userSELL:" + username
+	old_time, _ := client.Cmd("LPOP", string3).Int64()
+	t := time.Now().Unix()
+	diff := t - old_time
+	fmt.Println("in cancel_sell, old time is ", old_time, " time now is ", t, " diff is ", diff)
+	if diff > 60 {
+		LogErrorEventCommand(server, transNum, "CANCEL_SELL", username, nil, nil, nil, "there is no sell to cancel")
+		clearStack(client, string3)
+		fmt.Println("expiration!")
+		stack := listStack(client, string3)
+		fmt.Println("After clear the stack, User:", username, " BUYStack:", stack, "\n")
+		return "there is no sell to cancel"
+	}
 	client.Cmd("LPOP", string3).Int()
 	client.Cmd("LPOP", string3).Float64()
 	client.Cmd("LPOP", string3).Str()
 	//fmt.Println("Stock:", stock, "Amount:", amount)
-
+	return ""
 }
 
-func displayCANCEL_SELL(client *redis.Client, username string) {
+func displayCANCEL_SELL(client *redis.Client, username string, transNum int) string {
 	fmt.Println("-----CANCEL_SELL-----")
-	redisCANCEL_SELL(client, username)
+	message := redisCANCEL_SELL(client, username, transNum)
 	string3 := "userSELL:" + username
 	stack := listStack(client, string3)
 	fmt.Println("User:", username, " SELLStack:", stack, "\n")
+	return message
 }
 
 func redisSET_BUY_AMOUNT(client *redis.Client, username string, symbol string, amount float64) {
