@@ -496,25 +496,39 @@ func displaySET_BUY_AMOUNT(client *redis.Client, username string, symbol string,
 	fmt.Println("NEWBalance:", getBAL2, "\n")
 }
 
-func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64) {
+func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
+
+	setBuy_string3 := symbol + ":BUY:" + username
+	if listNotEmpty(client, setBuy_string3) == false {
+		LogErrorEventCommand(server, transNum, "SET_BUY_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any set buy to trigger")
+		return "there is no set buy to trigger"
+	}
 
 	string3 := symbol + ":BUYTRIG"
 	client.Cmd("HSET", username, string3, amount)
 	client.Cmd("HSET", "BUYTRIGGERS:"+username, symbol, amount)
+	return ""
 }
 
-func displaySET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64) {
+func displaySET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
 	fmt.Println("-----SET_BUY_TRIGGER-----")
 	fmt.Println("Username: ", username)
 
-	redisSET_BUY_TRIGGER(client, username, symbol, amount)
+	message := redisSET_BUY_TRIGGER(client, username, symbol, amount, transNum)
 
 	string3 := "BUYTRIGGERS:" + username
 	triggers, _ := client.Cmd("HGETALL", string3).List()
 	fmt.Println("BUYTRIGGERS: ", triggers, "\n")
+	return message
 }
 
-func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
+func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string, transNum int) string {
+
+	setBuy_string3 := symbol + ":BUY:" + username
+	if listNotEmpty(client, setBuy_string3) == false {
+		LogErrorEventCommand(server, transNum, "SET_BUY_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any set buy to cancel")
+		return "there is no set buy to cancel"
+	}
 
 	/* get length of stack */
 	string3 := symbol + ":BUY:" + username
@@ -531,15 +545,17 @@ func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
 	}
 
 	string4 := symbol + ":BUYTRIG"
+	// client.Cmd("HDEL", username)
 	client.Cmd("HSET", username, string4, 0.00)
 	string5 := "BUYTRIGGERS:" + username
 	client.Cmd("HSET", string5, symbol, 0.00)
+	return ""
 }
 
-func displayCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
+func displayCANCEL_SET_BUY(client *redis.Client, username string, symbol string, transNum int) string {
 	fmt.Println("-----CANCEL_SET_BUY-----")
 	fmt.Println("Username: ", username)
-	redisCANCEL_SET_BUY(client, username, symbol)
+	message := redisCANCEL_SET_BUY(client, username, symbol, transNum)
 
 	string3 := symbol + ":BUY:" + username
 	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
@@ -551,6 +567,7 @@ func displayCANCEL_SET_BUY(client *redis.Client, username string, symbol string)
 
 	getBAL2 := getBalance(client, username)
 	fmt.Println("NEWBalance:", getBAL2, "\n")
+	return message
 }
 
 func redisSET_SELL_AMOUNT(client *redis.Client, username string, symbol string, amount float64) {
@@ -576,24 +593,39 @@ func displaySET_SELL_AMOUNT(client *redis.Client, username string, symbol string
 	fmt.Println("SETSELLAMOUNTStack for ", symbol, ": ", stack, "\n")
 }
 
-func redisSET_SELL_TRIGGER(client *redis.Client, username string, symbol string, amount float64) {
+func redisSET_SELL_TRIGGER(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
+
+	setBuy_string3 := symbol + ":SELL:" + username
+	if listNotEmpty(client, setBuy_string3) == false {
+		LogErrorEventCommand(server, transNum, "SET_SELL_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any set sell to trigger")
+		return "there is no set sell to trigger"
+	}
 
 	string3 := symbol + ":SELLTRIG"
 	client.Cmd("HSET", username, string3, amount)
 
 	client.Cmd("HSET", "SELLTRIGGERS:"+username, symbol, amount)
+	return ""
 }
 
-func displaySET_SELL_TRIGGER(client *redis.Client, username string, symbol string, amount float64) {
+func displaySET_SELL_TRIGGER(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
 	fmt.Println("-----SET_SELL_TRIGGER-----")
 	fmt.Println("Username: ", username)
-	redisSET_SELL_TRIGGER(client, username, symbol, amount)
+	message := redisSET_SELL_TRIGGER(client, username, symbol, amount, transNum)
 
 	triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username).List()
 	fmt.Println("SELLTRIGGERS: ", triggers, "\n")
+	return message
 }
 
-func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string) {
+func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string, transNum int) string {
+
+	setBuy_string3 := symbol + ":SELL:" + username
+	if listNotEmpty(client, setBuy_string3) == false {
+		LogErrorEventCommand(server, transNum, "SET_SELL_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any set sell to cancel")
+		return "there is no set sell to cancel"
+	}
+
 	/* get length of stack */
 	string3 := symbol + ":SELL:" + username
 	stackLength, _ := client.Cmd("LLEN", string3).Int()
@@ -604,12 +636,13 @@ func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string) 
 	}
 	string4 := symbol + ":SELLTRIG"
 	client.Cmd("HSET", username, string4, 0.00)
+	return ""
 }
 
-func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string) {
+func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string, transNum int) string {
 	fmt.Println("-----CANCEL_SET_SELL-----")
 	fmt.Println("Username: ", username)
-	redisCANCEL_SET_SELL(client, username, symbol)
+	message := redisCANCEL_SET_SELL(client, username, symbol, transNum)
 
 	string3 := symbol + ":SELL:" + username
 	stack, _ := client.Cmd("LRANGE", string3, 0, -1).List()
@@ -621,6 +654,7 @@ func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string
 
 	getBAL2 := getBalance(client, username)
 	fmt.Println("NEWBalance:", getBAL2, "\n")
+	return message
 }
 
 func redisDISPLAY_SUMMARY(client *redis.Client, username string) {

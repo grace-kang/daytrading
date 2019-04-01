@@ -333,16 +333,168 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "SET_BUY_AMOUNT":
+		amount := amountInput
+		symbol := stringInput
+		fmt.Println("symbol is ", symbol, " amount is ", amount)
+		addr := address + "/set_buy_amount"
+		v.Add("amount", amount)
+		v.Add("symbol", symbol)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// write the response
+		w.Write([]byte(string(responseData)))
 
 	case "CANCEL_SET_BUY":
+		symbol := stringInput
+		fmt.Println("symbol is ", symbol)
+		addr := address + "/cancel_set_buy"
+		v.Add("symbol", symbol)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// write the response
+		w.Write([]byte(string(responseData)))
 
 	case "SET_BUY_TRIGGER":
+		amount := amountInput
+		symbol := stringInput
+		fmt.Println("symbol is ", symbol, " amount is ", amount)
+		addr := address + "/set_buy_trigger"
+		v.Add("amount", amount)
+		v.Add("symbol", symbol)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// write the response
+		w.Write([]byte(string(responseData)))
 
 	case "SET_SELL_AMOUNT":
+		amount := amountInput
+		symbol := stringInput
+		fmt.Println("symbol is ", symbol, " amount is ", amount)
+		addr := address + "/set_sell_amount"
+		v.Add("amount", amount)
+		v.Add("symbol", symbol)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// write the response
+		w.Write([]byte(string(responseData)))
 
 	case "SET_SELL_TRIGGER":
+		amount := amountInput
+		symbol := stringInput
+		fmt.Println("symbol is ", symbol, " amount is ", amount)
+		addr := address + "/set_sell_trigger"
+		v.Add("amount", amount)
+		v.Add("symbol", symbol)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// write the response
+		w.Write([]byte(string(responseData)))
 
 	case "CANCEL_SET_SELL":
+		symbol := stringInput
+		fmt.Println("symbol is ", symbol)
+		addr := address + "/cancel_set_sell"
+		v.Add("symbol", symbol)
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// write the response
+		w.Write([]byte(string(responseData)))
 
 	case "DUMPLOG":
 		addr := address + "/dumpLog"

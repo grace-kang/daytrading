@@ -420,6 +420,7 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 
 	balance := getBalance(client, user)
 	if balance < amount {
+		w.Write([]byte("balance is not enough to set buy amount"))
 		LogErrorEventCommand(server, transNum, "SET_BUY_AMOUNT", user, nil, nil, nil, "user "+user+" does not have any enough balance to set buy amount")
 		return
 	}
@@ -433,7 +434,7 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 		displaySET_BUY_AMOUNT(client, user, symbol, amount)
 	}
 
-	//w.Write([]byte("SET BUY AMOUNT complete"))
+	w.Write([]byte("SET BUY AMOUNT complete"))
 }
 
 func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
@@ -453,13 +454,17 @@ func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogUserCommand(server, transNum, "SET_BUY_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
-
+	var message string
 	if display == false {
-		redisSET_BUY_TRIGGER(client, user, symbol, amount)
+		message = redisSET_BUY_TRIGGER(client, user, symbol, amount, transNum)
 	} else {
-		displaySET_BUY_TRIGGER(client, user, symbol, amount)
+		message = displaySET_BUY_TRIGGER(client, user, symbol, amount, transNum)
 	}
-
+	if message == "" {
+		w.Write([]byte("set buy trigger successfully\n"))
+	} else {
+		w.Write([]byte(message))
+	}
 	//w.Write([]byte("SET BUY TRIGGER complete"))
 }
 
@@ -476,13 +481,17 @@ func cancelSetBuyHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 
 	LogUserCommand(server, transNum, "CANCEL_SET_BUY", user, nil, symbol, nil)
-
+	var message string
 	if display == false {
-		redisCANCEL_SET_BUY(client, user, symbol)
+		message = redisCANCEL_SET_BUY(client, user, symbol, transNum)
 	} else {
-		displayCANCEL_SET_BUY(client, user, symbol)
+		message = displayCANCEL_SET_BUY(client, user, symbol, transNum)
 	}
-
+	if message == "" {
+		w.Write([]byte("cancel set buy successfully\n"))
+	} else {
+		w.Write([]byte(message))
+	}
 	//w.Write([]byte("CANCEL SET BUY complete"))
 }
 
@@ -530,13 +539,17 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
-
+	var message string
 	if display == false {
-		redisSET_SELL_TRIGGER(client, user, symbol, amount)
+		message = redisSET_SELL_TRIGGER(client, user, symbol, amount, transNum)
 	} else {
-		displaySET_SELL_TRIGGER(client, user, symbol, amount)
+		message = displaySET_SELL_TRIGGER(client, user, symbol, amount, transNum)
 	}
-
+	if message == "" {
+		w.Write([]byte("set sell trigger successfully\n"))
+	} else {
+		w.Write([]byte(message))
+	}
 	//w.Write([]byte("SET SELL TRIGGER complete"))
 }
 
@@ -553,13 +566,17 @@ func cancelSetSellHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 
 	LogUserCommand(server, transNum, "CANCEL_SET_SELL", user, nil, symbol, nil)
-
+	var message string
 	if display == false {
-		redisCANCEL_SET_SELL(client, user, symbol)
+		message = redisCANCEL_SET_SELL(client, user, symbol, transNum)
 	} else {
-		displayCANCEL_SET_SELL(client, user, symbol)
+		message = displayCANCEL_SET_SELL(client, user, symbol, transNum)
 	}
-
+	if message == "" {
+		w.Write([]byte("cancel set sell successfully\n"))
+	} else {
+		w.Write([]byte(message))
+	}
 	//w.Write([]byte("CANCEL SET SELL complete"))
 }
 
