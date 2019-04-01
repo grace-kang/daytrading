@@ -69,6 +69,12 @@ func listNotEmpty(client *redis.Client, stackName string) bool {
 	return len != 0
 }
 
+func clearStack(client *redis.Client, stackName string) {
+	for listNotEmpty(client, stackName) == true {
+		client.Cmd("LPOP", stackName)
+	}
+}
+
 func saveTransaction(client *redis.Client, username string, command string, params ...string) {
 	// save transaction to HISTORY:username hash set
 	timestamp := time.Now().Local()
@@ -259,12 +265,14 @@ func redisCOMMIT_BUY(client *redis.Client, username string, transNum int) string
 	string3 := "userBUY:" + username
 	old_time, _ := client.Cmd("LPOP", string3).Int64()
 	t := time.Now().Unix()
-	fmt.Println("in commit_buy, time is ", old_time)
-	fmt.Println("time now is ", t)
 	diff := t - old_time
-	fmt.Println("diff is ")
+	fmt.Println("in commit_buy, old time is ", old_time, " time now is ", t, " diff is ", diff)
 	if diff > 60 {
 		LogErrorEventCommand(server, transNum, "COMMIT_BUY", username, nil, nil, nil, "there is no buy to commit")
+		clearStack(client, string3)
+		fmt.Println("expiration!")
+		stack := listStack(client, string3)
+		fmt.Println("After clear the stack, User:", username, " BUYStack:", stack, "\n")
 		return "there is no buy to commit"
 	}
 	stockBuy, _ := client.Cmd("LPOP", string3).Int()
@@ -382,12 +390,14 @@ func redisCANCEL_BUY(client *redis.Client, username string, transNum int) string
 	string3 := "userBUY:" + username
 	old_time, _ := client.Cmd("LPOP", string3).Int64()
 	t := time.Now().Unix()
-	fmt.Println("in commit_buy, time is ", old_time)
-	fmt.Println("time now is ", t)
 	diff := t - old_time
-	fmt.Println("diff is ")
+	fmt.Println("in cancel_buy, time is ", old_time, " time now is ", t, " diff is ", diff)
 	if diff > 60 {
 		LogErrorEventCommand(server, transNum, "CANCEL_BUY", username, nil, nil, nil, "there is no buy to cancel")
+		clearStack(client, string3)
+		fmt.Println("expiration!")
+		stack := listStack(client, string3)
+		fmt.Println("After clear the stack, User:", username, " BUYStack:", stack, "\n")
 		return "there is no buy to cancel"
 	}
 	client.Cmd("LPOP", string3).Int()
