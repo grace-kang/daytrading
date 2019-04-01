@@ -5,9 +5,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+  "os"
 )
 
-var address = "http://audit:1400"
+var address = "http://" + os.Getenv("AUDIT_URL")
 
 func convertStringToDecimal(value string) string {
 	amount, err := strconv.ParseFloat(value, 64)

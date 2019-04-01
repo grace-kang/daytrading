@@ -29,12 +29,14 @@ func init() {
 	var err error
 	// Establish a pool of 10 connections to the Redis server listening on
 	// port 6379 of the local machine.
-	db, err = pool.New("tcp", "redis:6379", 20)
+  redisurl := os.Getenv("REDIS_URL")
+	db, err = pool.New("tcp", redisurl, 20)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	db2, err = pool.New("tcp", "redis2:6379", 20)
+  redis2url := os.Getenv("REDIS2_URL")
+	db2, err = pool.New("tcp", redis2url, 20)
 	if err != nil {
 		log.Panic(err)
 	}

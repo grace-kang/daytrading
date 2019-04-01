@@ -81,10 +81,7 @@ services:
       - transaction
       - quote
     environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
+      TRANSACTION_URL: transaction:80
     volumes:
       - .:/go/src/servers/web_server
 

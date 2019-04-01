@@ -22,9 +22,10 @@ const (
 	connHost = "localhost"
 	connPort = "1600"
 	connType = "http"
-	address  = "http://reverse-proxy:80"
 	server   = "webserver"
 )
+
+var	address  = "http://" + os.Getenv("TRANSACTION_URL")
 
 //var wg sync.WaitGroup
 var transNum = 0
@@ -703,7 +704,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	//wg.Wait()
-	dumpLogFile("http://transaction:80", strconv.Itoa(count), nil, "./testLOG")
+	dumpLogFile(address, strconv.Itoa(count), nil, "./testLOG")
 
 	//print stats for the workload file
 	fmt.Println("--------------------")
