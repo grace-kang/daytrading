@@ -352,14 +352,18 @@ func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("there is no buy to cancel"))
 		return
 	}
-
+	var message string
 	if display == false {
-		redisCANCEL_BUY(client, user)
+		message := redisCANCEL_BUY(client, user, transNum)
 	} else {
-		displayCANCEL_BUY(client, user)
+		message := displayCANCEL_BUY(client, user, transNum)
 	}
 
-	w.Write([]byte("cancel buy successfully\n"))
+	if message == "" {
+		w.Write([]byte("cancel buy successfully\n"))
+	} else {
+		w.Write([]byte(message))
+	}
 }
 
 func cancelSellHandler(w http.ResponseWriter, r *http.Request) {

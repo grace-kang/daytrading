@@ -214,6 +214,9 @@ func redisBUY(client *redis.Client, username string, symbol string, totalCost fl
 	client.Cmd("LPUSH", string3, symbol)
 	client.Cmd("LPUSH", string3, totalCost)
 	client.Cmd("LPUSH", string3, stockSell)
+	t := time.Now().Unix()
+	fmt.Println("t is ", t)
+	client.Cmd("LPUSH", string3, t)
 
 }
 
@@ -254,6 +257,16 @@ func redisCOMMIT_BUY(client *redis.Client, username string, transNum int) string
 	*/
 
 	string3 := "userBUY:" + username
+	old_time, _ := client.Cmd("LPOP", string3).Int64()
+	t := time.Now().Unix()
+	fmt.Println("in commit_buy, time is ", old_time)
+	fmt.Println("time now is ", t)
+	diff := t - old_time
+	fmt.Println("diff is ")
+	if diff > 60 {
+		LogErrorEventCommand(server, transNum, "COMMIT_BUY", username, nil, nil, nil, "there is no buy to commit")
+		return "there is no buy to commit"
+	}
 	stockBuy, _ := client.Cmd("LPOP", string3).Int()
 	totalCost, _ := client.Cmd("LPOP", string3).Float64()
 	stock, _ := client.Cmd("LPOP", string3).Str()
@@ -363,22 +376,34 @@ func displayCOMMIT_SELL(client *redis.Client, username string, transNum int) str
 	return message
 }
 
-func redisCANCEL_BUY(client *redis.Client, username string) {
+func redisCANCEL_BUY(client *redis.Client, username string, transNum int) string {
 
 	/* Pop off 2 items from buy stack: stock name, and $ amount */
 	string3 := "userBUY:" + username
+	old_time, _ := client.Cmd("LPOP", string3).Int64()
+	t := time.Now().Unix()
+	fmt.Println("in commit_buy, time is ", old_time)
+	fmt.Println("time now is ", t)
+	diff := t - old_time
+	fmt.Println("diff is ")
+	if diff > 60 {
+		LogErrorEventCommand(server, transNum, "CANCEL_BUY", username, nil, nil, nil, "there is no buy to cancel")
+		return "there is no buy to cancel"
+	}
 	client.Cmd("LPOP", string3).Int()
 	client.Cmd("LPOP", string3).Float64()
 	client.Cmd("LPOP", string3).Str()
 	//fmt.Println("Stock:", stock, "Amount:", amount)
+	return ""
 
 }
-func displayCANCEL_BUY(client *redis.Client, username string) {
+func displayCANCEL_BUY(client *redis.Client, username string, transNum int) string {
 	fmt.Println("-----CANCEL_BUY-----")
-	redisCANCEL_BUY(client, username)
+	message := redisCANCEL_BUY(client, username, transNum)
 	string3 := "userBUY:" + username
 	stack := listStack(client, string3)
 	fmt.Println("User:", username, " BUYStack:", stack, "\n")
+	return message
 }
 
 func redisCANCEL_SELL(client *redis.Client, username string) {
