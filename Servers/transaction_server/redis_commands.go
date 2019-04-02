@@ -171,7 +171,7 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
 
 	LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
 	client.Cmd("SET", stringQ, price)
-	client.Cmd("EXPIRE", stringQ, 300)
+	client.Cmd("EXPIRE", stringQ, 3000)
 }
 
 func displayQUOTE(client *redis.Client, transNum int, username string, symbol string) {

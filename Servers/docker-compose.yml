@@ -54,8 +54,6 @@ services:
   
   transaction:
     build: transaction_server/
-    ports:
-      - 1300-1310:80
     links:
       - redis
       - redis2
@@ -81,21 +79,6 @@ services:
       - transaction
       - quote
     environment:
-      TRANSACTION_URL: transaction:80
+      TRANSACTION_URL: reverse-proxy:80
     volumes:
       - .:/go/src/servers/web_server
-
-  web2:
-    build: web_server2/
-    ports:
-      - 1601:1601
-    depends_on:
-      - transaction
-      - quote
-    environment:
-      REDIS_URL: redis:6379
-      REDIS2_URL: redis2:6379
-      QUOTE_URL: quote:1200
-      AUDIT_URL: audit:1400
-    volumes:
-      - .:/go/src/servers/web_server2
