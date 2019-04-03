@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -27,7 +28,7 @@ const (
 
 var address = "http://" + os.Getenv("TRANSACTION_URL")
 
-//var wg sync.WaitGroup
+var wg sync.WaitGroup
 var transNum = 0
 
 func main() {
@@ -210,7 +211,7 @@ func add(username string) string {
 }
 
 func concurrencyLogic(address string, lines []string, username string) {
-	//defer wg.Done()
+	defer wg.Done()
 	// httpclient := http.Client{}
 	// client := dialRedis()
 	for i, line := range lines {
@@ -233,7 +234,7 @@ func concurrencyLogic(address string, lines []string, username string) {
 			if i%transNum == 0 {
 				fmt.Println(transNum)
 			}
-			time.Sleep(1 * time.Millisecond)
+			time.Sleep(3 * time.Millisecond)
 			client := &http.Client{}
 			switch command {
 
@@ -659,6 +660,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 	User := make(map[string]int)
 	counter := 0
 	fmt.Println(counter)
+	waitLine := 0
 	for i, line := range lines {
 		s := strings.Split(line, ",")
 		x := strings.Split(s[0], " ")
@@ -668,6 +670,7 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 		data := make([]string, 2)
 		data[1] = strings.TrimSpace(x[1])
 		data = append(data, s[1:]...)
+
 		if User[data[2]] == 0 {
 			User[data[2]] = 1
 			counter += 1
@@ -675,20 +678,30 @@ func runWorkload(w http.ResponseWriter, r *http.Request) {
 			//fmt.Println("Num:", i, "-----------------------User:", data[2])
 			//fmt.Println("------------------counter-----------------", counter)
 
-			time.Sleep(100 * time.Millisecond)
 			if i%numWebs == webNum {
+				time.Sleep(500 * time.Millisecond)
 				if data[2] != "./testLOG" && data[2] != "" {
 					//wg.Add(1)
+
 					fmt.Println("------------------------")
 					fmt.Println("------------------USER:", counter)
 					fmt.Println("------------------------")
-					concurrencyLogic(address, lines, data[2])
+					if waitLine == 5 {
+						waitLine = 0
+						wg.Add(1)
+						go concurrencyLogic(address, lines, data[2])
+						wg.Wait()
+					} else {
+						waitLine += 1
+						wg.Add(1)
+						go concurrencyLogic(address, lines, data[2])
+					}
 				}
 			}
 
 		}
 	}
-
+	wg.Wait()
 	/*
 		threads := 7
 		if u%threads == 0 {
