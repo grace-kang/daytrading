@@ -672,7 +672,7 @@ func redisSET_SELL_TRIGGER(client *redis.Client, username string, symbol string,
 	maxStock := int(totalEarn / unitPrice)
 	stockOwned := stockOwned(client, username, symbol)
 
-	if maxStock < stockOwned {
+	if stockOwned < maxStock {
 		LogErrorEventCommand(server, transNum, "SET_SELL_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any stock to set sell trigger")
 		return "stock owned is not enough to set sell trigger "
 	}
