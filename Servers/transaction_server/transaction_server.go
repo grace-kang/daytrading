@@ -200,6 +200,7 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	exactTotalPrice := float64(stockSell) * getPrice
 	fmt.Println("exactTotalPrice is ", exactTotalPrice)
 	if stockSell <= 0 {
+		LogErrorEventCommand(server, transNum, "BUY", user, strconv.FormatFloat(amount, 'f', 2, 64), nil, nil, "amount is too low to buy any of the stock")
 		w.Write([]byte("amount is too low to buy any of the stock"))
 		return
 	}
@@ -244,8 +245,7 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	/*check if user exists or not*/
 	checkUserExists(transNum, user, "SELL")
 
-	id := symbol + ":OWNED"
-	stockOwned := stockOwned(client, user, id)
+	stockOwned := stockOwned(client, user, symbol)
 	getPrice := getQUOTE(client, transNum, user, symbol, true)
 	stockNeeded := int(amount / getPrice)
 	newBenefit := getPrice * float64(stockNeeded)
@@ -448,24 +448,18 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
-
-	balance := getBalance(client, user)
-	if balance < amount {
-		w.Write([]byte("balance is not enough to set buy amount"))
-		LogErrorEventCommand(server, transNum, "SET_BUY_AMOUNT", user, nil, nil, nil, "user "+user+" does not have any enough balance to set buy amount")
-		return
-	}
-
-	addBalance(client, user, -amount)
-	LogAccountTransactionCommand(server, transNum, "SET_BUY_AMOUNT", user, strconv.FormatFloat(amount, 'f', 2, 64))
-
+	var message string
 	if display == false {
-		redisSET_BUY_AMOUNT(client, user, symbol, amount)
+		message = redisSET_BUY_AMOUNT(client, user, symbol, amount)
 	} else {
-		displaySET_BUY_AMOUNT(client, user, symbol, amount)
+		message = displaySET_BUY_AMOUNT(client, user, symbol, amount)
 	}
 
-	w.Write([]byte("SET BUY AMOUNT complete"))
+	if message == "" {
+		w.Write([]byte("SET BUY AMOUNT complete\n"))
+	} else {
+		w.Write([]byte(message))
+	}
 }
 
 func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
@@ -564,12 +558,18 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 
 	LogUserCommand(server, transNum, "SET_SELL_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 
+	//check if the user has enough amount of stocks or not based on the current price
+	var message string
 	if display == false {
 		redisSET_SELL_AMOUNT(client, user, symbol, amount)
 	} else {
 		displaySET_SELL_AMOUNT(client, user, symbol, amount)
 	}
-
+	if message == "" {
+		w.Write([]byte("SET SELL AMOUNT complete"))
+	} else {
+		w.Write([]byte(message))
+	}
 	//w.Write([]byte("SET SELL AMOUNT complete"))
 }
 
@@ -585,12 +585,15 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+
 	if err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		w.Write([]byte("cannot parse amount into floating number"))
 		LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 		return
 	}
+
+	LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 
 	if amount < 0 {
 		LogErrorEventCommand(server, transNum, "set_sell_trigger", user, r.Form.Get("amount"), nil, nil, "amount cannot be negative")
@@ -599,7 +602,6 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
 	var message string
 	if display == false {
 		message = redisSET_SELL_TRIGGER(client, user, symbol, amount, transNum)
