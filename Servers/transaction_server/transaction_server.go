@@ -135,6 +135,8 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
 	if err != nil {
 		fmt.Println(err)
+		w.Write([]byte("cannot parse amount into floating number"))
+		return
 	}
 
 	LogUserCommand(server, transNum, "ADD", user, r.Form.Get("amount"), nil, nil)
@@ -171,6 +173,14 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
 	if err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		w.Write([]byte("cannot parse amount into floating number"))
+		return
+	}
+
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "buy", user, r.Form.Get("amount"), nil, nil, "cannot buy negative amount of stock")
+		w.Write([]byte("amount cannot be negative"))
+		return
 	}
 
 	LogUserCommand(server, transNum, "BUY", user, r.Form.Get("amount"), symbol, nil)
@@ -215,8 +225,19 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	symbol := r.Form.Get("symbol")
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
+
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		w.Write([]byte("cannot parse amount into floating number"))
+		LogUserCommand(server, transNum, "SELL", user, r.Form.Get("amount"), symbol, nil)
+		return
+	}
+
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "sell", user, r.Form.Get("amount"), nil, nil, "cannot sell negative amount into stock")
+		w.Write([]byte("amount cannot be negative"))
+		LogUserCommand(server, transNum, "SELL", user, r.Form.Get("amount"), symbol, nil)
+		return
 	}
 
 	LogUserCommand(server, transNum, "SELL", user, r.Form.Get("amount"), symbol, nil)
@@ -413,7 +434,17 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		w.Write([]byte("cannot parse amount into floating number"))
+		LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
+		return
+	}
+
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "set_buy_amount", user, r.Form.Get("amount"), nil, nil, "amount cannot be negative")
+		w.Write([]byte("amount cannot be negative"))
+		LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
+		return
 	}
 
 	LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
@@ -450,7 +481,17 @@ func setBuyTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		w.Write([]byte("cannot parse amount into floating number"))
+		LogUserCommand(server, transNum, "SET_BUY_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
+		return
+	}
+
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "set_buy_trigger", user, r.Form.Get("amount"), nil, nil, "amount cannot be negative")
+		w.Write([]byte("amount cannot be negative"))
+		LogUserCommand(server, transNum, "SET_BUY_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
+		return
 	}
 
 	LogUserCommand(server, transNum, "SET_BUY_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
@@ -508,7 +549,17 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		w.Write([]byte("cannot parse amount into floating number"))
+		LogUserCommand(server, transNum, "SET_SELL_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
+		return
+	}
+
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "set_sell_amount", user, r.Form.Get("amount"), nil, nil, "amount cannot be negative")
+		w.Write([]byte("amount cannot be negative"))
+		LogUserCommand(server, transNum, "SET_SELL_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
+		return
 	}
 
 	LogUserCommand(server, transNum, "SET_SELL_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
@@ -535,7 +586,17 @@ func setSellTriggerHandler(w http.ResponseWriter, r *http.Request) {
 	symbol := r.Form.Get("symbol")
 	amount, err := strconv.ParseFloat(strings.TrimSpace(r.Form.Get("amount")), 64)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		w.Write([]byte("cannot parse amount into floating number"))
+		LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
+		return
+	}
+
+	if amount < 0 {
+		LogErrorEventCommand(server, transNum, "set_sell_trigger", user, r.Form.Get("amount"), nil, nil, "amount cannot be negative")
+		w.Write([]byte("amount cannot be negative"))
+		LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
+		return
 	}
 
 	LogUserCommand(server, transNum, "SET_SELL_TRIGGER", user, r.Form.Get("amount"), symbol, nil)
