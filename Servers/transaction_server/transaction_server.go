@@ -561,9 +561,9 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 	//check if the user has enough amount of stocks or not based on the current price
 	var message string
 	if display == false {
-		message := redisSET_SELL_AMOUNT(client, user, symbol, amount, transNum)
+		message = redisSET_SELL_AMOUNT(client, user, symbol, amount, transNum)
 	} else {
-		message := displaySET_SELL_AMOUNT(client, user, symbol, amount, transNum)
+		message = displaySET_SELL_AMOUNT(client, user, symbol, amount, transNum)
 	}
 	if message == "" {
 		w.Write([]byte("SET SELL AMOUNT complete"))
