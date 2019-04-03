@@ -615,6 +615,11 @@ func redisSET_SELL_AMOUNT(client *redis.Client, username string, symbol string, 
 	stockOwned := stockOwned(client, username, symbol)
 	getPrice := getQUOTE(client, transNum, username, symbol, true)
 	stockNeeded := int(amount / getPrice)
+	fmt.Println("stock owned: ", stockOwned, "stockneeded: ", stockNeeded)
+	if stockOwned == 0 {
+		LogErrorEventCommand(server, transNum, "SET_SELL_AMOUNT", username, strconv.FormatFloat(amount, 'f', 2, 64), symbol, nil, "user "+username+" does not have stock "+symbol+" to set sell")
+		return "user doesn't have any stock " + symbol + " in the account to set sell amount"
+	}
 	if stockOwned < stockNeeded {
 		LogErrorEventCommand(server, transNum, "SET_SELL_AMOUNT", username, strconv.FormatFloat(amount, 'f', 2, 64), symbol, nil, "user "+username+" does not have enough stock "+symbol+" to set sell")
 		return "stack owned is not enough to set sell"

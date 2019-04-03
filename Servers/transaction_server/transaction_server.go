@@ -450,9 +450,9 @@ func setBuyAmountHandler(w http.ResponseWriter, r *http.Request) {
 	LogUserCommand(server, transNum, "SET_BUY_AMOUNT", user, r.Form.Get("amount"), symbol, nil)
 	var message string
 	if display == false {
-		message = redisSET_BUY_AMOUNT(client, user, symbol, amount)
+		message = redisSET_BUY_AMOUNT(client, user, symbol, amount, transNum)
 	} else {
-		message = displaySET_BUY_AMOUNT(client, user, symbol, amount)
+		message = displaySET_BUY_AMOUNT(client, user, symbol, amount, transNum)
 	}
 
 	if message == "" {
@@ -561,9 +561,9 @@ func setSellAmountHandler(w http.ResponseWriter, r *http.Request) {
 	//check if the user has enough amount of stocks or not based on the current price
 	var message string
 	if display == false {
-		redisSET_SELL_AMOUNT(client, user, symbol, amount)
+		message := redisSET_SELL_AMOUNT(client, user, symbol, amount, transNum)
 	} else {
-		displaySET_SELL_AMOUNT(client, user, symbol, amount)
+		message := displaySET_SELL_AMOUNT(client, user, symbol, amount, transNum)
 	}
 	if message == "" {
 		w.Write([]byte("SET SELL AMOUNT complete"))
