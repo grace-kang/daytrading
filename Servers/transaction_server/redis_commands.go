@@ -509,6 +509,7 @@ func addSetBuyTrigger(client *redis.Client, username string, symbol string, tota
 	// save for iterating all triggers for a given stock
 	client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":UNIT", username, unitPricePoint)
 	client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":TOTAL", username, totalCost)
+	client.Cmd("HSET", "BUYTRIGGERS:STOCKS", symbol, username)
 }
 
 func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
