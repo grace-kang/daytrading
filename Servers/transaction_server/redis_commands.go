@@ -508,7 +508,6 @@ func addSetBuyTrigger(client *redis.Client, username string, symbol string, tota
 	client.Cmd("HSET", "BUYTRIGGERS:"+username, symbol, unitPricePoint)
 	// save for iterating all triggers for a given stock
 	client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":UNIT", username, unitPricePoint)
-	client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":TOTAL", username, totalCost)
 	client.Cmd("HSET", "BUYTRIGGERS:STOCKS", symbol, username)
 }
 
@@ -707,44 +706,10 @@ func clearSetSellTriggers(client *redis.Client, username string, symbol string) 
 
 func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string, transNum int) string {
 
-	// setBuy_string3 := symbol + ":SELL:" + username
-	// if listNotEmpty(client, setBuy_string3) == false {
-	// 	LogErrorEventCommand(server, transNum, "SET_SELL_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any set sell to cancel")
-	// 	return "there is no set sell to cancel"
-	// }
-
-	// /* get length of stack */
-	// string3 := symbol + ":SELL:" + username
-	// stackLength, _ := client.Cmd("LLEN", string3).Int()
-	// //fmt.Println("Stack length:", stackLength)
-
-	// for i := 0; i < stackLength; i++ {
-	// 	client.Cmd("LPOP", string3).Float64()
-	// }
-	// string4 := symbol + ":SELLTRIG"
-	// client.Cmd("HSET", username, string4, 0.00)
-	// return ""
-
-	// setBuy_string3 := symbol + ":BUY:" + username
-	// if listNotEmpty(client, setBuy_string3) == false {
-	// 	LogErrorEventCommand(server, transNum, "SET_BUY_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any set buy to cancel")
-	// 	return "there is no set buy to cancel"
-	// }
-
-	string4 := symbol + ":SELLTRIG"
-	// client.Cmd("HDEL", username)
-	client.Cmd("HDEL", username, string4)
-	string5 := "SELLTRIGGERS:" + username
-	client.Cmd("HDEL", string5, symbol)
-
-	stackLength, _ := client.Cmd("LLEN", "BUYTRIGGERS:"+symbol+":UNIT").Int()
-	//fmt.Println("Stack length:", stackLength)
-
-	for i := 0; i < stackLength; i++ {
-		//add stock back
-		command := "SELLTRIGGERS:" + symbol + ":TOTAL"
-		refund, _ := client.Cmd("HGET", command).Float64()
-		addBalance(client, username, refund)
+	setSell_string3 := symbol + ":SELL:" + username
+	if listNotEmpty(client, setSell_string3) == false {
+		LogErrorEventCommand(server, transNum, "SET_SELL_AMOUNT", username, nil, symbol, nil, "user "+username+" does not have any set sell to cancel")
+		return "there is no set sell to cancel"
 	}
 
 	clearSetSellTriggers(client, username, symbol)
