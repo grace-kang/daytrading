@@ -139,6 +139,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 
 	switch command {
 	case "ADD":
+		if amountInput == "" {
+			w.Write([]byte(string("amount cannot be empty")))
+			return
+		}
 		amount := amountInput
 		fmt.Println(amount)
 		addr := address + "/add"
@@ -169,7 +173,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 
 		// var cookie, err = r.Cookie("Symbol")
 		// fmt.Println("coolie is ", cookie)
-
+		if stringInput == "" {
+			w.Write([]byte(string("symbol input cannot be empty")))
+			return
+		}
 		response := getQuote(strings.ToLower(stringInput), username)
 		fmt.Println("response is ", response)
 		split := strings.Split(response, ",")
@@ -181,6 +188,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("get quote price of stock " + stringInput + " : " + split[0] + " \n"))
 
 	case "BUY":
+		if stringInput == "" || amountInput == "" {
+			w.Write([]byte(string("please make sure both symbol and amount are non-empty")))
+			return
+		}
 		amount := amountInput
 		symbol := stringInput
 		addr := address + "/buy"
@@ -257,7 +268,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "SELL":
-
+		if stringInput == "" || amountInput == "" {
+			w.Write([]byte(string("please make sure both symbol and amount are non-empty")))
+			return
+		}
 		amount := amountInput
 		symbol := stringInput
 		addr := address + "/sell"
@@ -333,6 +347,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "SET_BUY_AMOUNT":
+		if stringInput == "" || amountInput == "" {
+			w.Write([]byte(string("please make sure both symbol and amount are non-empty")))
+			return
+		}
 		amount := amountInput
 		symbol := stringInput
 		fmt.Println("symbol is ", symbol, " amount is ", amount)
@@ -361,6 +379,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "CANCEL_SET_BUY":
+		if stringInput == "" {
+			w.Write([]byte(string("symbol cannot be empty")))
+			return
+		}
 		symbol := stringInput
 		fmt.Println("symbol is ", symbol)
 		addr := address + "/cancel_set_buy"
@@ -387,6 +409,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "SET_BUY_TRIGGER":
+		if stringInput == "" || amountInput == "" {
+			w.Write([]byte(string("please make sure both symbol and amount are non-empty")))
+			return
+		}
 		amount := amountInput
 		symbol := stringInput
 		fmt.Println("symbol is ", symbol, " amount is ", amount)
@@ -415,6 +441,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "SET_SELL_AMOUNT":
+		if stringInput == "" || amountInput == "" {
+			w.Write([]byte(string("please make sure both symbol and amount are non-empty")))
+			return
+		}
 		amount := amountInput
 		symbol := stringInput
 		fmt.Println("symbol is ", symbol, " amount is ", amount)
@@ -443,6 +473,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "SET_SELL_TRIGGER":
+		if stringInput == "" || amountInput == "" {
+			w.Write([]byte(string("please make sure both symbol and amount are non-empty")))
+			return
+		}
 		amount := amountInput
 		symbol := stringInput
 		fmt.Println("symbol is ", symbol, " amount is ", amount)
@@ -471,6 +505,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "CANCEL_SET_SELL":
+		if stringInput == "" {
+			w.Write([]byte(string("symbol cannot be empty")))
+			return
+		}
 		symbol := stringInput
 		fmt.Println("symbol is ", symbol)
 		addr := address + "/cancel_set_sell"
@@ -497,6 +535,10 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(string(responseData)))
 
 	case "DUMPLOG":
+		if stringInput == "" {
+			w.Write([]byte(string("filename cannot be empty")))
+			return
+		}
 		addr := address + "/dumpLog"
 		if username != "root123" {
 			v.Add("username", username)
