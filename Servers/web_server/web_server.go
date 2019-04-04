@@ -498,6 +498,9 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 
 	case "DUMPLOG":
 		addr := address + "/dumpLog"
+		if username != "root123" {
+			v.Add("username", username)
+		}
 		v.Add("filename", stringInput)
 		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
 		if err != nil {

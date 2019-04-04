@@ -11,13 +11,16 @@ import (
 	"time"
 )
 
-var server = "server1" // need to be replaced later
+var server = "audit" // need to be replaced later
 
 var localLog Log
+var userLogs map[string]Log
+var limit = 50000
 
-var channel = make(chan LogType, 20000)
+// var channel = make(chan LogType, 20000)
 
-var mutex = &sync.Mutex{} // used to lock localUserLogs map
+var mutex = &sync.Mutex{}    // used to writing xml file
+var logMutex = &sync.Mutex{} // used to lock the log
 
 const (
 	Header = `<?xml version="1.0"?>` + "\n"
@@ -51,7 +54,8 @@ func isError(err error) bool {
 }
 
 func initAuditServer() {
-	localLog = Log{LogData: make([]LogType, 500000)}
+	localLog = Log{LogData: make([]LogType, limit)}
+	userLogs = make(map[string]Log)
 }
 
 func getUnixTimestamp() int64 {
@@ -79,12 +83,29 @@ func deleteFile(logFilePath string) {
 	fmt.Println("File Deleted")
 }
 
-func worker() {
-	for {
-		// receive from channel, or be blocked
-		command := <-channel
-		localLog.append(command)
+// func worker() {
+// 	for {
+// 		// receive from channel, or be blocked
+// 		command := <-channel
+// 		localLog.append(command)
+// 	}
+// }
+
+func appendLog(newLog LogType, username string) {
+	logMutex.Lock()
+
+	localLog.append(newLog)
+	if _, ok := userLogs[username]; ok {
+		fmt.Printf("%v is in map\n", username)
+
+	} else {
+		fmt.Printf("%v is not in map\n", username)
+		userLogs[username] = Log{LogData: make([]LogType, limit)}
 	}
+	curUserlog := userLogs[username]
+	curUserlog.append(newLog)
+	userLogs[username] = curUserlog
+	logMutex.Unlock()
 }
 
 func UserCommandHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,18 +115,19 @@ func UserCommandHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
-
+	username := r.Form.Get("username")
 	data := &UserCommandType{
 		Timestamp:         getUnixTimestamp(),
 		Server:            r.Form.Get("server"),
 		TransactionNumber: transNum,
 		Command:           Command(r.Form.Get("command")),
-		Username:          r.Form.Get("username"),
+		Username:          username,
 		StockSymbol:       stockSymbolType(r.Form.Get("stockSymbol")),
 		Filename:          r.Form.Get("filename"),
 		Funds:             r.Form.Get("funds"),
 	}
-	channel <- LogType{UserCommand: data}
+	log := LogType{UserCommand: data}
+	appendLog(log, username)
 }
 
 func quoteServerHandler(w http.ResponseWriter, r *http.Request) {
@@ -116,7 +138,7 @@ func quoteServerHandler(w http.ResponseWriter, r *http.Request) {
 
 	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
 	QuoteServerTime, _ := strconv.ParseInt(r.Form.Get("quoteServerTime"), 10, 64)
-
+	username := r.Form.Get("username")
 	data := &QuoteServerType{
 		Timestamp:         getUnixTimestamp(),
 		Server:            r.Form.Get("server"),
@@ -127,7 +149,8 @@ func quoteServerHandler(w http.ResponseWriter, r *http.Request) {
 		QuoteServerTime:   QuoteServerTime,
 		CryptoKey:         r.Form.Get("cryptokey"),
 	}
-	channel <- LogType{QuoteServer: data}
+	log := LogType{QuoteServer: data}
+	appendLog(log, username)
 }
 
 func accountTransactionHandler(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +158,7 @@ func accountTransactionHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-
+	username := r.Form.Get("username")
 	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
 
 	data := &AccountTransactionType{
@@ -146,7 +169,8 @@ func accountTransactionHandler(w http.ResponseWriter, r *http.Request) {
 		Username:          r.Form.Get("username"),
 		Funds:             r.Form.Get("funds"),
 	}
-	channel <- LogType{AccountTransaction: data}
+	log := LogType{AccountTransaction: data}
+	appendLog(log, username)
 }
 
 func systemEventHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +178,7 @@ func systemEventHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-
+	username := r.Form.Get("username")
 	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
 
 	data := &SystemEventType{
@@ -167,7 +191,8 @@ func systemEventHandler(w http.ResponseWriter, r *http.Request) {
 		Filename:          r.Form.Get("filename"),
 		Funds:             r.Form.Get("funds"),
 	}
-	channel <- LogType{SystemEvent: data}
+	log := LogType{SystemEvent: data}
+	appendLog(log, username)
 }
 
 func errorEventHandler(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +200,7 @@ func errorEventHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-
+	username := r.Form.Get("username")
 	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
 
 	data := &ErrorEventType{
@@ -189,7 +214,8 @@ func errorEventHandler(w http.ResponseWriter, r *http.Request) {
 		Funds:             r.Form.Get("funds"),
 		ErrorMessage:      r.Form.Get("errorMessage"),
 	}
-	channel <- LogType{ErrorEvent: data}
+	log := LogType{ErrorEvent: data}
+	appendLog(log, username)
 }
 
 func debugEventHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +223,7 @@ func debugEventHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "ParseForm() err: %v", err)
 		return
 	}
-
+	username := r.Form.Get("username")
 	transNum, _ := strconv.Atoi(r.Form.Get("transactionNum"))
 	data := &DebugType{
 		Timestamp:         getUnixTimestamp(),
@@ -210,7 +236,8 @@ func debugEventHandler(w http.ResponseWriter, r *http.Request) {
 		Funds:             r.Form.Get("funds"),
 		DebugMessage:      r.Form.Get("debugMessage"),
 	}
-	channel <- LogType{DebugEvent: data}
+	log := LogType{DebugEvent: data}
+	appendLog(log, username)
 }
 
 func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
@@ -220,18 +247,30 @@ func dumpLogHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	filename := r.Form.Get("filename")
+	username := r.Form.Get("username")
 	filePath := filename + ".xml"
 	fmt.Println("filepath is " + filePath)
 
 	mutex.Lock()
-	out, err := xml.MarshalIndent(localLog, "", "   ")
-
-	if err != nil {
-		panic(err)
-	}
 
 	var logS = Header
-	logS += string(out)
+	if username != "" {
+		if _, ok := userLogs[username]; ok {
+			fmt.Printf("%v is in map\n", username)
+			out, err := xml.MarshalIndent(userLogs[username], "", "   ")
+			if err != nil {
+				panic(err)
+			}
+			logS += string(out)
+
+		}
+	} else {
+		out, err := xml.MarshalIndent(localLog, "", "   ")
+		if err != nil {
+			panic(err)
+		}
+		logS += string(out)
+	}
 
 	// fmt.Println("log is " + string(logS))
 	deleteFile(filePath)
@@ -269,7 +308,7 @@ func main() {
 	mux.HandleFunc("/clearSystemLogs", clearSystemLogsHandler)
 
 	fmt.Printf("Audit server listening on %s:%s\n", "http://audit", "1400")
-	go worker()
+	// go worker()
 	if err := http.ListenAndServe(":1400", mux); err != nil {
 		panic(err)
 	}
