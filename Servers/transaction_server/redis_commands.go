@@ -468,7 +468,7 @@ func displayCANCEL_SELL(client *redis.Client, username string, transNum int) str
 func addSetBuyAmount(client *redis.Client, username string, symbol string, amount float64) {
 	string3 := symbol + ":BUY:" + username
 	client.Cmd("LPUSH", string3, amount)
-	client.Cmd("HSET", username+":SETBUY", symbol) // store all the symbols of setbuy for a given user
+	client.Cmd("HSET", username+":SETBUY", symbol, 0) //store all the symbols of setbuy for a given user
 }
 
 func redisSET_BUY_AMOUNT(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
@@ -520,11 +520,19 @@ func clearSetBuyTriggers(client *redis.Client, username string, symbol string) {
 
 	triggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":UNIT").Map()
 	for symbolTime, _ := range triggers {
-		client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbolTime)
+		s := strings.Split(symbolTime, ":")[0]
+		if s == symbol {
+			client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbolTime)
+		}
 	}
 	triggers, _ = client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":TOTAL").Map()
-	for symbolTime, _ := range triggers {
-		client.Cmd("HDEL", "BUYTRIGGERS:"+username+":TOTAL", symbolTime)
+	for symbolTime, total := range triggers {
+		totalCost, _ := strconv.ParseFloat(total, 64)
+		s := strings.Split(symbolTime, ":")[0]
+		if s == symbol {
+			addBalance(client, username, totalCost)
+			client.Cmd("HDEL", "BUYTRIGGERS:"+username+":TOTAL", symbolTime)
+		}
 	}
 
 	// client.Cmd("HDEL", "BUYTRIGGERS:"+symbol+":UNIT", username)
@@ -711,22 +719,32 @@ func clearSetSellTriggers(client *redis.Client, username string, symbol string) 
 
 	triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
 	for symbolTime, _ := range triggers {
-		client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbolTime)
+		s := strings.Split(symbolTime, ":")[0]
+		if s == symbol {
+			client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbolTime)
+		}
+
 	}
+
 	triggers, _ = client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
 	for symbolTime, _ := range triggers {
-		client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbolTime)
+		s := strings.Split(symbolTime, ":")[0]
+		if s == symbol {
+			client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbolTime)
+		}
 	}
+
 	triggers, _ = client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":STOCKS").Map()
 	fmt.Println("triggers are: ", triggers)
 	for symbolTime, max_stock := range triggers {
 		fmt.Println("numStocks is ", max_stock)
 		numStockInt, _ := strconv.Atoi(max_stock)
-		symbol := strings.Split(symbolTime, ":")[0]
-		addStock(client, username, symbol, numStockInt) // add stock back
-		fmt.Println("add stock ", numStockInt, " back to account")
+		s := strings.Split(symbolTime, ":")[0]
+		if s == symbol {
+			addStock(client, username, symbol, numStockInt) // add stock back
+			client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbolTime)
+		}
 
-		client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbolTime)
 	}
 
 	// client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbol)
@@ -821,17 +839,20 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 	s += fmt.Sprintf("Set Buy Amount in the stack:\n")
 	s += fmt.Sprintf("%6v|%6s|%6s|\n", "", "stock", "totalCost")
 
-	set_buy_stocks := listStack(client, username+":SETBUY")
+	set_buy_stocks, _ := client.Cmd("HGETALL", username+":SETBUY").Map()
 	// fmt.Println("set buys are: ", set_buy_stocks)
-	for i := 0; i < len(set_buy_stocks); i = i + 1 {
-		symbol := set_buy_stocks[i]
+	for symbol, _ := range set_buy_stocks {
 		// fmt.Println("setbuysymbol is ", symbol)
 		set_buys := listStack(client, symbol+":BUY:"+username)
+		if len(set_buys) == 0 {
+			continue
+		}
 		// fmt.Println("set_buys is ", set_buys)
 		for j := 0; j < len(set_buys); j = j + 1 {
 			amount, _ := strconv.ParseFloat(set_buys[j], 64)
 			s += fmt.Sprintf("%6v|%6s|%6.2f|\n", "", symbol, amount)
 		}
+		s += fmt.Sprintf("----------------------------------\n")
 	}
 
 	s += fmt.Sprintf("\n")
@@ -855,6 +876,9 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 	set_sell_stocks, _ := client.Cmd("HGETALL", username+":SETSELL").Map()
 	for symbol, _ := range set_sell_stocks {
 		set_sells := listStack(client, symbol+":SELL:"+username)
+		if len(set_sells) == 0 {
+			continue
+		}
 		// fmt.Println("set_sells is ", set_buys)
 		for j := 0; j < len(set_sells); j = j + 1 {
 			amount, _ := strconv.ParseFloat(set_sells[j], 64)
