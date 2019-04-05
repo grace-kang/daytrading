@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mediocregopher/radix.v2/pool"
 )
@@ -84,6 +85,104 @@ func main() {
 		panic("ListenAndServe: " + err.Error())
 	}
 	fmt.Println("Transaction server listening on " + connHost + ":" + connPort)
+}
+
+func goCheckBuyTriggers(username string, symbol string) {
+	for {
+		runOn(func() {
+			fmt.Println(time.Now())
+			checkBuyTriggers(username, symbol)
+		}, 60*time.Second)
+	}
+}
+
+func goCheckSellTriggers(username string, symbol string) {
+	for {
+		runOn(func() {
+			fmt.Println(time.Now())
+			checkSellTriggers(username, symbol)
+		}, 60*time.Second)
+	}
+}
+
+func runOn(f func(), d time.Duration) {
+	now := time.Now()
+	d = now.Add(d).Truncate(d).Sub(now)
+	time.Sleep(d)
+	f()
+}
+
+func checkSellTriggers(username string, symbol string) {
+	//get all triggers
+	client, _ := db.Get()
+	defer db.Put(client)
+	UNIT_triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
+	TOTAL_triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
+	MAXSTOCKS_triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":STOCKS").Map()
+	for symbolTime, triggerPrice := range UNIT_triggers {
+		unitTriggerPointF, _ := strconv.ParseFloat(triggerPrice, 64)
+		s := strings.Split(symbolTime, ":")[0]
+		if s == symbol {
+			symbolPrice := getQUOTE(client, 0, username, symbol, true)
+			if symbolPrice >= unitTriggerPointF {
+				fmt.Println("sell trigger activated!!")
+				totalAmount, _ := strconv.ParseFloat(TOTAL_triggers[symbolTime], 64)
+				numStockInt, _ := strconv.Atoi(MAXSTOCKS_triggers[symbolTime])
+				addStock(client, username, symbol, numStockInt) // add stock back
+				stockNeeded := int(totalAmount / symbolPrice)
+				newBenefit := symbolPrice * float64(stockNeeded)
+				if stockNeeded <= 0 {
+					continue
+				}
+				if display == false {
+					redisSELL(client, username, symbol, newBenefit, stockNeeded)
+				} else {
+					displaySELL(client, username, symbol, newBenefit, stockNeeded)
+				}
+
+				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbolTime)
+				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbolTime)
+				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbolTime)
+
+			}
+		}
+	}
+}
+
+func checkBuyTriggers(username string, symbol string) {
+	client, _ := db.Get()
+	defer db.Put(client)
+	//check if the price is higher than trigger point
+	unitTriggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":UNIT").Map()
+	totalTriggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":TOTAL").Map()
+	for symbolTime, unitTriggerPoint := range unitTriggers {
+		total := totalTriggers[symbolTime]
+		totalCost, _ := strconv.ParseFloat(total, 64)
+		unitTriggerPointF, _ := strconv.ParseFloat(unitTriggerPoint, 64)
+		s := strings.Split(symbolTime, ":")[0]
+		if s == symbol {
+			symbolPrice := getQUOTE(client, 0, username, symbol, true)
+			if symbolPrice <= unitTriggerPointF {
+				fmt.Println("buy trigger activated!!")
+				addBalance(client, username, totalCost)
+				stockToBuy := int(totalCost / symbolPrice)
+				exactTotalPrice := float64(stockToBuy) * symbolPrice
+				fmt.Println("exactTotalPrice is ", exactTotalPrice)
+				if stockToBuy <= 0 {
+					continue
+				}
+				client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbolTime)
+				client.Cmd("HDEL", "BUYTRIGGERS:"+username+":TOTAL", symbolTime)
+
+				if display == false {
+					redisBUY(client, username, symbol, exactTotalPrice, stockToBuy)
+				} else {
+					displayBUY(client, username, symbol, exactTotalPrice, stockToBuy)
+				}
+			}
+
+		}
+	}
 }
 
 func clearSystemLogHandler(w http.ResponseWriter, r *http.Request) {
@@ -197,19 +296,19 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 
 	getPrice := getQUOTE(client, transNum, user, symbol, true)
 	fmt.Println("amount is ", amount, "price is ", getPrice)
-	stockSell := int(amount / getPrice)
-	exactTotalPrice := float64(stockSell) * getPrice
+	stockToBuy := int(amount / getPrice)
+	exactTotalPrice := float64(stockToBuy) * getPrice
 	fmt.Println("exactTotalPrice is ", exactTotalPrice)
-	if stockSell <= 0 {
+	if stockToBuy <= 0 {
 		LogErrorEventCommand(server, transNum, "BUY", user, strconv.FormatFloat(amount, 'f', 2, 64), nil, nil, "amount is too low to buy any of the stock")
 		w.Write([]byte("amount is too low to buy any of the stock"))
 		return
 	}
 
 	if display == false {
-		redisBUY(client, user, symbol, exactTotalPrice, stockSell)
+		redisBUY(client, user, symbol, exactTotalPrice, stockToBuy)
 	} else {
-		displayBUY(client, user, symbol, exactTotalPrice, stockSell)
+		displayBUY(client, user, symbol, exactTotalPrice, stockToBuy)
 	}
 
 	w.Write([]byte("pushed command: buy amount " + strings.TrimSpace(r.Form.Get("amount")+" of stock "+symbol+" successfully\n")))
@@ -345,13 +444,18 @@ func commitSellHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var message string
 	if display == false {
-		redisCOMMIT_SELL(client, user, transNum)
+		message = redisCOMMIT_SELL(client, user, transNum)
 	} else {
-		displayCOMMIT_SELL(client, user, transNum)
+		message = displayCOMMIT_SELL(client, user, transNum)
 	}
 
-	w.Write([]byte("commit sell successfully\n"))
+	if message == "" {
+		w.Write([]byte("commit sell successfully\n"))
+	} else {
+		w.Write([]byte(message))
+	}
 }
 
 func cancelBuyHandler(w http.ResponseWriter, r *http.Request) {
@@ -656,6 +760,11 @@ func displaySummaryHandler(w http.ResponseWriter, r *http.Request) {
 
 	client, _ := db.Get()
 	defer db.Put(client)
+	if user == "root123" {
+		s := displayAllAccountInfo(client)
+		w.Write(s.Bytes())
+		return
+	}
 	s := redisDISPLAY_SUMMARY(client, user)
 	w.Write(s.Bytes())
 }

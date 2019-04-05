@@ -91,26 +91,32 @@ func getTransaction(client *redis.Client, username string) bytes.Buffer {
 	// getBalance(client, username
 
 	if username == "root123" {
-		fmt.Fprintf(writer, "\t%s\t%s\t%s\t%s\n", "Time", "User", "Command", "Transaction Description", "Current Balance")
+		fmt.Fprintf(writer, "\t|%s\t|%s\t|%s\t|%s\t|%s\n", "Time", "User", "Command", "Transaction Description", "Current Balance")
 		client.Cmd("SORT", "HISTORY")
 		history, _ := client.Cmd("ZRANGE", "HISTORY", 0, -1).List()
 		fmt.Println("history iis ", history)
-		for time, val := range history {
-			user := strings.Split(val, ":")[0]
-			transList := strings.Split(strings.Split(val, ":")[1], ";")
-			fmt.Fprintf(writer, "\t\t%s\t%s\t%s\t%s\t%s\n", time, user, transList[0], transList[2], transList[1])
+		for _, val := range history {
+			time := strings.Split(val, ":")[0]
+			user := strings.Split(val, ":")[1]
+			transList := strings.Split(strings.Split(val, ":")[2], ";")
+			fmt.Println("in trans hit, time is ", time, "user is ", user, "command is ", transList[0], "trans hist is ", transList[2], "current balacne is ", transList[1])
+			fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\t|%s\n", time, user, transList[0], transList[2], transList[1])
 		}
 	} else {
-		fmt.Fprintf(writer, "\t%s\t%s \t%s\n", "Time", "Command", "Transaction Description", "Current Balance")
+		fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\n", "Time", "Command", "Transaction Description", "Current Balance")
+		client.Cmd("SORT", "HISTORY")
 		history, _ := client.Cmd("ZRANGE", "HISTORY", 0, -1, true).Map()
-		for time, val := range history {
-			user := strings.Split(val, ":")[0]
+		for _, val := range history {
+			user := strings.Split(val, ":")[1]
 			if user == username {
-				transList := strings.Split(strings.Split(val, ":")[1], ";")
-				fmt.Fprintf(writer, "\t\t%s\t%s\t%s\t%s\n", time, transList[0], transList[2], transList[1])
+				time := strings.Split(val, ":")[0]
+				transList := strings.Split(strings.Split(val, ":")[2], ";")
+				fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\t|%s\n", time, user, transList[0], transList[2], transList[1])
 			}
 		}
 	}
+	writer.Flush()
+	fmt.Println(b.String())
 
 	return b
 
@@ -119,9 +125,10 @@ func getTransaction(client *redis.Client, username string) bytes.Buffer {
 func saveTransactionString(client *redis.Client, username string, command string, comment string, new_balance float64) {
 
 	timestamp := time.Now().Local()
+	timestamp_str := timestamp.String()
 	amountS := fmt.Sprintf("%.2f", new_balance)
 	transaction_string := command + ";" + amountS + ";" + comment
-	client.Cmd("ZADD", "HISTORY", timestamp.UnixNano(), username+":"+transaction_string)
+	client.Cmd("ZADD", "HISTORY", timestamp.UnixNano(), timestamp_str+":"+username+":"+transaction_string)
 }
 
 func saveTransaction(client *redis.Client, username string, command string, params ...string) {
@@ -172,6 +179,7 @@ func redisADD(client *redis.Client, username string, amount float64) {
 	} else {
 		addBalance(client, username, amount)
 	}
+	client.Cmd("HMSET", "usersList", username, amount)
 	newBalance := getBalance(client, username)
 	comment := fmt.Sprintf("add %.2f into balance", amount)
 	saveTransactionString(client, username, "ADD", comment, newBalance)
@@ -404,10 +412,6 @@ func redisCOMMIT_SELL(client *redis.Client, username string, transNum int) strin
 		LogErrorEventCommand(server, transNum, "COMMIT_SELL", username, nil, nil, nil, "there is no sell to commit")
 		clearStack(client, string3)
 		fmt.Println("expiration! Going to clear the stack")
-		stack := listStack(client, string3)
-		fmt.Println("Before clear the stack, User:", username, " BUYStack:", stack, "\n")
-		stack = listStack(client, string3)
-		fmt.Println("After clear the stack, User:", username, " BUYStack:", stack, "\n")
 		return "there is no sell to commit"
 	}
 	stockNeeded, _ := client.Cmd("LPOP", string3).Int()
@@ -622,6 +626,8 @@ func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, 
 	totalCost, _ := client.Cmd("LPOP", setBuy_string3).Float64()
 	addSetBuyTrigger(client, username, symbol, totalCost, amount)
 
+	go goCheckSellTriggers(username, symbol)
+
 	newBalance := getBalance(client, username)
 	comment := fmt.Sprintf("Set buy trigger for stock %s. Total cost is %.2f. Unit trigger point is %.2f", symbol, totalCost, amount)
 	saveTransactionString(client, username, "SET_BUY_TRIGGER", comment, newBalance)
@@ -773,6 +779,8 @@ func redisSET_SELL_TRIGGER(client *redis.Client, username string, symbol string,
 	addStock(client, username, symbol, -maxStock)
 	addSetSellTrigger(client, username, symbol, totalEarn, unitPrice, maxStock)
 
+	go goCheckSellTriggers(username, symbol)
+
 	newBalance := getBalance(client, username)
 	comment := fmt.Sprintf("Add set sell trigger for stock %s. Total earn will be %.2f. Unit trigger point is %.2f. Maximum stocks to sell is ", symbol, totalEarn, unitPrice, maxStock)
 	saveTransactionString(client, username, "SET_SELL_TRIGGER", comment, newBalance)
@@ -854,6 +862,17 @@ func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string
 	getBAL2 := getBalance(client, username)
 	fmt.Println("NEWBalance:", getBAL2, "\n")
 	return message
+}
+
+func displayAllAccountInfo(client *redis.Client) bytes.Buffer {
+	userMaps, _ := client.Cmd("HGETALL", "usersList").Map()
+	var b bytes.Buffer
+	for user, _ := range userMaps {
+		b.WriteString("\n--------------------User:" + user + "-----------------------\n")
+		s := redisDISPLAY_SUMMARY(client, user)
+		b.Write(s.Bytes())
+	}
+	return b
 }
 
 func redisDISPLAY_SUMMARY(client *redis.Client, username string) bytes.Buffer {
