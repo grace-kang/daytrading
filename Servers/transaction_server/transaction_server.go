@@ -656,8 +656,7 @@ func displaySummaryHandler(w http.ResponseWriter, r *http.Request) {
 	if display == true {
 		client, _ := db.Get()
 		defer db.Put(client)
-		redisDISPLAY_SUMMARY(client, user)
+		s := redisDISPLAY_SUMMARY(client, user)
+		w.Write([]byte(s))
 	}
-
-	//w.Write([]byte("DISPLAY SUMMARY complete"))
 }
