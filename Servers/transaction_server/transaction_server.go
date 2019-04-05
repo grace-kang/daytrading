@@ -301,7 +301,7 @@ func buyHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("exactTotalPrice is ", exactTotalPrice)
 	if stockToBuy <= 0 {
 		LogErrorEventCommand(server, transNum, "BUY", user, strconv.FormatFloat(amount, 'f', 2, 64), nil, nil, "amount is too low to buy any of the stock")
-		w.Write([]byte("amount is too low to buy any of the stock"))
+		w.Write([]byte("amount is too low to buy any of the stock. Price of stock is higher than amount."))
 		return
 	}
 
@@ -356,7 +356,7 @@ func sellHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if stockNeeded <= 0 {
-		w.Write([]byte("amount is too low to sell any of the stock"))
+		w.Write([]byte("amount is too low to sell any of the stock. Price of stock is higher than amount."))
 		return
 	}
 
