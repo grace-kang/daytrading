@@ -56,7 +56,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	display = true
 	//client := dialRedis()
 	//flushRedis(client)
 
@@ -75,6 +74,8 @@ func main() {
 	http.HandleFunc("/set_sell_trigger", setSellTriggerHandler)
 	http.HandleFunc("/cancel_set_sell", cancelSetSellHandler)
 	http.HandleFunc("/display_summary", displaySummaryHandler)
+	http.HandleFunc("/transaction_history", transactionHistoryHandler)
+
 	http.HandleFunc("/dumpLog", dumpLogHandler)
 	http.HandleFunc("/clearSystemLogs", clearSystemLogHandler)
 
@@ -653,10 +654,24 @@ func displaySummaryHandler(w http.ResponseWriter, r *http.Request) {
 	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
 	LogUserCommand(server, transNum, "DISPLAY_SUMMARY", user, nil, nil, nil)
 
-	if display == true {
-		client, _ := db.Get()
-		defer db.Put(client)
-		s := redisDISPLAY_SUMMARY(client, user)
-		w.Write([]byte(s))
+	client, _ := db.Get()
+	defer db.Put(client)
+	s := redisDISPLAY_SUMMARY(client, user)
+	w.Write(s.Bytes())
+}
+
+func transactionHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		fmt.Fprintf(w, "ParseForm() err: %v", err)
+		return
 	}
+
+	user := r.Form.Get("user")
+	transNum, _ := strconv.Atoi(r.Form.Get("transNum"))
+	LogUserCommand(server, transNum, "DISPLAY_TRANSACTION_HISTORY", user, nil, nil, nil)
+
+	client, _ := db.Get()
+	defer db.Put(client)
+	s := getTransaction(client, user)
+	w.Write(s.Bytes())
 }

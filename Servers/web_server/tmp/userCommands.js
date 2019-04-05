@@ -1,4 +1,29 @@
 var username;
+window.setInterval(function(){
+  //display account summary
+  $.ajax({
+    type: "POST",
+    url: "sendCommand",
+    data: {
+      command: "DISPLAY_SUMMARY",
+      username: username
+    },
+    cache: false,
+    success: function(results) {
+      $('#SummaryDiv').html('<p>'+nl2br(results, true)+'</p>')
+    },
+    error: function(jqXHR, textStatus, errorThrown) {
+      console.log('jqXHR:');
+      console.log(jqXHR);
+      console.log('textStatus:');
+      console.log(textStatus);
+      console.log('errorThrown:');
+      console.log(errorThrown);
+      $('#SummaryDiv').html('<p>status code: '+jqXHR.status+'</p><p>errorThrown: ' + errorThrown + '</p><p>jqXHR.responseText:</p><div>'+jqXHR.responseText + '</div>');
+      
+  },
+  })
+}, 500);
 
 $(document).ready(function() {
   $("#myButtons :input").change(function() {
@@ -87,6 +112,11 @@ $(document).ready(function() {
         $("#fieldOne").hide();
         $("#fieldTwo").hide();
         break;
+      case "TRANSACTION_HISTORY":
+        $("#fieldOne").hide();
+        $("#fieldTwo").hide();
+        break;
+
     }
   });
 
@@ -130,7 +160,7 @@ function submitRequest() {
       console.log(results);
       $("input[name=stringInput]").val("")
       $("input[name=numberInput]").val("")
-      $('#displayDiv').html('<p>'+results+'</p>')
+      $('#displayDiv').html('<p>'+nl2br(results, true)+'</p>')
     },
     error: function(jqXHR, textStatus, errorThrown) {
       console.log('jqXHR:');
@@ -145,10 +175,9 @@ function submitRequest() {
       
   },
   })
-    // .done(function() {
-    //   alert("success");
-    // })
-    // .fail(function() {
-    //   alert("error");
-    // });
+}
+
+function nl2br (str, is_xhtml) {
+  var breakTag = (is_xhtml || typeof is_xhtml === 'undefined') ? '<br />' : '<br>';
+  return (str + '').replace(/([^>\r\n]?)(\r\n|\n\r|\r|\n)/g, '$1' + breakTag + '$2');
 }

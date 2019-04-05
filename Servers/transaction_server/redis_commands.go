@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/mediocregopher/radix.v2/redis"
@@ -83,6 +84,46 @@ func clearStack(client *redis.Client, stackName string) {
 	}
 }
 
+func getTransaction(client *redis.Client, username string) bytes.Buffer {
+	fmt.Println("in getTransactioin")
+	var b bytes.Buffer
+	writer := tabwriter.NewWriter(&b, 0, 8, 0, '\t', 0)
+	// getBalance(client, username
+
+	if username == "root123" {
+		fmt.Fprintf(writer, "\t%s\t%s\t%s\t%s\n", "Time", "User", "Command", "Transaction Description", "Current Balance")
+		client.Cmd("SORT", "HISTORY")
+		history, _ := client.Cmd("ZRANGE", "HISTORY", 0, -1).List()
+		fmt.Println("history iis ", history)
+		for time, val := range history {
+			user := strings.Split(val, ":")[0]
+			transList := strings.Split(strings.Split(val, ":")[1], ";")
+			fmt.Fprintf(writer, "\t\t%s\t%s\t%s\t%s\t%s\n", time, user, transList[0], transList[2], transList[1])
+		}
+	} else {
+		fmt.Fprintf(writer, "\t%s\t%s \t%s\n", "Time", "Command", "Transaction Description", "Current Balance")
+		history, _ := client.Cmd("ZRANGE", "HISTORY", 0, -1, true).Map()
+		for time, val := range history {
+			user := strings.Split(val, ":")[0]
+			if user == username {
+				transList := strings.Split(strings.Split(val, ":")[1], ";")
+				fmt.Fprintf(writer, "\t\t%s\t%s\t%s\t%s\n", time, transList[0], transList[2], transList[1])
+			}
+		}
+	}
+
+	return b
+
+}
+
+func saveTransactionString(client *redis.Client, username string, command string, comment string, new_balance float64) {
+
+	timestamp := time.Now().Local()
+	amountS := fmt.Sprintf("%.2f", new_balance)
+	transaction_string := command + ";" + amountS + ";" + comment
+	client.Cmd("ZADD", "HISTORY", timestamp.UnixNano(), username+":"+transaction_string)
+}
+
 func saveTransaction(client *redis.Client, username string, command string, params ...string) {
 	// save transaction to HISTORY:username hash set
 	timestamp := time.Now().Local()
@@ -132,8 +173,8 @@ func redisADD(client *redis.Client, username string, amount float64) {
 		addBalance(client, username, amount)
 	}
 	newBalance := getBalance(client, username)
-	//save to transaction history
-	saveTransaction(client, username, "ADD", strconv.FormatFloat(amount, 'f', 2, 64), strconv.FormatFloat(newBalance, 'f', 2, 64))
+	comment := fmt.Sprintf("add %.2f into balance", amount)
+	saveTransactionString(client, username, "ADD", comment, newBalance)
 }
 
 func displayADD(client *redis.Client, username string, amount float64) {
@@ -157,6 +198,9 @@ func redisQUOTE(client *redis.Client, transNum int, username string, stock strin
 		currentprice, _ := client.Cmd("GET", stringQ).Float64()
 		LogSystemEventCommand(server, transNum, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
 	}
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("quote stock %s", stock)
+	saveTransactionString(client, username, "QUOTE", comment, newBalance)
 }
 
 func getQUOTE(client *redis.Client, transNum int, username string, stock string, force bool) float64 {
@@ -219,7 +263,7 @@ func displayQUOTE(client *redis.Client, transNum int, username string, symbol st
 	fmt.Println("QUOTE:", stockPrice, "\n")
 }
 
-func redisBUY(client *redis.Client, username string, symbol string, totalCost float64, stockSell int) {
+func redisBUY(client *redis.Client, username string, symbol string, totalCost float64, stockBuy int) {
 	/*
 	  check to see buy stack in redis cli
 	  LRANGE userBUY:oY01WVirLr 0 -1
@@ -227,10 +271,14 @@ func redisBUY(client *redis.Client, username string, symbol string, totalCost fl
 	string3 := "userBUY:" + username
 	client.Cmd("LPUSH", string3, symbol)
 	client.Cmd("LPUSH", string3, totalCost)
-	client.Cmd("LPUSH", string3, stockSell)
+	client.Cmd("LPUSH", string3, stockBuy)
 	t := time.Now().Unix()
 	fmt.Println("t is ", t)
 	client.Cmd("LPUSH", string3, t)
+
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("buy %d of stocks %s. Total cost is %.2f", stockBuy, symbol, totalCost)
+	saveTransactionString(client, username, "BUY", comment, newBalance)
 
 }
 
@@ -251,6 +299,10 @@ func redisSELL(client *redis.Client, username string, symbol string, totalEarned
 	t := time.Now().Unix()
 	fmt.Println("t is ", t)
 	client.Cmd("LPUSH", string3, t)
+
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("sell %d of stocks %s. Total earned will be %.2f", stockNeeded, symbol, totalEarned)
+	saveTransactionString(client, username, "SELL", comment, newBalance)
 
 }
 
@@ -306,8 +358,9 @@ func redisCOMMIT_BUY(client *redis.Client, username string, transNum int) string
 	stockUnitPrice := totalCost / float64(stockBuy)
 
 	/* 7 save to transaction list*/
-	getBAL2 := getBalance(client, username)
-	saveTransaction(client, username, "COMMIT_BUY", stock, string(stockBuy), strconv.FormatFloat(stockUnitPrice, 'f', 2, 64), strconv.FormatFloat(totalCost, 'f', 2, 64), strconv.FormatFloat(getBAL2, 'f', 2, 64))
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("Commit buy %d of stocks %s. Unit price is %.2f. Total cost is %.2f.", stockBuy, stock, stockUnitPrice, totalCost)
+	saveTransactionString(client, username, "COMMIT_BUY", comment, newBalance)
 	return ""
 }
 
@@ -377,8 +430,9 @@ func redisCOMMIT_SELL(client *redis.Client, username string, transNum int) strin
 	/* 6 */
 	addStock(client, username, stock, -stockNeeded)
 
-	getBAL3 := getBalance(client, username)
-	saveTransaction(client, username, "COMMIT_SELL", stock, string(stockNeeded), strconv.FormatFloat(totalEarned/float64(stockNeeded), 'f', 2, 64), strconv.FormatFloat(totalEarned, 'f', 2, 64), strconv.FormatFloat(getBAL3, 'f', 2, 64))
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("commit sell %d of stocks %s. Total earned is %.2f", stockNeeded, stock, totalEarned)
+	saveTransactionString(client, username, "COMMIT_SELL", comment, newBalance)
 
 	return ""
 
@@ -417,10 +471,16 @@ func redisCANCEL_BUY(client *redis.Client, username string, transNum int) string
 		fmt.Println("After clear the stack, User:", username, " BUYStack:", stack, "\n")
 		return "there is no buy to cancel"
 	}
-	client.Cmd("LPOP", string3).Int()
-	client.Cmd("LPOP", string3).Float64()
-	client.Cmd("LPOP", string3).Str()
+
+	stockBuy, _ := client.Cmd("LPOP", string3).Int()
+	totalCost, _ := client.Cmd("LPOP", string3).Float64()
+	stock, _ := client.Cmd("LPOP", string3).Str()
+
 	//fmt.Println("Stock:", stock, "Amount:", amount)
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("cancel buy %d of stocks %s. Total earned is %.2f", stockBuy, stock, totalCost)
+	saveTransactionString(client, username, "CANCEL_BUY", comment, newBalance)
+
 	return ""
 
 }
@@ -449,9 +509,14 @@ func redisCANCEL_SELL(client *redis.Client, username string, transNum int) strin
 		fmt.Println("After clear the stack, User:", username, " BUYStack:", stack, "\n")
 		return "there is no sell to cancel"
 	}
-	client.Cmd("LPOP", string3).Int()
-	client.Cmd("LPOP", string3).Float64()
-	client.Cmd("LPOP", string3).Str()
+
+	stockNeeded, _ := client.Cmd("LPOP", string3).Int()
+	totalEarned, _ := client.Cmd("LPOP", string3).Float64()
+	stock, _ := client.Cmd("LPOP", string3).Str()
+
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("cancel buy %d of stocks %s. Total earned is %.2f", stockNeeded, stock, totalEarned)
+	saveTransactionString(client, username, "CANCEL_BUY", comment, newBalance)
 	//fmt.Println("Stock:", stock, "Amount:", amount)
 	return ""
 }
@@ -471,6 +536,16 @@ func addSetBuyAmount(client *redis.Client, username string, symbol string, amoun
 	client.Cmd("HSET", username+":SETBUY", symbol, 0) //store all the symbols of setbuy for a given user
 }
 
+func hasSetBuyBefore(client *redis.Client, username string, symbol string) bool {
+	exist, _ := client.Cmd("HEXISTS", username+":SETBUY", symbol).Int()
+	return exist == 1
+}
+
+func hasSetSellBefore(client *redis.Client, username string, symbol string) bool {
+	exist, _ := client.Cmd("HEXISTS", username+":SETSELL", symbol).Int()
+	return exist == 1
+}
+
 func redisSET_BUY_AMOUNT(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
 
 	balance := getBalance(client, username)
@@ -485,6 +560,11 @@ func redisSET_BUY_AMOUNT(client *redis.Client, username string, symbol string, a
 	// decrease balance put in reserve
 	addBalance(client, username, -amount)
 	LogAccountTransactionCommand(server, transNum, "SET_BUY_AMOUNT", username, strconv.FormatFloat(amount, 'f', 2, 64))
+
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("add set buy amount for stock %s. Total cost is %.2f.", symbol, amount)
+	saveTransactionString(client, username, "SET_BUY_AMOUNT", comment, newBalance)
+
 	return ""
 }
 
@@ -506,37 +586,30 @@ func addSetBuyTrigger(client *redis.Client, username string, symbol string, tota
 	string3 := symbol + ":BUYTRIG"
 	client.Cmd("HSET", username, string3, unitPricePoint)
 	//save for transaction
-	t := time.Now().Unix()
-	client.Cmd("HSET", "BUYTRIGGERS:"+username+":UNIT", symbol+":"+string(t), unitPricePoint)
-	client.Cmd("HSET", "BUYTRIGGERS:"+username+":TOTAL", symbol+":"+string(t), totalCost)
-	// save for iterating all triggers for a given stock
-	// client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":UNIT", username, unitPricePoint)
-	// client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":TOTAL", username, totalCost)
+	t := time.Now().Format("20060102150405")
+	client.Cmd("HSET", "BUYTRIGGERS:"+username+":UNIT", symbol+":"+t, unitPricePoint)
+	client.Cmd("HSET", "BUYTRIGGERS:"+username+":TOTAL", symbol+":"+t, totalCost)
 }
 
 func clearSetBuyTriggers(client *redis.Client, username string, symbol string) {
 	string4 := symbol + ":BUYTRIG"
 	client.Cmd("HDEL", username, string4)
 
-	triggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":UNIT").Map()
-	for symbolTime, _ := range triggers {
-		s := strings.Split(symbolTime, ":")[0]
-		if s == symbol {
-			client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbolTime)
-		}
-	}
-	triggers, _ = client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":TOTAL").Map()
-	for symbolTime, total := range triggers {
+	unitTriggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":UNIT").Map()
+	totalTriggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":TOTAL").Map()
+	for symbolTime, unitTriggerPoint := range unitTriggers {
+		total := totalTriggers[symbolTime]
 		totalCost, _ := strconv.ParseFloat(total, 64)
 		s := strings.Split(symbolTime, ":")[0]
 		if s == symbol {
+			client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbolTime)
 			addBalance(client, username, totalCost)
 			client.Cmd("HDEL", "BUYTRIGGERS:"+username+":TOTAL", symbolTime)
+			newBalance := getBalance(client, username)
+			comment := fmt.Sprintf("Cancel set buy trigger for stock %s. Trigger point is %.2f. Refund is %.2f.", symbol, unitTriggerPoint, totalCost)
+			saveTransactionString(client, username, "CANCEL_SET_BUY", comment, newBalance)
 		}
 	}
-
-	// client.Cmd("HDEL", "BUYTRIGGERS:"+symbol+":UNIT", username)
-	// client.Cmd("HDEL", "BUYTRIGGERS:"+symbol+":TOTAL", username)
 }
 
 func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
@@ -548,6 +621,10 @@ func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, 
 	}
 	totalCost, _ := client.Cmd("LPOP", setBuy_string3).Float64()
 	addSetBuyTrigger(client, username, symbol, totalCost, amount)
+
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("Set buy trigger for stock %s. Total cost is %.2f. Unit trigger point is %.2f", symbol, totalCost, amount)
+	saveTransactionString(client, username, "SET_BUY_TRIGGER", comment, newBalance)
 
 	return ""
 }
@@ -566,9 +643,8 @@ func displaySET_BUY_TRIGGER(client *redis.Client, username string, symbol string
 
 func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string, transNum int) string {
 
-	setBuy_string3 := symbol + ":BUY:" + username
-	if listNotEmpty(client, setBuy_string3) == false {
-		LogErrorEventCommand(server, transNum, "SET_BUY_TRIGGER", username, nil, symbol, nil, "user "+username+" does not have any set buy to cancel")
+	if hasSetBuyBefore(client, username, symbol) == false {
+		LogErrorEventCommand(server, transNum, "CANCEL_SET_BUY", username, nil, symbol, nil, "user "+username+" does not have any set buy to cancel")
 		return "there is no set buy to cancel"
 	}
 
@@ -581,6 +657,9 @@ func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string, t
 	for i := 0; i < stackLength; i++ {
 		refund, _ := client.Cmd("LPOP", string3).Float64()
 		addBalance(client, username, refund)
+		newBalance := getBalance(client, username)
+		comment := fmt.Sprintf("Cancel set buy for stock %s. Refund is %.2f. Unit trigger point is %.2f", symbol, refund)
+		saveTransactionString(client, username, "CANCEL_SET_BUY", comment, newBalance)
 		//getBAL2 := getBalance(client, username)
 		//fmt.Println("Refund:", refund)
 		//fmt.Println("New Balance:", getBAL2)
@@ -643,12 +722,10 @@ func redisSET_SELL_AMOUNT(client *redis.Client, username string, symbol string, 
 
 	addSetSellAmount(client, username, symbol, amount)
 
-	/*
-	  push amount then trigger price in SET_BUY_TRIGGER
-	  these two operate in pairs
-	*/
-	//stack := listStack(client, string3)
-	//fmt.Println("SETSELLTRIGGERStack: ", stack)
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("Add set sell amount for stock %s. Total benefit will be %.2f", symbol, amount)
+	saveTransactionString(client, username, "SET_SELL_AMOUNT", comment, newBalance)
+
 	return ""
 }
 
@@ -667,14 +744,10 @@ func addSetSellTrigger(client *redis.Client, username string, symbol string, tot
 	string3 := symbol + ":SELLTRIG"
 	client.Cmd("HSET", username, string3, unitPrice)
 
-	t := time.Now().Unix()
-	client.Cmd("HSET", "SELLTRIGGERS:"+username+":UNIT", symbol+":"+string(t), unitPrice)
-	client.Cmd("HSET", "SELLTRIGGERS:"+username+":TOTAL", symbol+":"+string(t), totalEarn)
-	client.Cmd("HSET", "SELLTRIGGERS:"+username+":STOCKS", symbol+":"+string(t), maxStock)
-
-	// client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":UNIT", username, unitPrice)
-	// client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":TOTAL", username, totalEarn)
-	// client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":STOCKS", username, maxStock)
+	t := time.Now().Format("20060102150405")
+	client.Cmd("HSET", "SELLTRIGGERS:"+username+":UNIT", symbol+":"+t, unitPrice)
+	client.Cmd("HSET", "SELLTRIGGERS:"+username+":TOTAL", symbol+":"+t, totalEarn)
+	client.Cmd("HSET", "SELLTRIGGERS:"+username+":STOCKS", symbol+":"+t, maxStock)
 
 }
 
@@ -699,6 +772,10 @@ func redisSET_SELL_TRIGGER(client *redis.Client, username string, symbol string,
 
 	addStock(client, username, symbol, -maxStock)
 	addSetSellTrigger(client, username, symbol, totalEarn, unitPrice, maxStock)
+
+	newBalance := getBalance(client, username)
+	comment := fmt.Sprintf("Add set sell trigger for stock %s. Total earn will be %.2f. Unit trigger point is %.2f. Maximum stocks to sell is ", symbol, totalEarn, unitPrice, maxStock)
+	saveTransactionString(client, username, "SET_SELL_TRIGGER", comment, newBalance)
 	return ""
 }
 
@@ -717,46 +794,31 @@ func clearSetSellTriggers(client *redis.Client, username string, symbol string) 
 	string3 := symbol + ":SELLTRIG"
 	client.Cmd("HDEL", username, string3)
 
-	triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
-	for symbolTime, _ := range triggers {
+	UNIT_triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
+	TOTAL_triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
+	MAXSTOCKS_triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":STOCKS").Map()
+	for symbolTime, triggerPrice := range UNIT_triggers {
 		s := strings.Split(symbolTime, ":")[0]
 		if s == symbol {
 			client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbolTime)
-		}
-
-	}
-
-	triggers, _ = client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
-	for symbolTime, _ := range triggers {
-		s := strings.Split(symbolTime, ":")[0]
-		if s == symbol {
+			totalAmount, _ := TOTAL_triggers[symbolTime]
 			client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbolTime)
-		}
-	}
-
-	triggers, _ = client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":STOCKS").Map()
-	fmt.Println("triggers are: ", triggers)
-	for symbolTime, max_stock := range triggers {
-		fmt.Println("numStocks is ", max_stock)
-		numStockInt, _ := strconv.Atoi(max_stock)
-		s := strings.Split(symbolTime, ":")[0]
-		if s == symbol {
+			numStockInt, _ := strconv.Atoi(MAXSTOCKS_triggers[symbolTime])
 			addStock(client, username, symbol, numStockInt) // add stock back
 			client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbolTime)
+
+			newBalance := getBalance(client, username)
+			comment := fmt.Sprintf("Cancel set sell trigger for stock %s. Refund is %.2f. Unit trigger point is %.2f. Maximum stocks to sell is ", symbol, totalAmount, triggerPrice, numStockInt)
+			saveTransactionString(client, username, "CANCEL_SET_SELL", comment, newBalance)
 		}
 
 	}
-
-	// client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbol)
-	// client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbol)
-	// client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbol)
 }
 
 func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string, transNum int) string {
 
-	setSell_string3 := symbol + ":SELL:" + username
-	if listNotEmpty(client, setSell_string3) == false {
-		LogErrorEventCommand(server, transNum, "SET_SELL_AMOUNT", username, nil, symbol, nil, "user "+username+" does not have any set sell to cancel")
+	if hasSetSellBefore(client, username, symbol) == false {
+		LogErrorEventCommand(server, transNum, "CANCEL_SELL_AMOUNT", username, nil, symbol, nil, "user "+username+" does not have any set sell to cancel")
 		return "there is no set sell to cancel"
 	}
 
@@ -764,7 +826,10 @@ func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string, 
 
 	stackLength, _ := client.Cmd("LLEN", string3).Int()
 	for i := 0; i < stackLength; i++ {
-		client.Cmd("LPOP", string3).Float64()
+		amount, _ := client.Cmd("LPOP", string3).Float64()
+		newBalance := getBalance(client, username)
+		comment := fmt.Sprintf("Cancel set sell amount for stock %s. Amount for this set_sell is %.2f. ", symbol, amount)
+		saveTransactionString(client, username, "CANCEL_SET_SELL", comment, newBalance)
 	}
 
 	clearSetSellTriggers(client, username, symbol)
@@ -791,20 +856,23 @@ func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string
 	return message
 }
 
-func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
+func redisDISPLAY_SUMMARY(client *redis.Client, username string) bytes.Buffer {
 	fmt.Println("-----DISPLAY_SUMMARY-----")
-	s := fmt.Sprintf("Username: %s\nBalance: %.2f\n", username, getBalance(client, username))
+
+	// writer.Init(os.Stdout, 0, 8, 0, '\t', 0)
+	var b bytes.Buffer
+	writer := tabwriter.NewWriter(&b, 0, 8, 0, '\t', 0)
+	fmt.Fprintf(writer, "Username: %s\nBalance: %.2f\n", username, getBalance(client, username))
 	// fmt.Println("Username: ", username)
 	// fmt.Println("Balance: ", getBalance(client, username))
 	stocks_owned, _ := client.Cmd("HGETALL", "OWNED:"+username).Map()
-	s += fmt.Sprintf("Stocks owned:\n")
-	s += fmt.Sprintf("%6v|%6s|%6s|\n", "", "stock", "num_stocks")
+	fmt.Fprintf(writer, "Stocks owned:\n")
+	fmt.Fprintf(writer, "\t\t|%s\t|%s\n", "stock", "num_stocks")
 	for key, val := range stocks_owned {
-		s += fmt.Sprintf("%6v|%6s|%6s|\n", "", key, val)
+		fmt.Fprintf(writer, "\t\t%s\t%s\n", key, val)
 	}
-	s += fmt.Sprintf("\n")
-	s += fmt.Sprintf("Pending buys in the stack:\n")
-	s += fmt.Sprintf("%6v|%6s|%6s|%6s|%6s|\n", "", "stock", "num_stocks", "totalCost", "timestamp")
+	fmt.Fprintf(writer, "\nPending buys in the stack:\n")
+	fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\n", "stock", "num_stocks", "totalCost", "timestamp")
 	buys := listStack(client, "userBUY:"+username)
 	// fmt.Println("buys are: ", buys)
 	for i := 0; i < len(buys); i = i + 4 {
@@ -812,7 +880,7 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 		num_stocks, _ := strconv.Atoi(buys[i+1])
 		totalCost, _ := strconv.ParseFloat(buys[i+2], 64)
 		symbol := buys[i+3]
-		s += fmt.Sprintf("%6v|%6s|%6d|%6.2f|%6s|\n", "", symbol, num_stocks, totalCost, time)
+		fmt.Fprintf(writer, "\t\t|%s\t|%d\t|%.2f\t|%s\n", symbol, num_stocks, totalCost, time)
 	}
 
 	// client.Cmd("LPUSH", string3, symbol)
@@ -822,9 +890,8 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 	// fmt.Println("t is ", t)
 	// client.Cmd("LPUSH", string3, t)
 
-	s += fmt.Sprintf("\n")
-	s += fmt.Sprintf("Pending sells in the stack:\n")
-	s += fmt.Sprintf("%6v|%6s|%6s|%6s|%6s|\n", "", "stock", "num_stocks", "totalEarn", "timestamp")
+	fmt.Fprintf(writer, "\nPending sells in the stack:\n")
+	fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\n", "stock", "num_stocks", "totalEarn", "timestamp")
 	sells := listStack(client, "userSELL:"+username)
 	// fmt.Println("sells are: ", sells)
 	for i := 0; i < len(sells); i = i + 4 {
@@ -832,12 +899,10 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 		num_stocks := sells[i+1]
 		totalEarned, _ := strconv.ParseFloat(sells[i+2], 64)
 		symbol := sells[i+3]
-		s += fmt.Sprintf("%6v|%6s|%6s|%6.2f|%6s|\n", "", symbol, num_stocks, totalEarned, time)
+		fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%.2f\t|%s\n", symbol, num_stocks, totalEarned, time)
 	}
-
-	s += fmt.Sprintf("\n")
-	s += fmt.Sprintf("Set Buy Amount in the stack:\n")
-	s += fmt.Sprintf("%6v|%6s|%6s|\n", "", "stock", "totalCost")
+	fmt.Fprintf(writer, "\nSet Buy Amount in the stack:\n")
+	fmt.Fprintf(writer, "\t\t|%s\t|%s\n", "stock", "totalCost")
 
 	set_buy_stocks, _ := client.Cmd("HGETALL", username+":SETBUY").Map()
 	// fmt.Println("set buys are: ", set_buy_stocks)
@@ -850,28 +915,29 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 		// fmt.Println("set_buys is ", set_buys)
 		for j := 0; j < len(set_buys); j = j + 1 {
 			amount, _ := strconv.ParseFloat(set_buys[j], 64)
-			s += fmt.Sprintf("%6v|%6s|%6.2f|\n", "", symbol, amount)
+			fmt.Fprintf(writer, "\t\t|%s\t|%.2f\n", symbol, amount)
 		}
-		s += fmt.Sprintf("----------------------------------\n")
+		// fmt.Fprintf(writer, "\t\t%s\t%s\n", "----", "----")
 	}
 
-	s += fmt.Sprintf("\n")
-	s += fmt.Sprintf("Set Buy Triggers:\n")
-	s += fmt.Sprintf("%6v|%6s|%6s|%6s|\n", "", "stock", "triggerPoint", "totalCost")
+	fmt.Fprintf(writer, "\nSet Buy Triggers:\n")
+	fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\n", "stock", "triggerPoint", "totalCost")
 
 	buy_triggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":UNIT").Map()
 	totalCostMap, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":TOTAL").Map()
+	fmt.Println("printing out unit buy_triggers")
 	for symbolTime, unitPrice := range buy_triggers {
+		fmt.Println("symbol is ", symbolTime, ", unit price is ", unitPrice)
 		symbol := strings.Split(symbolTime, ":")[0]
 		totalCost := totalCostMap[symbolTime]
 		totalCostF, _ := strconv.ParseFloat(totalCost, 64)
 		unitPriceF, _ := strconv.ParseFloat(unitPrice, 64)
-		s += fmt.Sprintf("%6v|%6s|%6.2f|%6.2f|\n", "", symbol, unitPriceF, totalCostF)
+		fmt.Fprintf(writer, "\t\t|%s\t|%.2f\t|%.2f\n", symbol, unitPriceF, totalCostF)
+		// fmt.Fprintf(writer, "\t\t%s\t%s\t%s\n", "----", "----", "----")
 	}
 
-	s += fmt.Sprintf("\n")
-	s += fmt.Sprintf("Set Sell Amount in the stack:\n")
-	s += fmt.Sprintf("%6v|%6s|%6s|\n", "", "stock", "totalEarn")
+	fmt.Fprintf(writer, "\nSet Sell Amount in the stack:\n")
+	fmt.Fprintf(writer, "\t\t|%s\t|%s\n", "stock", "totalEarn")
 
 	set_sell_stocks, _ := client.Cmd("HGETALL", username+":SETSELL").Map()
 	for symbol, _ := range set_sell_stocks {
@@ -882,15 +948,12 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 		// fmt.Println("set_sells is ", set_buys)
 		for j := 0; j < len(set_sells); j = j + 1 {
 			amount, _ := strconv.ParseFloat(set_sells[j], 64)
-			s += fmt.Sprintf("%6v|%6s|%6.2f|\n", "", symbol, amount)
+			fmt.Fprintf(writer, "\t\t%s\t%.2f\n", symbol, amount)
 		}
-		s += fmt.Sprintf("----------------------------------\n")
+		// fmt.Fprintf(writer, "\t\t%s\t%s\n", "----", "----")
 	}
 
-	s += fmt.Sprintf("\n")
-	s += fmt.Sprintf("Set Sell Triggers:\n")
-	s += fmt.Sprintf("%6v|%6s|%6s|%6s|%6s\n", "", "stock", "triggerPoint", "totalEarn", "maxStock")
-
+	fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\n", "stock", "triggerPoint", "totalEarn", "maxStock")
 	sellTriggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
 	totalEarnMap, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
 	maxStockMap, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":STOCKS").Map()
@@ -900,8 +963,10 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 		maxStock := maxStockMap[symbolTime]
 		totalEarnF, _ := strconv.ParseFloat(totalEarn, 64)
 		unitPriceF, _ := strconv.ParseFloat(unitPrice, 64)
-		s += fmt.Sprintf("%6v|%6s|%6.2f|%6.2f|\n", "", symbol, unitPriceF, totalEarnF, maxStock)
+		// fmt.Println("has sell triggers: symbol:", symbol, " unitPricd:", unitPriceF, " total earn: ", totalEarnF, " max stock:", maxStock)
+		fmt.Fprintf(writer, "\t\t|%s\t|%.2f\t|%.2f\t|%s\n", symbol, unitPriceF, totalEarnF, maxStock)
 	}
+	writer.Flush()
 
 	// fmt.Println("Transaction history: ")
 	// client.Cmd("SORT", "HISTORY:"+username)
@@ -910,7 +975,7 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 	// 	fmt.Println("    " + val)
 	// }
 
-	fmt.Println(s)
-	return s
+	fmt.Println(b.String())
+	return b
 
 }

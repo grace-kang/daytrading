@@ -167,7 +167,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 
 		// write the response
 		// w.Write([]byte("added balance " + amount + " successfully\n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "QUOTE":
 
@@ -217,7 +217,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 
 		// write the response
 		// w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "COMMIT_BUY":
 
@@ -241,7 +241,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 		// write the response
 		// w.Write([]byte("commit buy successfully\n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "CANCEL_BUY":
 
@@ -265,7 +265,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 		// write the response
 		// w.Write([]byte("cancel buy successfully\n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "SELL":
 		if stringInput == "" || amountInput == "" {
@@ -296,7 +296,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 		// write the response
 		// w.Write([]byte("buy amount " + amount + " of stock " + symbol + " successfully\n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "COMMIT_SELL":
 
@@ -320,7 +320,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 		// write the response
 		// w.Write([]byte("commit buy successfully\n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "CANCEL_SELL":
 
@@ -344,7 +344,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 		// write the response
 		// w.Write([]byte("cancel buy successfully\n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "SET_BUY_AMOUNT":
 		if stringInput == "" || amountInput == "" {
@@ -376,7 +376,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write the response
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "CANCEL_SET_BUY":
 		if stringInput == "" {
@@ -406,7 +406,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write the response
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "SET_BUY_TRIGGER":
 		if stringInput == "" || amountInput == "" {
@@ -438,7 +438,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write the response
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "SET_SELL_AMOUNT":
 		if stringInput == "" || amountInput == "" {
@@ -470,7 +470,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write the response
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "SET_SELL_TRIGGER":
 		if stringInput == "" || amountInput == "" {
@@ -502,7 +502,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write the response
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "CANCEL_SET_SELL":
 		if stringInput == "" {
@@ -532,7 +532,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// write the response
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "DUMPLOG":
 		if stringInput == "" {
@@ -563,7 +563,7 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 		// write the response
 		// w.Write([]byte("dumplog successfully. \n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
 
 	case "DISPLAY_SUMMARY":
 		addr := address + "/display_summary"
@@ -586,7 +586,29 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 		}
 		// write the response
 		// w.Write([]byte("dumplog successfully. \n"))
-		w.Write([]byte(string(responseData)))
+		w.Write(responseData)
+	case "TRANSACTION_HISTORY":
+		addr := address + "/transaction_history"
+		req, err := http.NewRequest("POST", addr, strings.NewReader(v.Encode()))
+		if err != nil {
+			fmt.Println(err)
+		}
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded; param=value")
+		req.Host = "transaction"
+		resp, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+
+		responseData, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// write the response
+		// w.Write([]byte("dumplog successfully. \n"))
+		w.Write(responseData)
 	}
 
 }
