@@ -113,6 +113,7 @@ func runOn(f func(), d time.Duration) {
 }
 
 func checkSellTriggers(username string, symbol string) {
+	fmt.Println("in checkSellTriggers")
 	//get all triggers
 	client, _ := db.Get()
 	defer db.Put(client)
@@ -134,15 +135,19 @@ func checkSellTriggers(username string, symbol string) {
 				if stockNeeded <= 0 {
 					continue
 				}
+
+				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbolTime)
+				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbolTime)
+				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbolTime)
+
+				comment := fmt.Sprintf("%s;%.2f;%.2f;%.2f;%d;%.2f;%d", symbol, unitTriggerPointF, totalAmount, symbolPrice, numStockInt, newBenefit, stockNeeded)
+				client.Cmd("HSET", "SELLTRIGGERSCOMPLETE:"+username, symbol, comment)
+
 				if display == false {
 					redisSELL(client, username, symbol, newBenefit, stockNeeded)
 				} else {
 					displaySELL(client, username, symbol, newBenefit, stockNeeded)
 				}
-
-				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbolTime)
-				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbolTime)
-				client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbolTime)
 
 			}
 		}
@@ -150,6 +155,7 @@ func checkSellTriggers(username string, symbol string) {
 }
 
 func checkBuyTriggers(username string, symbol string) {
+	fmt.Println("in checkBuyTriggers")
 	client, _ := db.Get()
 	defer db.Put(client)
 	//check if the price is higher than trigger point
@@ -173,6 +179,9 @@ func checkBuyTriggers(username string, symbol string) {
 				}
 				client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbolTime)
 				client.Cmd("HDEL", "BUYTRIGGERS:"+username+":TOTAL", symbolTime)
+
+				comment := fmt.Sprintf("%s;%.2f;%.2f;%.2f;%.2f;%d", symbol, unitTriggerPointF, totalCost, symbolPrice, exactTotalPrice, stockToBuy)
+				client.Cmd("HSET", "BUYTRIGGERSCOMPLETE:"+username, symbol, comment)
 
 				if display == false {
 					redisBUY(client, username, symbol, exactTotalPrice, stockToBuy)

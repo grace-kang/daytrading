@@ -598,6 +598,7 @@ func addSetBuyTrigger(client *redis.Client, username string, symbol string, tota
 	t := time.Now().Format("20060102150405")
 	client.Cmd("HSET", "BUYTRIGGERS:"+username+":UNIT", symbol+":"+t, unitPricePoint)
 	client.Cmd("HSET", "BUYTRIGGERS:"+username+":TOTAL", symbol+":"+t, totalCost)
+	goCheckBuyTriggers(username, symbol)
 }
 
 func clearSetBuyTriggers(client *redis.Client, username string, symbol string) {
@@ -759,6 +760,7 @@ func addSetSellTrigger(client *redis.Client, username string, symbol string, tot
 	client.Cmd("HSET", "SELLTRIGGERS:"+username+":UNIT", symbol+":"+t, unitPrice)
 	client.Cmd("HSET", "SELLTRIGGERS:"+username+":TOTAL", symbol+":"+t, totalEarn)
 	client.Cmd("HSET", "SELLTRIGGERS:"+username+":STOCKS", symbol+":"+t, maxStock)
+	goCheckSellTriggers(username, symbol)
 
 }
 
@@ -977,6 +979,7 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) bytes.Buffer {
 		// fmt.Fprintf(writer, "\t\t%s\t%s\n", "----", "----")
 	}
 
+	fmt.Fprintf(writer, "\nSet Sell Triggers\n")
 	fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\n", "stock", "triggerPoint", "totalEarn", "maxStock")
 	sellTriggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
 	totalEarnMap, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
@@ -990,6 +993,23 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) bytes.Buffer {
 		// fmt.Println("has sell triggers: symbol:", symbol, " unitPricd:", unitPriceF, " total earn: ", totalEarnF, " max stock:", maxStock)
 		fmt.Fprintf(writer, "\t\t|%s\t|%.2f\t|%.2f\t|%s\n", symbol, unitPriceF, totalEarnF, maxStock)
 	}
+
+	fmt.Fprintf(writer, "\nComplete Buy Triggers\n")
+	fmt.Fprintf(writer, "\t\t|Symbol\t|Trigger Point\t|Expected Cost\t|Actual Unit Price\t|Actual Total Cost\t|StockToBuy\n")
+	completeBuyTriggers, _ := client.Cmd("HGETALL", "BUYTRIGGERSCOMPLETE:"+username).Map()
+	for _, comment := range completeBuyTriggers {
+		complete_buyTri_list := strings.Split(comment, ";")
+		fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\t|%s\t|%s", complete_buyTri_list[0], complete_buyTri_list[1], complete_buyTri_list[2], complete_buyTri_list[3], complete_buyTri_list[4], complete_buyTri_list[5])
+	}
+
+	fmt.Fprintf(writer, "\nComplete Sell Triggers\n")
+	fmt.Fprintf(writer, "\t\t|Symbol\t|Trigger Point\t|Expected Earn\t|Actual Unit Price\t|Max stock to sell\t|Actual Total Earn\t|StockToSell\n")
+	completeSellTriggers, _ := client.Cmd("HGETALL", "SELLTRIGGERSCOMPLETE:"+username).Map()
+	for _, comment := range completeSellTriggers {
+		complete_sellTri_list := strings.Split(comment, ";")
+		fmt.Fprintf(writer, "\t\t|%s\t|%s\t|%s\t|%s\t|%s\t|%s\t|%s", complete_sellTri_list[0], complete_sellTri_list[1], complete_sellTri_list[2], complete_sellTri_list[3], complete_sellTri_list[4], complete_sellTri_list[5], complete_sellTri_list[6])
+	}
+
 	writer.Flush()
 
 	// fmt.Println("Transaction history: ")
