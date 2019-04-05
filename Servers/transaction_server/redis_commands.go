@@ -506,22 +506,29 @@ func addSetBuyTrigger(client *redis.Client, username string, symbol string, tota
 	string3 := symbol + ":BUYTRIG"
 	client.Cmd("HSET", username, string3, unitPricePoint)
 	//save for transaction
-	client.Cmd("HSET", "BUYTRIGGERS:"+username+":UNIT", symbol, unitPricePoint)
-	client.Cmd("HSET", "BUYTRIGGERS:"+username+":TOTAL", symbol, totalCost)
+	t := time.Now().Unix()
+	client.Cmd("HSET", "BUYTRIGGERS:"+username+":UNIT", symbol+":"+string(t), unitPricePoint)
+	client.Cmd("HSET", "BUYTRIGGERS:"+username+":TOTAL", symbol+":"+string(t), totalCost)
 	// save for iterating all triggers for a given stock
-	client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":UNIT", username, unitPricePoint)
-	client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":TOTAL", username, totalCost)
+	// client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":UNIT", username, unitPricePoint)
+	// client.Cmd("HSET", "BUYTRIGGERS:"+symbol+":TOTAL", username, totalCost)
 }
 
 func clearSetBuyTriggers(client *redis.Client, username string, symbol string) {
 	string4 := symbol + ":BUYTRIG"
 	client.Cmd("HDEL", username, string4)
 
-	client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbol)
-	client.Cmd("HDEL", "BUYTRIGGERS:"+username+":TOTAL", symbol)
+	triggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":UNIT").Map()
+	for symbolTime, _ := range triggers {
+		client.Cmd("HDEL", "BUYTRIGGERS:"+username+":UNIT", symbolTime)
+	}
+	triggers, _ = client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":TOTAL").Map()
+	for symbolTime, _ := range triggers {
+		client.Cmd("HDEL", "BUYTRIGGERS:"+username+":TOTAL", symbolTime)
+	}
 
-	client.Cmd("HDEL", "BUYTRIGGERS:"+symbol+":UNIT", username)
-	client.Cmd("HDEL", "BUYTRIGGERS:"+symbol+":TOTAL", username)
+	// client.Cmd("HDEL", "BUYTRIGGERS:"+symbol+":UNIT", username)
+	// client.Cmd("HDEL", "BUYTRIGGERS:"+symbol+":TOTAL", username)
 }
 
 func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, amount float64, transNum int) string {
@@ -652,13 +659,14 @@ func addSetSellTrigger(client *redis.Client, username string, symbol string, tot
 	string3 := symbol + ":SELLTRIG"
 	client.Cmd("HSET", username, string3, unitPrice)
 
-	client.Cmd("HSET", "SELLTRIGGERS:"+username+":UNIT", symbol, unitPrice)
-	client.Cmd("HSET", "SELLTRIGGERS:"+username+":TOTAL", symbol, totalEarn)
-	client.Cmd("HSET", "SELLTRIGGERS:"+username+":STOCKS", symbol, maxStock)
+	t := time.Now().Unix()
+	client.Cmd("HSET", "SELLTRIGGERS:"+username+":UNIT", symbol+":"+string(t), unitPrice)
+	client.Cmd("HSET", "SELLTRIGGERS:"+username+":TOTAL", symbol+":"+string(t), totalEarn)
+	client.Cmd("HSET", "SELLTRIGGERS:"+username+":STOCKS", symbol+":"+string(t), maxStock)
 
-	client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":UNIT", username, unitPrice)
-	client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":TOTAL", username, totalEarn)
-	client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":STOCKS", username, maxStock)
+	// client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":UNIT", username, unitPrice)
+	// client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":TOTAL", username, totalEarn)
+	// client.Cmd("HSET", "SELLTRIGGERS:"+symbol+":STOCKS", username, maxStock)
 
 }
 
@@ -701,13 +709,29 @@ func clearSetSellTriggers(client *redis.Client, username string, symbol string) 
 	string3 := symbol + ":SELLTRIG"
 	client.Cmd("HDEL", username, string3)
 
-	client.Cmd("HDEL", "SELLTRIGGERS:"+symbol+":UNIT", username)
-	client.Cmd("HDEL", "SELLTRIGGERS:"+symbol+":TOTAL", username)
-	client.Cmd("HDEL", "SELLTRIGGERS:"+symbol+":STOCKS", username)
+	triggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
+	for symbolTime, _ := range triggers {
+		client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbolTime)
+	}
+	triggers, _ = client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
+	for symbolTime, _ := range triggers {
+		client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbolTime)
+	}
+	triggers, _ = client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":STOCKS").Map()
+	fmt.Println("triggers are: ", triggers)
+	for symbolTime, max_stock := range triggers {
+		fmt.Println("numStocks is ", max_stock)
+		numStockInt, _ := strconv.Atoi(max_stock)
+		symbol := strings.Split(symbolTime, ":")[0]
+		addStock(client, username, symbol, numStockInt) // add stock back
+		fmt.Println("add stock ", numStockInt, " back to account")
 
-	client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbol)
-	client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbol)
-	client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbol)
+		client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbolTime)
+	}
+
+	// client.Cmd("HDEL", "SELLTRIGGERS:"+username+":UNIT", symbol)
+	// client.Cmd("HDEL", "SELLTRIGGERS:"+username+":TOTAL", symbol)
+	// client.Cmd("HDEL", "SELLTRIGGERS:"+username+":STOCKS", symbol)
 }
 
 func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string, transNum int) string {
@@ -816,9 +840,9 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 
 	buy_triggers, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":UNIT").Map()
 	totalCostMap, _ := client.Cmd("HGETALL", "BUYTRIGGERS:"+username+":TOTAL").Map()
-	for symbol, unitPrice := range buy_triggers {
-
-		totalCost := totalCostMap[symbol]
+	for symbolTime, unitPrice := range buy_triggers {
+		symbol := strings.Split(symbolTime, ":")[0]
+		totalCost := totalCostMap[symbolTime]
 		totalCostF, _ := strconv.ParseFloat(totalCost, 64)
 		unitPriceF, _ := strconv.ParseFloat(unitPrice, 64)
 		s += fmt.Sprintf("%6v|%6s|%6.2f|%6.2f|\n", "", symbol, unitPriceF, totalCostF)
@@ -836,7 +860,7 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 			amount, _ := strconv.ParseFloat(set_sells[j], 64)
 			s += fmt.Sprintf("%6v|%6s|%6.2f|\n", "", symbol, amount)
 		}
-		s += fmt.Sprintf("----------------------------------")
+		s += fmt.Sprintf("----------------------------------\n")
 	}
 
 	s += fmt.Sprintf("\n")
@@ -846,10 +870,10 @@ func redisDISPLAY_SUMMARY(client *redis.Client, username string) string {
 	sellTriggers, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":UNIT").Map()
 	totalEarnMap, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":TOTAL").Map()
 	maxStockMap, _ := client.Cmd("HGETALL", "SELLTRIGGERS:"+username+":STOCKS").Map()
-	for symbol, unitPrice := range sellTriggers {
-
-		totalEarn := totalEarnMap[symbol]
-		maxStock := maxStockMap[symbol]
+	for symbolTime, unitPrice := range sellTriggers {
+		symbol := strings.Split(symbolTime, ":")[0]
+		totalEarn := totalEarnMap[symbolTime]
+		maxStock := maxStockMap[symbolTime]
 		totalEarnF, _ := strconv.ParseFloat(totalEarn, 64)
 		unitPriceF, _ := strconv.ParseFloat(unitPrice, 64)
 		s += fmt.Sprintf("%6v|%6s|%6.2f|%6.2f|\n", "", symbol, unitPriceF, totalEarnF, maxStock)
