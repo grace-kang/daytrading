@@ -598,7 +598,6 @@ func addSetBuyTrigger(client *redis.Client, username string, symbol string, tota
 	t := time.Now().Format("20060102150405")
 	client.Cmd("HSET", "BUYTRIGGERS:"+username+":UNIT", symbol+":"+t, unitPricePoint)
 	client.Cmd("HSET", "BUYTRIGGERS:"+username+":TOTAL", symbol+":"+t, totalCost)
-	goCheckBuyTriggers(username, symbol)
 }
 
 func clearSetBuyTriggers(client *redis.Client, username string, symbol string) {
@@ -632,11 +631,11 @@ func redisSET_BUY_TRIGGER(client *redis.Client, username string, symbol string, 
 	totalCost, _ := client.Cmd("LPOP", setBuy_string3).Float64()
 	addSetBuyTrigger(client, username, symbol, totalCost, amount)
 
-	go goCheckSellTriggers(username, symbol)
-
 	newBalance := getBalance(client, username)
 	comment := fmt.Sprintf("Set buy trigger for stock %s. Total cost is %.2f. Unit trigger point is %.2f", symbol, totalCost, amount)
 	saveTransactionString(client, username, "SET_BUY_TRIGGER", comment, newBalance)
+
+	go goCheckBuyTriggers(username, symbol)
 
 	return ""
 }
@@ -760,7 +759,6 @@ func addSetSellTrigger(client *redis.Client, username string, symbol string, tot
 	client.Cmd("HSET", "SELLTRIGGERS:"+username+":UNIT", symbol+":"+t, unitPrice)
 	client.Cmd("HSET", "SELLTRIGGERS:"+username+":TOTAL", symbol+":"+t, totalEarn)
 	client.Cmd("HSET", "SELLTRIGGERS:"+username+":STOCKS", symbol+":"+t, maxStock)
-	goCheckSellTriggers(username, symbol)
 
 }
 
@@ -786,11 +784,11 @@ func redisSET_SELL_TRIGGER(client *redis.Client, username string, symbol string,
 	addStock(client, username, symbol, -maxStock)
 	addSetSellTrigger(client, username, symbol, totalEarn, unitPrice, maxStock)
 
-	go goCheckSellTriggers(username, symbol)
-
 	newBalance := getBalance(client, username)
 	comment := fmt.Sprintf("Add set sell trigger for stock %s. Total earn will be %.2f. Unit trigger point is %.2f. Maximum stocks to sell is ", symbol, totalEarn, unitPrice, maxStock)
 	saveTransactionString(client, username, "SET_SELL_TRIGGER", comment, newBalance)
+
+	go goCheckSellTriggers(username, symbol)
 	return ""
 }
 

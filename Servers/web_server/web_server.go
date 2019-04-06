@@ -47,6 +47,15 @@ func set(w http.ResponseWriter, r *http.Request) {
 	SetFlash(w, "message", fm)
 }
 
+func IsLetter(s string) bool {
+	for _, r := range s {
+		if (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') {
+			return false
+		}
+	}
+	return true
+}
+
 func get(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("in get fun")
 	fm, err := GetFlash(w, r, "message")
@@ -177,6 +186,17 @@ func sendCommandHandle(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte(string("symbol input cannot be empty")))
 			return
 		}
+
+		if len(strings.TrimSpace(stringInput)) > 3 {
+			w.Write([]byte("stock symbol has maximum three characters\n"))
+			return
+		}
+
+		if IsLetter(strings.TrimSpace(stringInput)) == false {
+			w.Write([]byte("stock symbol has to ba alphabetic\n"))
+			return
+		}
+
 		response := getQuote(strings.ToLower(stringInput), username)
 		fmt.Println("response is ", response)
 		split := strings.Split(response, ",")
