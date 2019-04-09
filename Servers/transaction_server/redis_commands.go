@@ -163,7 +163,7 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
 			} else {
 				respBuf := make([]byte, 2048)
 				for {
-					err = conn.SetReadDeadline(time.Now().Add(3 * time.Second))
+					err = conn.SetReadDeadline(time.Now().Add(1 * time.Second))
 					_, err = conn.Read(respBuf)
 					if err != nil {
 						LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Read: "+err.Error())
