@@ -12,11 +12,11 @@ To load a Docker image
 
 To run development environment with Docker Compose
 > `docker-compose build`
-> `docker-compose up`
+`docker-compose up`
 
 To run production environment with Docker Compose
 > `docker-compose build`
-> `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up`
+`docker-compose -f docker-compose.yml -f docker-compose.prod.yml up`
 
 ## Performance
 Our system that has been optimized for performance is currently on our master branch. This is the branch that we used to run the final workload. We used Docker to save and load the images onto the lab machines and then used Docker Compose to run our services in Docker containers.
