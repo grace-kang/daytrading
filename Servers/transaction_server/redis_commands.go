@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"math"
-	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+	"bytes"
+	"net"
 
 	"github.com/mediocregopher/radix.v2/redis"
 )
@@ -52,7 +52,6 @@ func exists(client *redis.Client, username string) bool {
 func qExists(client *redis.Client, stock string) bool {
 	//client := dialRedis()
 	exists, _ := client.Cmd("EXISTS", stock).Int()
-	fmt.Println("Exists: ", exists, " Stock:", stock)
 	if exists == 0 {
 		return false
 	} else {
@@ -134,10 +133,6 @@ func redisQUOTE(client *redis.Client, transNum int, username string, stock strin
 	ex := qExists(client, stringQ)
 	if ex == false {
 		goQuote(client, transNum, username, stock)
-	} else {
-		stringQ := stock + ":QUOTE"
-		currentprice, _ := client.Cmd("GET", stringQ).Float64()
-		LogSystemEventCommand(server, transNum, "QUOTE", username, fmt.Sprintf("%f", currentprice), stock, nil)
 	}
 }
 
@@ -145,55 +140,28 @@ func goQuote(client *redis.Client, transNum int, username string, stock string) 
 	stringQ := stock + ":QUOTE"
 
 	QUOTE_URL := os.Getenv("QUOTE_URL")
-	conn, err := net.Dial("tcp", QUOTE_URL)
+	conn, _ := net.Dial("tcp", QUOTE_URL)
+
+	conn.Write([]byte((stock + "," + username + "\n")))
+	respBuf := make([]byte, 2048)
+	_, err := conn.Read(respBuf)
+	conn.Close()
+
 	if err != nil {
-		LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "net.Dial: "+err.Error())
-		conn.Close()
-	} else {
-		if err != nil {
-			LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "setReadDealine: "+err.Error())
-			conn.Close()
-			return
-		} else {
-			_, err = conn.Write([]byte((stock + "," + username + "\r")))
-			if err != nil {
-				LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Write: "+err.Error())
-				conn.Close()
-				return
-			} else {
-				respBuf := make([]byte, 2048)
-				for {
-					err = conn.SetReadDeadline(time.Now().Add(3 * time.Second))
-					_, err = conn.Read(respBuf)
-					if err != nil {
-						LogErrorEventCommand(server, transNum, "QUOTE", username, nil, stock, nil, "conn.Read: "+err.Error())
-						conn.Close()
-						return
-					}
-					if err == nil {
-						break
-					}
-				}
-				conn.Close()
-				respBuf = bytes.Trim(respBuf, "\x00")
-				message := bytes.NewBuffer(respBuf).String()
-				message = strings.TrimSpace(message)
-
-				split := strings.Split(message, ",")
-				price, _ := strconv.ParseFloat(split[0], 64)
-				quoteTimestamp := strings.TrimSpace(split[3])
-				crytpoKey := split[4]
-
-				quoteServerTime := ParseUint(quoteTimestamp, 10, 64)
-
-				LogQuoteServerCommand(server, transNum, strings.TrimSpace(split[0]), stock, username, quoteServerTime, crytpoKey)
-				client.Cmd("SET", stringQ, price)
-				client.Cmd("EXPIRE", stringQ, 60)
-			}
-		}
+		fmt.Printf("Error reading body: %s", err.Error())
 	}
-}
+	respBuf = bytes.Trim(respBuf, "\x00")
+	message := bytes.NewBuffer(respBuf).String()
+	message = strings.TrimSpace(message)
 
+	split := strings.Split(message, ",")
+	price, _ := strconv.ParseFloat(split[0], 64)
+	if err != nil {
+		return
+	}
+	client.Cmd("SET", stringQ, price)
+	client.Cmd("EXPIRE", stringQ, 60)
+}
 func displayQUOTE(client *redis.Client, transNum int, username string, symbol string) {
 	fmt.Println("-----QUOTE-----")
 	redisQUOTE(client, transNum, username, symbol)
@@ -204,8 +172,8 @@ func displayQUOTE(client *redis.Client, transNum int, username string, symbol st
 
 func redisBUY(client *redis.Client, username string, symbol string, amount float64) {
 	/*
-	  check to see buy stack in redis cli
-	  LRANGE userBUY:oY01WVirLr 0 -1
+	check to see buy stack in redis cli
+	LRANGE userBUY:oY01WVirLr 0 -1
 	*/
 	string3 := "userBUY:" + username
 	client.Cmd("LPUSH", string3, amount)
@@ -241,12 +209,12 @@ func displaySELL(client *redis.Client, username string, symbol string, amount fl
 func redisCOMMIT_BUY(client *redis.Client, username string) {
 
 	/*
-	  1. LPOP - stock symbol
-	  2. LPOP - amount
-	  3. check user balance
-	  4. calculate num. stocks to buy
-	  5. decrease balance
-	  6. increase stocks
+	1. LPOP - stock symbol
+	2. LPOP - amount
+	3. check user balance
+	4. calculate num. stocks to buy
+	5. decrease balance
+	6. increase stocks
 	*/
 
 	/* 1, 2 */
@@ -256,7 +224,7 @@ func redisCOMMIT_BUY(client *redis.Client, username string) {
 
 	/* 4 */
 	stockQ := stock + ":QUOTE"
-	stockPrice, _ := client.Cmd("HGET", stockQ, stockQ).Float64()
+	stockPrice, _ := client.Cmd("GET", stockQ).Float64()
 	stock2BUY := int(math.Floor(amount / stockPrice))
 	totalCOST := stockPrice * float64(stock2BUY)
 
@@ -298,11 +266,11 @@ func displayCOMMIT_BUY(client *redis.Client, username string) {
 func redisCOMMIT_SELL(client *redis.Client, username string) {
 
 	/*
-	  1. LPOP - stock symbol
-	  2. LPOP - amount
-	  4. calculate num. stocks to buy
-	  5. increase balance
-	  6. decrease stocks
+	1. LPOP - stock symbol
+	2. LPOP - amount
+	4. calculate num. stocks to buy
+	5. increase balance
+	6. decrease stocks
 	*/
 
 	/* 1, 2 */
@@ -312,7 +280,7 @@ func redisCOMMIT_SELL(client *redis.Client, username string) {
 
 	/* 4 */
 	stockQ := stock + ":QUOTE"
-	stockPrice, _ := client.Cmd("HGET", stockQ, stockQ).Float64()
+	stockPrice, _ := client.Cmd("GET", stockQ).Float64()
 	stock2SELL := int(math.Floor(amount / stockPrice))
 	totalCOST := stockPrice * float64(stock2SELL)
 	id := stock + ":OWNED"
@@ -390,12 +358,12 @@ func redisSET_BUY_AMOUNT(client *redis.Client, username string, symbol string, a
 	client.Cmd("LPUSH", string3, amount)
 
 	/*
-	  push amount then trigger price in SET_BUY_TRIGGER
-	  these two operate in pairs
+	push amount then trigger price in SET_BUY_TRIGGER
+	these two operate in pairs
 	*/
 
 	/*
-	  decrease balance put in reserve
+	decrease balance put in reserve
 	*/
 
 	client.Cmd("HINCRBYFLOAT", username, "Balance", -amount)
@@ -450,9 +418,9 @@ func redisCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
 	}
 
 	string4 := symbol + ":BUYTRIG"
-	client.Cmd("HSET", username, string4, 0.00)
+	client.Cmd("HDEL", username, string4)
 	string5 := "BUYTRIGGERS:" + username
-	client.Cmd("HSET", string5, symbol, 0.00)
+	client.Cmd("HDEL", string5, symbol)
 }
 
 func displayCANCEL_SET_BUY(client *redis.Client, username string, symbol string) {
@@ -478,8 +446,8 @@ func redisSET_SELL_AMOUNT(client *redis.Client, username string, symbol string, 
 	client.Cmd("LPUSH", string3, amount)
 
 	/*
-	  push amount then trigger price in SET_BUY_TRIGGER
-	  these two operate in pairs
+	push amount then trigger price in SET_BUY_TRIGGER
+	these two operate in pairs
 	*/
 	//stack := listStack(client, string3)
 	//fmt.Println("SETSELLTRIGGERStack: ", stack)
@@ -522,7 +490,8 @@ func redisCANCEL_SET_SELL(client *redis.Client, username string, symbol string) 
 		client.Cmd("LPOP", string3).Float64()
 	}
 	string4 := symbol + ":SELLTRIG"
-	client.Cmd("HSET", username, string4, 0.00)
+	client.Cmd("HDEL", username, string4)
+	client.Cmd("HDEL", "SELLTRIGGERS:"+username, symbol)
 }
 
 func displayCANCEL_SET_SELL(client *redis.Client, username string, symbol string) {

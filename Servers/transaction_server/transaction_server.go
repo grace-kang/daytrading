@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"log"
+	// "log"
 	"net/http"
 	"os"
 	"strconv"
@@ -26,21 +26,21 @@ var db2 *pool.Pool
 var server = "server1"
 
 func init() {
-	var err error
-	// Establish a pool of 10 connections to the Redis server listening on
+	// var err error
+	//Establish a pool of 10 connections to the Redis server listening on
 	// port 6379 of the local machine.
-  redisurl := os.Getenv("REDIS_URL")
-	db, err = pool.New("tcp", redisurl, 20)
-	if err != nil {
-		log.Panic(err)
-	}
-
-  redis2url := os.Getenv("REDIS2_URL")
-	db2, err = pool.New("tcp", redis2url, 20)
-	if err != nil {
-		log.Panic(err)
-	}
-
+  // redisurl := os.Getenv("REDIS_URL")
+	// db, err = pool.New("tcp", redisurl, 20)
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
+  //
+  // redis2url := os.Getenv("REDIS2_URL")
+	// db2, err = pool.New("tcp", redis2url, 20)
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
+  //
 }
 
 func main() {
